@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- Standard orientation constant. -->
+	<attr name="orientation">
+		<enum name="horizontal" value="1" />
+		<enum name="vertical" value="2" />
+		<!-- 定义了自动换行的widget -->
+		<enum name="multirow" value="4" />
+	</attr>
+
+	<!-- 自定义滚动的功能 -->
+	<attr name="scroll">
+		<flag name="none" value="0" />
+		<flag name="horizontal" value="1" />
+		<flag name="vertical" value="2" />
+	</attr>
+
+	<attr name="fillViewport">
+		<flag name="none" value="0" />
+		<flag name="horizontal" value="1" />
+		<flag name="vertical" value="2" />
+	</attr>
+
+	<declare-styleable name="Layout">
+		<attr name="orientation" />
+		<attr name="scroll" />
+		<attr name="fillViewport" />
+		<attr name="weightSum" format="float" />
+	</declare-styleable>
+
+</resources>
+

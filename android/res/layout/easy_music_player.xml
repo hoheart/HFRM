@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/player" android:background="@drawable/player_bg"
+	android:orientation="vertical">
+	<Button android:id="@+id/btn_player_close" android:background="@drawable/btn_close"
+		android:layout_width="wrap_content" android:layout_height="wrap_content"
+		android:layout_gravity="right|top" android:layout_marginTop="5dp"
+		android:layout_marginRight="5dp"></Button>
+	<SeekBar android:layout_gravity="center" android:id="@+id/PlayerSeekBar"
+		android:paddingLeft="8.0dp" android:paddingRight="8.0dp"
+		android:paddingBottom="2.0dp" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:max="100"
+		android:progress="0" android:secondaryProgress="0"
+		android:progressDrawable="@drawable/seekbar" />
+	<LinearLayout android:layout_width="wrap_content"
+		android:layout_height="wrap_content" android:layout_gravity="right|bottom"
+		android:layout_marginBottom="5dp" android:layout_marginRight="5dp">
+		<ImageButton android:id="@+id/btn_player_start"
+			android:src="@drawable/image_btn_play_selector" android:layout_width="wrap_content"
+			android:layout_height="wrap_content" android:paddingLeft="30dp"
+			android:paddingRight="30dp"></ImageButton>
+		<ImageButton android:id="@+id/btn_player_stop"
+			android:src="@drawable/image_btn_stop_selector" android:layout_width="wrap_content"
+			android:layout_height="wrap_content" android:paddingLeft="30dp"
+			android:paddingRight="30dp" android:layout_marginLeft="10dp"></ImageButton>
+	</LinearLayout>
+</LinearLayout>

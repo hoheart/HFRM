@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="Download">下载</string>
+	<string name="WaitDownloadPrompt">等待服务器处理...</string>
+	<string name="Downloading">正在下载...</string>
+	<string name="DownloadFailed">下载失败</string>
+	<string name="DownloadBackground">后台下载</string>
+	<string name="Cancel">取消</string>
+	<string name="Retry">重试</string>
+	<string name="Prompt">提示</string>
+	<string name="Confirm">确定</string>
+</resources>

@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>无标题文档</title>
+</head>
+
+<body>
+<span id="ctl00_MainContentPlaceholder_ctl01_ctl00_lblEntry">
+<p><span style="font-family: 宋体;">因为</span><span lang="EN-US">2</span><span style="font-family: 宋体;">月有闰日（</span><span lang="EN-US">leap day</span><span style="font-family: 宋体;">），不便于计算，所以将</span><span lang="EN-US">2</span><span style="font-family: 宋体;">月算作前一年（</span><span lang="EN-US">year -= 1</span><span style="font-family: 宋体;">）的最后一个月，即</span><span lang="EN-US">12</span><span style="font-family: 宋体;">月，其他月份也依次向前退两个月，从而</span><span lang="EN-US">1</span><span style="font-family: 宋体;">月变为前一年的</span><span lang="EN-US">11</span><span style="font-family: 宋体;">月份。这样我们不再按照我们平时的计时方法计时了，为说明方便，我们将本程序中使用的日历称为</span><span lang="EN-US">Guass</span><span style="font-family: 宋体;">历，原来的日历称为公历，这样公历每年的</span><span lang="EN-US">3</span><span style="font-family: 宋体;">月</span><span lang="EN-US">1</span><span style="font-family: 宋体;">日</span><span lang="EN-US">0</span><span style="font-family: 宋体;">时</span><span lang="EN-US">0</span><span style="font-family: 宋体;">分就相当于</span><span lang="EN-US">Guass</span><span style="font-family: 宋体;">历每年的</span><span lang="EN-US">1</span><span style="font-family: 宋体;">月</span><span lang="EN-US">1</span><span style="font-family: 宋体;">号</span><span lang="EN-US">0</span><span style="font-family: 宋体;">时</span><span lang="EN-US">0</span><span style="font-family: 宋体;">分。这样每个月的天数如下表。</span></p>
+<table style="border: medium none ; border-collapse: collapse;" border="1" cellpadding="0" cellspacing="0">
+  <tbody>
+    <tr>
+      <td style="border: 1pt solid windowtext; width: 86.4pt;" valign="top" width="115"><p><span style="font-family: 宋体;">公历的月份</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">3</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">4</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">5</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">6</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">7</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">8</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">9</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">10</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">11</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">12</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">1</span></p></td>
+      <td style="border-style: solid solid solid none; border-color: windowtext windowtext windowtext -moz-use-text-color; border-width: 1pt 1pt 1pt medium; width: 34.75pt;" valign="top" width="46"><p><span lang="EN-US">2</span></p></td>
+    </tr>
+    <tr>
+      <td style="border-style: none solid solid; border-color: -moz-use-text-color windowtext windowtext; border-width: medium 1pt 1pt; width: 86.4pt;" valign="top" width="115"><p><span lang="EN-US">Gauss</span><span style="font-family: 宋体;">历的月份</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">1</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">2</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">3</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">4</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">5</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">6</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">7</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">8</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">9</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">10</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">11</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 34.75pt;" valign="top" width="46"><p><span lang="EN-US">12</span></p></td>
+    </tr>
+    <tr>
+      <td style="border-style: none solid solid; border-color: -moz-use-text-color windowtext windowtext; border-width: medium 1pt 1pt; width: 86.4pt;" valign="top" width="115"><p><span lang="EN-US">每个月的天数</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">30</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">30</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">30</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">30</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">31</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 34.75pt;" valign="top" width="46"><p><span lang="EN-US">28/29</span></p></td>
+    </tr>
+    <tr>
+      <td style="border-style: none solid solid; border-color: -moz-use-text-color windowtext windowtext; border-width: medium 1pt 1pt; width: 86.4pt;" valign="top" width="115"><p><span lang="EN-US">有31天的月份</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">1</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">?</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">3</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">?</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">5</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">6</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">?</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">8</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">?</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.7pt;" valign="top" width="37"><p><span lang="EN-US">10</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 27.75pt;" valign="top" width="37"><p><span lang="EN-US">11</span></p></td>
+      <td style="border-style: none solid solid none; border-color: -moz-use-text-color windowtext windowtext -moz-use-text-color; border-width: medium 1pt 1pt medium; width: 34.75pt;" valign="top" width="46"><p><span lang="EN-US">?</span></p></td>
+    </tr>
+  </tbody>
+</table>
+<p><span lang="EN-US">?</span></p>
+<p><span style="font-family: 宋体;">从上表看除了</span><span lang="EN-US">12</span><span style="font-family: 宋体;">月份，其他的要么是</span><span lang="EN-US">30</span><span style="font-family: 宋体;">天，要么是</span><span lang="EN-US">31</span><span style="font-family: 宋体;">天，则n月m号到1月0日0时0分（注意，0日是每个月月初前一天，这里只是为以后计算方便）的天数为（n-1）*30+[n*t]+m天（[]表示向下取整）<span style="font-size: 10.5pt; font-family: 宋体;"></span></span><span style="font-family: 宋体;">，根据</span><span lang="EN-US">12</span><span style="font-family: 宋体;">个月的情况，有下列方程组成立。</span></p>
+<p><span lang="en-us">0&lt;t&lt;1;</span></p>
+<p><span lang="en-us">1&lt;=2t&lt;2;</span></p>
+<p><span lang="en-us">1&lt;=3t&lt;2;</span></p>
+<p><span lang="en-us">2&lt;=4t&lt;3;</span></p>
+<p><span lang="en-us">2&lt;=5t&lt;3;</span></p>
+<p><span lang="en-us">3&lt;=6t&lt;4;???????=&gt;??7/12&lt;=t&lt;5/3? =&gt; 35/60&lt;=t&lt;36/60</span></p>
+<p><span lang="en-us">4&lt;=7t&lt;5;</span></p>
+<p><span lang="en-us">4&lt;=8t&lt;5;</span></p>
+<p><span lang="en-us">5&lt;=9t&lt;6;</span></p>
+<p><span lang="en-us">5&lt;=10t&lt;6;</span></p>
+<p><span lang="en-us">6&lt;=11t&lt;7;</span></p>
+<p><span lang="en-us">7&lt;=12t&lt;8;</span></p>
+<p><span style="font-family: 宋体;">为简便起见，取</span><span lang="EN-US">t=35/60=7/12</span><span style="font-family: 宋体;">。有了上面的概念，后面的工作就迎刃而解了，由于闰年的规则是每</span><span lang="EN-US">4</span><span style="font-family: 宋体;">年多一天，每</span><span lang="EN-US">100</span><span style="font-family: 宋体;">年少一天，每</span><span lang="EN-US">400</span><span style="font-family: 宋体;">年又多一天，我们以公历公元前</span><span lang="EN-US">1</span><span style="font-family: 宋体;">年的</span><span lang="EN-US">3</span><span style="font-family: 宋体;">月</span><span lang="EN-US">0</span><span style="font-family: 宋体;">日作为原始起点，折合成</span><span lang="EN-US">Guass</span><span style="font-family: 宋体;">历就是公元前</span><span lang="EN-US">1</span><span style="font-family: 宋体;">年</span><span lang="EN-US">1</span><span style="font-family: 宋体;">月</span><span lang="EN-US">0</span><span style="font-family: 宋体;">日，则当前的日期相对于该原始起点的天数就是</span><span lang="EN-US">year/4 - year/100 + year/400 + 30*(mon-1)+7/12*mon + day + year*365</span><span style="font-family: 宋体;">，</span><span lang="EN-US">1969</span><span style="font-family: 宋体;">年</span><span lang="EN-US">11</span><span style="font-family: 宋体;">月</span><span lang="EN-US">1</span><span style="font-family: 宋体;">日（即，相当于公历的</span><span lang="EN-US">1970</span><span style="font-family: 宋体;">年</span><span lang="EN-US">1</span><span style="font-family: 宋体;">月</span><span lang="EN-US">1</span><span style="font-family: 宋体;">日）相对于</span><span lang="EN-US">Guass</span><span style="font-family: 宋体;">历公元前</span><span lang="EN-US">1</span><span style="font-family: 宋体;">年</span><span lang="EN-US">1</span><span style="font-family: 宋体;">月</span><span lang="EN-US">0</span><span style="font-family: 宋体;">日（公历公元前</span><span lang="EN-US">1</span><span style="font-family: 宋体;">年</span><span lang="EN-US">3</span><span style="font-family: 宋体;">月</span><span lang="EN-US">0</span><span style="font-family: 宋体;">日）的天数为1969<span lang="EN-US">/4 - 1969/100 + 1969/400 + 30*(11-1)+7/12*11 +?1 + 1969*365，这样以上两个式子一减就是结果，因为用到了减法，为了效率起见，mon可以不用减1，直接用mon，这样第一个式子就成了<font face="宋体">天数就是</font><span lang="EN-US">year/4 - year/100 + year/400 + 367*mon/12 + day + year*365，而719499就是将1969、11、1三个数带进去的结果。</span></span></span></p>
+</span></body>
+</html>
