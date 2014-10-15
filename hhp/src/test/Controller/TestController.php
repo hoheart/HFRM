@@ -1,78 +1,30 @@
 <?php
 
-namespace test\Controller;
+namespace test\controller;
 
 /**
  * Hhp相关
  */
-use Hhp\Controller;
+use hhp\Controller;
 
 /**
  * Test相关
  */
 use test\App;
-use Hhp\View\View;
-use test\Hfc\Util\Util;
-use test\Hfc\Database\DatabaseClient;
-use test\Hfc\Database\DatabaseStatement;
-use test\Hfc\Event\Event;
-use test\Hfc\Event\Event1;
-use test\Hfc\Util\Logger;
-use test\Hfc\IO\Path;
-use test\Hfc\IO\Directory;
-use test\Hfc\IO\File;
+use hhp\View\View;
+use test\hfc\util\Util;
+use test\hfc\Database\DatabaseClient;
+use test\hfc\Database\DatabaseStatement;
+use test\hfc\Event\Event;
+use test\hfc\Event\Event1;
+use test\hfc\Util\Logger;
+use test\hfc\IO\Path;
+use test\hfc\IO\Directory;
+use test\hfc\IO\File;
 
 class TestController extends Controller {
 
-	public function getConfig ($actionName) {
-		if ('executerTester' == $actionName) {
-			return array(
-				'route' => array(
-					'pre_executer' => array(
-						'test\Executer',
-						'test\TestPreExecuter2'
-					),
-					'later_executer' => array(
-						'test\TestLaterExecuter1',
-						'test\TestLaterExecuter2'
-					)
-				)
-			);
-		} else if ('eventTester' == $actionName) {
-			return array(
-				'service' => array(
-					'EventManager' => array(
-						'class' => 'Hfc\Event\EventManager',
-						'config' => array(
-							'Hfc\Event\IEvent' => array(
-								'test\Hfc\Event\EventHandler',
-								'test\Hfc\Event\EventHandler1'
-							),
-							'Hfc\Event\CommonEvent' => array(
-								'testEvent' => array(
-									'test\Hfc\Event\EventHandler2',
-									'test\Hfc\Event\EventHandler3'
-								),
-								'testEvent1' => array(
-									'test\Hfc\Event\EventHandler4'
-								)
-							),
-							'test\Hfc\Event\Event' => array(
-								'test\Hfc\Event\EventHandler5',
-								'test\Hfc\Event\EventHandler6'
-							),
-							'test\Hfc\Event\Event1' => array(
-								'test\Hfc\Event\EventHandler7',
-								'test\Hfc\Event\EventHandler8'
-							)
-						)
-					)
-				)
-			);
-		}
-	}
-
-	public function index () {
+	public function indexAction () {
 		$arr = array(
 			new Logger(),
 			new File(),
