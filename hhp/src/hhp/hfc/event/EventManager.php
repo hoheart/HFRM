@@ -1,8 +1,8 @@
 <?php
 
-namespace Hfc\Event;
+namespace hfc\Event;
 
-use Hfc\Event\IEvent;
+use hfc\event\IEvent;
 
 class EventManager {
 	

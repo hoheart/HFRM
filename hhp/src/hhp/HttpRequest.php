@@ -29,9 +29,9 @@ class HttpRequest implements IRequest {
 		
 		return $this;
 	}
-	
-	public function getRequestUri(){
-		$uri = urldecode( $_SERVER['REQUEST_URI'] );
+
+	public function getRequestUri () {
+		$uri = urldecode($_SERVER['REQUEST_URI']);
 		return $uri;
 	}
 }
