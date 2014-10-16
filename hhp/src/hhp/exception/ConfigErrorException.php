@@ -1,8 +1,8 @@
 <?php
 
-namespace Hhp\Exception;
+namespace hhp\exception;
 
-use Hhp\Exception\SystemErrcode;
+use hhp\exception\SystemErrcode;
 
 class ConfigErrorException extends \Exception {
 

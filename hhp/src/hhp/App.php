@@ -378,6 +378,9 @@ namespace hhp\App {
 				$app = App::Instance ();
 				$appConfModuleArr = $app->getConfigValue ( 'module' );
 				$appConfModule = $appConfModuleArr [$moduleAlias];
+				if (empty ( $appConfModule )) {
+					throw new ConfigErrorException ( 'can not fond the config in app module.module:' . $moduleAlias );
+				}
 				
 				// 优先处理自己模块的调用关系。
 				// hhp和hfc可以调用任何模块
@@ -390,11 +393,9 @@ namespace hhp\App {
 					$this->checkModuleConf ( $appConfModule, $callerModuleConf, $moduleConf, $moduleAlias, $relativeClassName );
 					
 					$moduleDir = $appConfModule ['dir'];
-					
-					if (! key_exists ( $moduleDir, $this->mModuleDirIndex )) {
-						$this->mModuleDirIndex [$moduleDir] = $moduleAlias;
-					}
 				}
+				
+				$this->recoredModuleDirIndex ( $moduleDir, $moduleAlias );
 			}
 			
 			$path = $moduleDir . str_replace ( '\\', '/', $relativeClassName ) . '.php';
@@ -408,31 +409,37 @@ namespace hhp\App {
 		 * @return array 第一个值是模块的别名，第二个值是模块名。
 		 */
 		protected function getCallerModule() {
-			$callerInfo = debug_backtrace ( ~ DEBUG_BACKTRACE_PROVIDE_OBJECT | ~ DEBUG_BACKTRACE_IGNORE_ARGS, 4 )[3];
-			$callerPath = $callerInfo ['file'];
-			$callerClass = $callerInfo ['class'];
-			list ( $callerModuleName, $relativeClassName ) = $this->getClassModule ( $callerClass );
-			if ('hhp' == $callerModuleName || 'hfc' == $callerModuleName) {
-				return array (
-						$callerModuleName,
-						$callerModuleName 
-				);
-			}
+			$callerStackInfo = debug_backtrace ( ~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+			$callerPath = $callerStackInfo [2] ['file'];
 			
-			$relativePath = $relativeClassName;
-			if (DIRECTORY_SEPARATOR != '\\') {
-				$relativePath = str_replace ( '\\', DIRECTORY_SEPARATOR, $relativePath );
-			}
 			$posStart = strpos ( $callerPath, App::$ROOT_DIR );
 			if (0 == $posStart) {
 				$posStart = strlen ( App::$ROOT_DIR );
 			}
-			$posEnd = strrpos ( $callerPath, $relativePath, - 4 );
 			
+			$callerModuleAlias = null;
+			$callerModuleName = null;
+			$posEnd = strlen ( $callerPath ) - 4; // 去掉.php后缀。
 			$moduleDir = substr ( $callerPath, $posStart, $posEnd - $posStart );
 			
+			// 本来想通过debug_backtrace返回的类名，直接找到模块所在的dir，但有的类的名字空间与文件不一定一致，比如App\ClassLoader
+			while ( true ) {
+				$posEnd = strrpos ( $moduleDir, DIRECTORY_SEPARATOR, - 2 ); // -2表示从倒数第二个字符开始找
+				if (false === $posEnd) { // 不可能发生。
+					break;
+				}
+				
+				$moduleDir = substr ( $moduleDir, 0, $posEnd + 1 );
+				$callerModuleAlias = $this->mModuleDirIndex [$moduleDir];
+				if (! empty ( $callerModuleAlias )) {
+					$callerModuleName = App::Instance ()->getConfigValue ( 'module' )[$callerModuleAlias]['name'];
+					
+					break;
+				}
+			}
+			
 			return array (
-					$this->mModuleDirIndex [$moduleDir],
+					$callerModuleAlias,
 					$callerModuleName 
 			);
 		}
@@ -483,11 +490,25 @@ namespace hhp\App {
 				if ($controllerConf ['enable']) {
 					$path = $appConfModule ['dir'] . $moduleConf ['controller_dir'] . $relativeControllerName . '.php';
 					
+					$this->recoredModuleDirIndex ( $appConfModule ['dir'], $moduleAlias );
+					
 					return $this->loadFile ( $path );
 				}
 			}
 			
 			throw new RequestErrorException ( 'Request resource is not available.' );
+		}
+		
+		/**
+		 * 记录模块dir的索引
+		 *
+		 * @param string $moduleDir        	
+		 * @param string $moduleAlias        	
+		 */
+		protected function recoredModuleDirIndex($moduleDir, $moduleAlias) {
+			if (! key_exists ( $moduleDir, $this->mModuleDirIndex )) {
+				$this->mModuleDirIndex [$moduleDir] = $moduleAlias;
+			}
 		}
 		
 		/**
