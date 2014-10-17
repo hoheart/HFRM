@@ -3,8 +3,6 @@
 namespace test;
 
 abstract class AbstractTest {
-	protected $mErrorMethodName;
-	protected $mErrorLineNumber;
 	
 	/**
 	 * test函数，由框架调用。
@@ -19,8 +17,7 @@ abstract class AbstractTest {
 	 * @param string $lineno        	
 	 */
 	public function throwError($msg, $methodName, $lineno) {
-		$this->mErrorLineNumber = $lineno;
-		$this->mErrorMethodName = $methodName;
+		$msg = "Error:$msg<br>Method:$methodName<br>Line:$lineno";
 		
 		throw new \Exception ( $msg );
 	}

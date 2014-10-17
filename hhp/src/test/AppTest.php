@@ -155,6 +155,8 @@ namespace test\AppTest {
 	use TestSub\TestSubApi;
 	use hfc\database\DatabaseClientFactory;
 	use test\AbstractTest;
+	use test\TestApi;
+	use TestSub\TestSubInnerApi;
 
 	class ClassLoaderTest extends AbstractTest {
 		public function test() {
@@ -178,13 +180,24 @@ namespace test\AppTest {
 			
 			// 先测试hhp
 			$r = new HttpRequest ();
-			// 再测试Hfc
+			// 再测试hfc
 			$db = new DatabaseClientFactory ();
 			// 再测试本模块
-			$c = new ServiceManager ();
+			$c = new TestApi ();
 			// 再测试引用模块
 			$api = new TestSubApi ();
-			if ('api' != $api->api ()) {
+			$ret = $api->api ();
+			if ('api' != $ret) {
+				$this->throwError ( '', __METHOD__, __LINE__ );
+			}
+			// 测试调用没有开启的类
+			$testPass = false;
+			try {
+				$api = new TestSubInnerApi ();
+			} catch ( \Exception $e ) {
+				$testPass = true;
+			}
+			if (! $testPass) {
 				$this->throwError ( '', __METHOD__, __LINE__ );
 			}
 			
