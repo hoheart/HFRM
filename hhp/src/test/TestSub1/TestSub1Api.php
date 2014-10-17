@@ -1,8 +1,8 @@
 <?php
 
-namespace TestSub;
+namespace TestSub1;
 
-class TestSubApi {
+class TestSub1Api {
 	public function api() {
 		return 'api';
 	}

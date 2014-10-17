@@ -363,6 +363,13 @@ namespace hhp\App {
 		 * @param string $className        	
 		 */
 		public function autoload($className) {
+			if( 'test\HApp' == $className ){
+				echo '<p>';
+				debug_print_backtrace(
+	
+				);
+			}
+			echo '<br>';
 			// 确定要载入的类所在的模块别名。（要引用别的模块，用模块别名打头）
 			list ( $moduleAlias, $relativeClassName ) = $this->getClassModule ( $className );
 			
@@ -379,7 +386,9 @@ namespace hhp\App {
 				$appConfModuleArr = $app->getConfigValue ( 'module' );
 				$appConfModule = $appConfModuleArr [$moduleAlias];
 				if (empty ( $appConfModule )) {
-					throw new ConfigErrorException ( 'can not fond the config in app module.module:' . $moduleAlias );
+					//autoload函数里不要throw错误，否则会引起autoload多次调用。
+					// throw new ConfigErrorException ( 'can not fond the config in app module.module:' . $moduleAlias );
+					return false;
 				}
 				
 				// 优先处理自己模块的调用关系。
@@ -390,7 +399,11 @@ namespace hhp\App {
 				} else {
 					$callerModuleConf = $app->getModuleConf ( $callerAlias );
 					$moduleConf = $app->getModuleConf ( $moduleAlias );
-					$this->checkModuleConf ( $appConfModule, $callerModuleConf, $moduleConf, $moduleAlias, $relativeClassName );
+					try {
+						$this->checkModuleConf ( $appConfModule, $callerModuleConf, $moduleConf, $moduleAlias, $relativeClassName );
+					} catch ( \Exception $e ) {
+						return false;
+					}
 					
 					$moduleDir = $appConfModule ['dir'];
 				}

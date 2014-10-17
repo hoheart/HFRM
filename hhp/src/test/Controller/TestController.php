@@ -38,8 +38,10 @@ class TestController extends Controller {
 		foreach ( $arr as $t ) {
 			try {
 				$t->test ();
+				
+				echo 'success.';
 			} catch ( \Exception $e ) {
-				echo 'Test not passed! <br> Error:' . $e->getMessage () . '<br>Class:' . get_class ( $t ) . '<br>Method:' . $t->getErrorMethod () . '<br>Line:' . $t->getErrorLineNumber ();
+				echo 'Test not passed! <br>' . $e->getMessage ();
 				echo '<br>';
 				echo '<pre>';
 				print_r ( $e );
@@ -47,8 +49,6 @@ class TestController extends Controller {
 				break;
 			}
 		}
-		
-		echo 'success.';
 	}
 }
 ?>

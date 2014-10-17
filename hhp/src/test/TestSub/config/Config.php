@@ -13,6 +13,9 @@ return array (
 		'API' => array (
 				'TestSub\TestSubApi' => array (
 						'enable' => true 
+				),
+				'TestSub\TestSubInnerApi' => array (
+						'enable' => false
 				) 
 		),
 		

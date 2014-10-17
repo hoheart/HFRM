@@ -26,8 +26,8 @@ namespace test {
 			$this->trigger ();
 		}
 		public function Instance() {
-			$app = HApp::Instance ();
-			if ($app instanceof HApp) {
+			$app = App::Instance ();
+			if ($app instanceof App) {
 				return true;
 			}
 			
@@ -151,12 +151,10 @@ namespace test {
 namespace test\AppTest {
 
 	use hhp\HttpRequest;
-	use test\ServiceManager;
-	use TestSub\TestSubApi;
 	use hfc\database\DatabaseClientFactory;
 	use test\AbstractTest;
 	use test\TestApi;
-	use TestSub\TestSubInnerApi;
+	use TestSub\TestSubApi;
 
 	class ClassLoaderTest extends AbstractTest {
 		public function test() {
@@ -190,14 +188,19 @@ namespace test\AppTest {
 			if ('api' != $ret) {
 				$this->throwError ( '', __METHOD__, __LINE__ );
 			}
-			// 测试调用没有开启的类
-			$testPass = false;
-			try {
-				$api = new TestSubInnerApi ();
-			} catch ( \Exception $e ) {
-				$testPass = true;
+			
+			// 测试模块没有开启
+			if ($l->autoload ( 'TestSub1\TestSub1Api' )) {
+				$this->throwError ( '', __METHOD__, __LINE__ );
 			}
-			if (! $testPass) {
+			
+			// 测试没有依赖
+			if ($l->autoload ( 'TestSub2\TestSub2Api' )) {
+				$this->throwError ( '', __METHOD__, __LINE__ );
+			}
+			
+			// 测试调用没有开启接口的类
+			if ($l->autoload ( 'TestSub\TestSubInnerApi' )) {
 				$this->throwError ( '', __METHOD__, __LINE__ );
 			}
 			

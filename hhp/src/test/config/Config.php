@@ -12,6 +12,16 @@ return array (
 						'name' => 'TestSub',
 						'enable' => true,
 						'dir' => 'test/TestSub/' 
+				),
+				'TestSub1' => array (
+						'name' => 'TestSub1',
+						'enable' => false,
+						'dir' => 'test/TestSub1/' 
+				),
+				'TestSub2' => array (
+						'name' => 'TestSub2',
+						'enable' => true,
+						'dir' => 'test/TestSub2/' 
 				) 
 		),
 		
@@ -32,6 +42,8 @@ return array (
 		/**
 		 * 本模块依赖的其他模块，用数组的key给出名字，其值暂时保留以后扩展。
 		 */
-		'depends' => array ( 'TestSub' => array ()) 
+		'depends' => array (
+				'TestSub' => array () 
+		) 
 );
 ?>
