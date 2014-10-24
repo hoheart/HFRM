@@ -29,11 +29,11 @@ abstract class Controller {
 
 	/**
 	 * 取得对应action独有的配置，主要是运行该action，需要增加活修改全局配置的项目。
-	 * 
+	 *
 	 * @param string $actionName
 	 *        	不带Action字样的方法名。
 	 */
-	public function getConfig ($actionName) {
+	static public function getConfig ($actionName) {
 	}
 }
 

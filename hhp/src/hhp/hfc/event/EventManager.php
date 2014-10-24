@@ -3,6 +3,7 @@
 namespace hfc\Event;
 
 use hfc\event\IEvent;
+use hfc\exception\ParameterErrorException;
 
 class EventManager {
 	
@@ -20,11 +21,21 @@ class EventManager {
 	/**
 	 * 触发一个事件
 	 *
-	 * @param IEvent $event        	
+	 * @param object $event
+	 *        	可以是字符串，也可以是IEvent对象。字符串表示时间名称，即事件的唯一标志。
+	 * @param object $sender        	
+	 * @param object $dataObject        	
 	 * @return boolean 如果返回true，表示有人处理了这个事件，反之则没人处理。
 	 */
-	public function trigger (IEvent $event) {
-		$ieventClsArr = $this->mConfig['Hfc\Event\IEvent'];
+	public function trigger ($event, $sender = null, $dataObject = null) {
+		if (is_string($event)) {
+			if (null == $sender) {
+				throw new ParameterErrorException('common event need sender.');
+			}
+			return $this->triggerCommonEvent($event, $sender, $dataObject);
+		}
+		
+		$ieventClsArr = $this->mConfig['hfc\event\IEvent'];
 		
 		$name = get_class($event);
 		$clsArr = $this->mConfig[$name];
@@ -34,8 +45,8 @@ class EventManager {
 
 	public function triggerCommonEvent ($name, $sender, $dataObject = null) {
 		$e = new CommonEvent($sender, $name, $dataObject);
-		$ieventClsArr = $this->mConfig['Hfc\Event\IEvent'];
-		$clsArr = $this->mConfig['Hfc\Event\CommonEvent'][$name];
+		$ieventClsArr = $this->mConfig['hfc\event\IEvent'];
+		$clsArr = $this->mConfig['hfc\event\CommonEvent'][$name];
 		
 		return $this->triggerListener($e, $ieventClsArr, $clsArr);
 	}

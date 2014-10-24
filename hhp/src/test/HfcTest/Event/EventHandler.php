@@ -1,10 +1,10 @@
 <?php
 
-namespace test\Hfc\Event;
+namespace test\HfcTest\Event;
 
-use Hfc\Event\IEventHandler;
-use test\Controller\TestController;
-use Hfc\Event\IEvent;
+use hfc\event\IEventHandler;
+use hfc\event\IEvent;
+use test\controller\TriggerTestController;
 
 class EventHandler implements IEventHandler {
 
@@ -18,11 +18,11 @@ class EventHandler implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
-		if ($event instanceof \Hfc\Event\CommonEvent) {
+		if ($event instanceof \hfc\event\CommonEvent) {
 			echo $event->dataObject[1];
 		}
 		
@@ -42,11 +42,11 @@ class EventHandler1 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
-		if ($event instanceof \Hfc\Event\CommonEvent) {
+		if ($event instanceof \hfc\event\CommonEvent) {
 			echo $event->dataObject[0];
 		}
 		
@@ -66,7 +66,7 @@ class EventHandler2 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -86,7 +86,7 @@ class EventHandler3 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -106,7 +106,7 @@ class EventHandler4 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -126,7 +126,7 @@ class EventHandler5 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -146,7 +146,7 @@ class EventHandler6 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -166,7 +166,7 @@ class EventHandler7 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		
@@ -186,7 +186,7 @@ class EventHandler8 implements IEventHandler {
 	}
 
 	public function handle (IEvent $event) {
-		if (! $event->getSender() instanceof TestController) {
+		if (! $event->getSender() instanceof TriggerTestController) {
 			return;
 		}
 		

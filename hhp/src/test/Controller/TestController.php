@@ -23,28 +23,29 @@ use test\hfc\IO\Directory;
 use test\hfc\IO\File;
 
 class TestController extends Controller {
-	public function indexAction() {
-		$arr = array (
-				// new Logger(),
-				// new File(),
-				// new Directory(),
-				// new Path(),
-				// new Util(),
-				// new DatabaseClient(),
-				// new DatabaseStatement(),
-				new AppTest () 
+
+	public function indexAction () {
+		$arr = array(
+			// new Logger(),
+			// new File(),
+			// new Directory(),
+			// new Path(),
+			// new Util(),
+			// new DatabaseClient(),
+			// new DatabaseStatement(),
+			new AppTest()
 		);
 		
-		foreach ( $arr as $t ) {
+		foreach ($arr as $t) {
 			try {
-				$t->test ();
+				$t->test();
 				
 				echo 'success.';
-			} catch ( \Exception $e ) {
-				echo 'Test not passed! <br>' . $e->getMessage ();
+			} catch (\Exception $e) {
+				echo 'Test not passed! <br>' . $e->getMessage();
 				echo '<br>';
 				echo '<pre>';
-				print_r ( $e );
+				print_r($e);
 				echo '</pre>';
 				break;
 			}

@@ -1,9 +1,9 @@
 <?php
 
-namespace Hfc\Database\Mysql;
+namespace hfc\database\Mysql;
 
-use Hfc\Database\PDOClient;
-use Hfc\Exception\NotImplementedException;
+use hfc\database\PDOClient;
+use hfc\exception\NotImplementedException;
 
 class MysqlClient extends PDOClient {
 

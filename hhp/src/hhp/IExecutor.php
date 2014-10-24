@@ -2,7 +2,7 @@
 
 namespace hhp;
 
-interface IExecuter {
+interface IExecutor {
 
 	static public function Instance ();
 

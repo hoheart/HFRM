@@ -1,8 +1,8 @@
 <?php
 
-namespace test\Hfc\Event;
+namespace test\HfcTest\Event;
 
-use Hfc\Event\IEvent;
+use hfc\event\IEvent;
 
 class Event implements IEvent {
 	protected $mSender = null;

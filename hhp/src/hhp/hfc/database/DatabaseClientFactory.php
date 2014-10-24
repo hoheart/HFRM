@@ -1,15 +1,16 @@
 <?php
 
-namespace Hfc\Database;
+namespace hfc\Database;
 
-use Hfc\Database\Mysql\MysqlClient;
-use Hfc\Exception\NotImplementedException;
+use hfc\database\mysql\MysqlClient;
+use hfc\exception\NotImplementedException;
 
 class DatabaseClientFactory {
 
 	public function create (array $conf) {
 		$client = null;
-		switch ($conf['dbms']) {
+		$dbms = $conf['dbms'];
+		switch ($dbms) {
 			case 'mysql':
 				$client = new MysqlClient($conf);
 				break;

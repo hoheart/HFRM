@@ -1,8 +1,8 @@
 <?php
 
-namespace Hhp\Exception;
+namespace hhp\exception;
 
-class UserErrcode extends Hfc\UserErrcode {
+class UserErrcode extends \hfc\exception\UserErrcode {
 	const RequestError = 4100;
 }
 ?>

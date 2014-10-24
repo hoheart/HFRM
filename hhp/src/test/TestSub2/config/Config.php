@@ -15,7 +15,7 @@ return array (
 						'enable' => true 
 				),
 				'TestSub\TestSubInnerApi' => array (
-						'enable' => false
+						'enable' => false 
 				) 
 		),
 		
@@ -23,7 +23,7 @@ return array (
 		 * 本模块提供的Controller
 		 */
 		'controller' => array (
-				'TestSub\controller\TestSubController' => array (
+				'TestSub2\controller\TestSub2Controller' => array (
 						'enable' => true 
 				) 
 		),

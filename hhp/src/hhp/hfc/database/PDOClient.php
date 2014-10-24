@@ -1,6 +1,6 @@
 <?php
 
-namespace Hfc\Database;
+namespace hfc\database;
 
 abstract class PDOClient extends DatabaseClient {
 	
@@ -56,10 +56,11 @@ abstract class PDOClient extends DatabaseClient {
 
 	public function query ($sql, $cursorType = self::CURSOR_FWDONLY) {
 		try {
-			$stmt = $this->getClient()->prepare($sql, array(
-				self::ATTR_CURSOR => $cursorType
-			));
-			if (false === $ret) {
+			$stmt = $this->getClient()->prepare($sql, 
+					array(
+						self::ATTR_CURSOR => $cursorType
+					));
+			if (false === $stmt) {
 				$this->throwError($sql);
 			}
 			if (false === $stmt->execute()) {
@@ -122,7 +123,7 @@ abstract class PDOClient extends DatabaseClient {
 		
 		$dsn = $this->getDSN();
 		try {
-			$this->mClient = new \PDO($dsn, $this->mConf['user'], $this->mConf['password'], $password);
+			$this->mClient = new \PDO($dsn, $this->mConf['user'], $this->mConf['password']);
 		} catch (\Exception $e) {
 			throw new DatabaseConnectException('On Connection Error.' . $e->getMessage());
 		}
@@ -136,7 +137,8 @@ abstract class PDOClient extends DatabaseClient {
 		$obj = null == $stmt ? $this->getClient() : $stmt;
 		$info = $obj->errorInfo();
 		throw new DatabaseQueryException(
-				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] . '. SQL: ' . $sql);
+				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] .
+						 '. SQL: ' . $sql);
 	}
 }
 ?>
