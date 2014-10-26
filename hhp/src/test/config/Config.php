@@ -23,6 +23,11 @@ return array(
 			'name' => 'TestSub2',
 			'enable' => true,
 			'dir' => 'test/TestSub2/'
+		),
+		'innerDirSub' => array(
+			'name' => 'InnerSub',
+			'enable' => true,
+			'dir' => 'test/inner/InnerDirSub/'
 		)
 	),
 	
@@ -50,7 +55,8 @@ return array(
 	 * 本模块依赖的其他模块，用数组的key给出名字，其值暂时保留以后扩展。
 	 */
 	'depends' => array(
-		'TestSub' => array()
+		'TestSub' => array(),
+		'innerDirSub' => array()
 	)
 );
 ?>
