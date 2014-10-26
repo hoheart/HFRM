@@ -142,11 +142,33 @@ namespace test {
 		}
 
 		public function getModuleConf () {
-			$this->throwError($msg, $methodName, $lineno);
+			$app = App::Instance();
+			
+			// 测试是否是直接返回的当前controller的config
+			$testConf = $app->getModuleConf('test');
+			if (! empty($testConf['default_module'])) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
+			if ('TestSub2' != $testConf['module']['TestSub2']['name']) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
+			// 测试是否只能调用一次
+			$testSub1Conf = $app->getModuleConf('TestSub1');
+			if ($testSub1Conf == $testConf) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
 		}
 
 		public function getConfigValue () {
-			$this->throwError('', $methodName, $lineno);
+			$app = App::Instance();
+			
+			// 测试是否是直接返回的当前controller的config
+			if ('3.34.5' != $app->getConfigValue('version')) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
+			if ('TestSub2' != $app->getConfigValue('module')['TestSub2']['name']) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
 		}
 	}
 }
@@ -160,6 +182,7 @@ namespace test\AppTest {
 	use TestSub\TestSubApi;
 	use hhp\exception\RequestErrorException;
 	use hhp\exception\ModuleNotAvailableException;
+	use hhp\App;
 
 	class ClassLoaderTest extends AbstractTest {
 
@@ -214,6 +237,16 @@ namespace test\AppTest {
 			}
 			// 测试调用没有开启接口的类
 			if (class_exists('TestSub\TestSubInnerApi')) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
+			
+			// 测试调用别名与模块名及路径不一致的情况
+			try {
+				$obj = App::create('innerDirSub\InnerSubApi');
+				if (! is_object($obj)) {
+					throw new \Exception('');
+				}
+			} catch (\Exception $e) {
 				$this->throwError('', __METHOD__, __LINE__);
 			}
 			

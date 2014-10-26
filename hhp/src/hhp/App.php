@@ -313,6 +313,11 @@ namespace hhp {
 			}
 			return $conf[$key];
 		}
+
+		static public function create ($className) {
+			$realClassName = self::Instance()->mClassLoader->autoload($className);
+			return new $realClassName();
+		}
 	}
 	
 	App::$ROOT_DIR = dirname(__DIR__) . DIRECTORY_SEPARATOR;
@@ -364,6 +369,7 @@ namespace hhp\App {
 
 		/**
 		 * 根据类名对应的路径，装在类。
+		 * 注意：模块别名和模块名不同的情况，要调用App提供的create函数。
 		 *
 		 * @param string $className        	
 		 */
@@ -408,12 +414,16 @@ namespace hhp\App {
 					$moduleDir = $appConfModule['dir'];
 				}
 				
+				$className = $appConfModule['name'] . '\\' . $relativeClassName;
+				
 				$this->recoredModuleDirIndex($moduleDir, $moduleAlias);
 			}
 			
 			$path = $moduleDir . str_replace('\\', '/', $relativeClassName) . '.php';
 			
-			return $this->loadFile($path);
+			$this->loadFile($path);
+			
+			return $appConfModule['name'] . '\\' . $relativeClassName;
 		}
 
 		/**
@@ -423,8 +433,11 @@ namespace hhp\App {
 		 */
 		protected function getCallerModule () {
 			$callerStackInfo = debug_backtrace(
-					~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+					~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 4);
 			$callerPath = $callerStackInfo[2]['file'];
+			if (empty($callerPath)) { // 如果是class_exists这种系统调用，类文件在第三个数组元素里。
+				$callerPath = $callerStackInfo[3]['file'];
+			}
 			
 			$posStart = strpos($callerPath, App::$ROOT_DIR);
 			if (0 == $posStart) {
