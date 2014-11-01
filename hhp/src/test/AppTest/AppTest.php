@@ -1,6 +1,6 @@
 <?php
 
-namespace test {
+namespace test\AppTest {
 
 	use test\AppTest\ClassLoaderTest;
 	use hhp\App;
@@ -11,7 +11,7 @@ namespace test {
 	 * @author Hoheart
 	 *        
 	 */
-	class AppTest extends AbstractTest {
+	class AppTest extends \test\AbstractTest {
 
 		public function test () {
 			$cl = new ClassLoaderTest();
@@ -21,7 +21,6 @@ namespace test {
 			$this->getVersion();
 			$this->getCurrentController();
 			$this->getController();
-			$this->getRequest();
 			$this->run();
 			$this->getService();
 			$this->trigger();
@@ -55,12 +54,6 @@ namespace test {
 
 		public function getController () {
 			if (! App::Instance()->getController() instanceof \test\controller\TestController) {
-				$this->throwError('', __METHOD__, __LINE__);
-			}
-		}
-
-		public function getRequest () {
-			if (! App::Instance()->getRequest() instanceof \hhp\IRequest) {
 				$this->throwError('', __METHOD__, __LINE__);
 			}
 		}
@@ -175,10 +168,10 @@ namespace test {
 
 namespace test\AppTest {
 
-	use hhp\HttpRequest;
+	use hhp\view\View;
 	use hfc\database\DatabaseClientFactory;
 	use test\AbstractTest;
-	use test\TestApi;
+	use test\AppTest\TestApi;
 	use TestSub\TestSubApi;
 	use hhp\exception\RequestErrorException;
 	use hhp\exception\ModuleNotAvailableException;
@@ -203,7 +196,7 @@ namespace test\AppTest {
 			$l->register2System();
 			
 			// 如果能new，表示注册成功了
-			$r = new HttpRequest();
+			$r = new View();
 		}
 
 		public function autoload () {
@@ -211,7 +204,7 @@ namespace test\AppTest {
 			$l->register2System();
 			
 			// 先测试hhp
-			$r = new HttpRequest();
+			$r = new View();
 			// 再测试hfc
 			$db = new DatabaseClientFactory();
 			
@@ -304,7 +297,7 @@ namespace test\AppTest {
 
 		public function loadFile () {
 			$l = new \hhp\App\ClassLoader();
-			$str = $l->loadFile('test/loadFileData.php');
+			$str = $l->loadFile('test/AppTest/loadFileData.php');
 			if ('alsdkfjasldfj;' != $str) {
 				$this->throwError('', __METHOD__, __LINE__);
 			}

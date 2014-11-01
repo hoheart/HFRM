@@ -1,6 +1,6 @@
 <?php
 
-namespace Hfc\Database;
+namespace hfc\database;
 
 /**
  * 独立于DBMS的抽象数据库客户端。根据配置，调用专门针对DBMS的客户端完成所需功能，基本都是调用PDO完成。

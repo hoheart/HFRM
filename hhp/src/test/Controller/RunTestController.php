@@ -17,12 +17,12 @@ class RunTestController extends Controller {
 			return array(
 				'executor' => array(
 					'pre_executor' => array(
-						'\test\Executor',
-						'\test\TestPreExecutor2'
+						'\test\AppTest\Executor',
+						'\test\AppTest\TestPreExecutor2'
 					),
 					'later_executor' => array(
-						'\test\TestLaterExecutor1',
-						'\test\TestLaterExecutor2'
+						'\test\AppTest\TestLaterExecutor1',
+						'\test\AppTest\TestLaterExecutor2'
 					)
 				)
 			);

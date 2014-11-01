@@ -70,7 +70,7 @@ abstract class PDOClient extends DatabaseClient {
 			$this->throwError($sql, $stmt);
 		}
 		
-		return new PDOStatement($stmt, $this);
+		return new PDOStatement($this, $stmt);
 	}
 
 	public function transLimitSelect ($sql, $start, $size) {

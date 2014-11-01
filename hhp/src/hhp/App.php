@@ -3,9 +3,7 @@
 namespace hhp {
 
 	use hhp\app\ClassLoader;
-	use hfc\event\IEvent;
 	use hfc\util\Util;
-	use hfc\exception\ParameterErrorException;
 	use hhp\ErrorHandler;
 	use hhp\exception\RequestErrorException;
 
@@ -90,6 +88,8 @@ namespace hhp {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
 			
+			date_default_timezone_set('Asia/Chongqing');
+			
 			$this->mClassLoader = new ClassLoader();
 			$this->mClassLoader->register2System();
 			
@@ -126,27 +126,6 @@ namespace hhp {
 
 		public function getController () {
 			return $this->mBootController;
-		}
-
-		/**
-		 * 根据请求，产生IRequest对象。
-		 *
-		 * @return \hhp\IRequest
-		 */
-		public function getRequest () {
-			static $r = null;
-			if (null != $r) {
-				return $r;
-			}
-			
-			if (! empty($_SERVER['HTTP_HOST'])) {
-				$r = new HttpRequest();
-				$r->setBody($_REQUEST);
-				
-				return $r;
-			}
-			
-			return $r;
 		}
 
 		/**

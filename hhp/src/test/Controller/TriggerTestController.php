@@ -7,7 +7,7 @@ use test\HfcTest\Event\Event;
 use test\HfcTest\Event\Event1;
 
 /**
- * App::run方法的测试controller。
+ * App::trigger方法的测试controller。
  *
  * @author Hoheart
  *        

@@ -1,8 +1,8 @@
 <?php
 
-namespace Hfc\IO;
+namespace hfc\io;
 
-use Hfc\Exception\SystemAPIErrorException;
+use hfc\exception\SystemAPIErrorException;
 
 /**
  * 文件目录操作函数。可用于foreach语句。
@@ -105,7 +105,7 @@ class Directory extends Path implements \Iterator {
 			$d->unlink();
 		} else {
 			if (! rmdir($dir)) {
-				throw new SystemAPIErrorException('can not rmdir:' . $str . '. may be not empty.');
+				throw new SystemAPIErrorException('can not rmdir:' . $dir . '. may be not empty.');
 			}
 		}
 	}

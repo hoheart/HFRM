@@ -1,8 +1,6 @@
 <?php
 
-namespace Hfc\Database;
-
-use Hhp\Exception\NotImplementedException;
+namespace hfc\database;
 
 class PDOStatement extends DatabaseStatement {
 	
@@ -19,7 +17,7 @@ class PDOStatement extends DatabaseStatement {
 	 */
 	protected $mClient = null;
 
-	public function __construct (\PDOStatement $statement, DatabaseClient $client) {
+	public function __construct (DatabaseClient $client, \PDOStatement $statement = null) {
 		$this->mStatement = $statement;
 		$this->mClient = $client;
 	}
@@ -52,7 +50,8 @@ class PDOStatement extends DatabaseStatement {
 	protected function throwError () {
 		$info = $this->mStatement->errorInfo();
 		throw new DatabaseQueryException(
-				'On statement operation Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] . '.');
+				'On statement operation Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] .
+						 '.');
 	}
 }
 ?>

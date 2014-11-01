@@ -12,22 +12,58 @@ return array(
 		'TestSub' => array(
 			'name' => 'TestSub',
 			'enable' => true,
-			'dir' => 'test/TestSub/'
+			'dir' => 'test/AppTest/TestSub/'
 		),
 		'TestSub1' => array(
 			'name' => 'TestSub1',
 			'enable' => false,
-			'dir' => 'test/TestSub1/'
+			'dir' => 'test/AppTest/TestSub1/'
 		),
 		'TestSub2' => array(
 			'name' => 'TestSub2',
 			'enable' => true,
-			'dir' => 'test/TestSub2/'
+			'dir' => 'test/AppTest/TestSub2/'
 		),
 		'innerDirSub' => array(
 			'name' => 'InnerSub',
 			'enable' => true,
-			'dir' => 'test/inner/InnerDirSub/'
+			'dir' => 'test/AppTest/inner/InnerDirSub/'
+		)
+	),
+	
+	'service' => array(
+		'db' => array(
+			'class' => 'hfc\database\DatabaseClientFactory',
+			'method' => 'create',
+			'config' => array(
+				'dbms' => 'mysql',
+				'user' => 'hoheart',
+				'password' => 'hoheart',
+				'server' => '127.0.0.1',
+				'port' => 3306,
+				'name' => 'hhptest',
+				'charset' => 'utf8'
+			)
+		),
+		'log' => array(
+			'config' => array(
+				
+				// 由于日志文件很可能与其他数据文件，所以一般单独指定文件夹。
+				'root_dir' => dirname(__DIR__) . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR
+			)
+		),
+		'serviceOnly' => array(
+			'class' => 'test\ServiceManagerTest\TestService',
+			'config' => array(
+				'param' => 123
+			)
+		),
+		'serviceFactory' => array(
+			'class' => 'test\ServiceManagerTest\TestServiceFactory',
+			'method' => 'create',
+			'config' => array(
+				'param' => 234
+			)
 		)
 	),
 	
@@ -47,6 +83,9 @@ return array(
 			'enable' => true
 		),
 		'test\controller\TriggerTestController' => array(
+			'enable' => true
+		),
+		'test\controller\ErrorHandlerTestController' => array(
 			'enable' => true
 		)
 	),

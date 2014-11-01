@@ -1,6 +1,6 @@
 <?php
 
-namespace test;
+namespace test\AppTest;
 
 use hhp\IExecutor;
 

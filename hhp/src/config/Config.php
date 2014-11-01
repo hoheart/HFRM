@@ -60,7 +60,7 @@ return array(
 	 */
 	'service' => array(
 		'db' => array(
-			'class' => 'Hfc\Database\DatabaseClientFactory',
+			'class' => 'hfc\database\DatabaseClientFactory',
 			'method' => 'create',
 			'config' => array(
 				'dbms' => 'mysql',

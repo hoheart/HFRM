@@ -1,6 +1,6 @@
 <?php
 
-namespace Hfc\Database;
+namespace hfc\database;
 
 abstract class DatabaseStatement {
 	

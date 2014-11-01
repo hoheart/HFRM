@@ -57,6 +57,8 @@ class ErrorHandler {
 			print_r($e);
 			echo '</pre>';
 		} else if (E_ERROR == $errno || E_PARSE == $errno) {
+			header('Nothing', '', 200); // 因为到这儿说明脚本出现了致命错误，虽然handle了，但还是会抛出http错误码500，所以这儿手动改一下。
+			
 			$render = new JsonRender();
 			// 一旦出现致命错误，之前的chdir就没用了。
 			$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', 50000, 

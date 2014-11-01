@@ -1,6 +1,6 @@
 <?php
 
-namespace Hfc\Database;
+namespace hfc\database;
 
 class DatabaseTransaction {
 	
@@ -10,7 +10,7 @@ class DatabaseTransaction {
 	 */
 	protected $mDatabaseClient = null;
 
-	public function __construct (IDatabaseClient $databaseClient) {
+	public function __construct (DatabaseClient $databaseClient) {
 		$this->mDatabaseClient = $databaseClient;
 		
 		$this->mDatabaseClient->beginTransaction();
