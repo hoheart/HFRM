@@ -1,1 +1,0 @@
-<?php return array(1=>array('id'=>1,'name'=>'group1','val_string'=>33,'val_float'=>'3.1415'));

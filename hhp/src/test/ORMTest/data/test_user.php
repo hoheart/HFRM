@@ -1,1 +1,0 @@
-<?php return array(1=>array('id'=>1,'name'=>'user1','age'=>34,'amount'=>1500.23,'birthday'=>'2000-08-08','register_time'=>'2014-10-20 22:22:22','female'=>true),2=>array('id'=>2,'name'=>'user2','age'=>34,'amount'=>1500.23,'birthday'=>'2000-08-08','register_time'=>'2014-10-20 22:22:22','female'=>true));
