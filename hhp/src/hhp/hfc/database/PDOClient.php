@@ -2,6 +2,8 @@
 
 namespace hfc\database;
 
+use hfc\exception\NotImplementedException;
+
 abstract class PDOClient extends DatabaseClient {
 	
 	/**
@@ -9,7 +11,7 @@ abstract class PDOClient extends DatabaseClient {
 	 *
 	 * @var \PDO
 	 */
-	protected $mClient = null;
+	private $mClient = null;
 	
 	/**
 	 * 对于数据库的配置
@@ -87,31 +89,31 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function beginTransaction () {
-		if (false === $this->mClient->beginTransaction()) {
+		if (false === $this->getClient()->beginTransaction()) {
 			$this->throwError('begin transaction.');
 		}
 	}
 
 	public function rollBack () {
-		if (false === $this->mClient->rollBack()) {
+		if (false === $this->getClient()->rollBack()) {
 			$this->throwError('roll back transaction.');
 		}
 	}
 
 	public function commit () {
-		if (false === $this->mClient->commit()) {
+		if (false === $this->getClient()->commit()) {
 			$this->throwError('commit transaction.');
 		}
 	}
 
 	public function inTransaction () {
-		if (false === $this->mClient->inTransaction()) {
+		if (false === $this->getClient()->inTransaction()) {
 			$this->throwError('inTransaction.');
 		}
 	}
 
 	public function lastInsertId () {
-		return $this->mClient->lastInsertId();
+		return $this->getClient()->lastInsertId();
 	}
 
 	abstract protected function getDSN ();
@@ -139,6 +141,10 @@ abstract class PDOClient extends DatabaseClient {
 		throw new DatabaseQueryException(
 				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] .
 						 '. SQL: ' . $sql);
+	}
+
+	public function change2SqlValue ($str, $type = 'string') {
+		throw new NotImplementedException('this method must be Override.');
 	}
 }
 ?>

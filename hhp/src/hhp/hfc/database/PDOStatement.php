@@ -17,7 +17,7 @@ class PDOStatement extends DatabaseStatement {
 	 */
 	protected $mClient = null;
 
-	public function __construct (DatabaseClient $client, \PDOStatement $statement = null) {
+	public function __construct (DatabaseClient $client,\PDOStatement $statement = null) {
 		$this->mStatement = $statement;
 		$this->mClient = $client;
 	}

@@ -1,12 +1,12 @@
 <?php
 
-namespace icms\Evaluation {
+namespace orm {
 
-	use Condition\Item;
+	use orm\Condition\Item;
 
 	/**
 	 * 条件类，存放key=>value形式的条件元素，key和value之间的比较关系有=、!=、<>、>、<、LIKE，
-	 * 个条件元素之间可以用OR和AND进行连接。
+	 * 每个条件元素之间可以用OR和AND进行连接。
 	 * 还可以包含子条件。
 	 * 本类只是简单的存放，不做相同条件合并等计算操作。
 	 *
@@ -60,9 +60,9 @@ namespace icms\Evaluation {
 		 * @var array
 		 */
 		protected static $SupportOperation = array(
-			self::OPERATION_EQUAL,
-			self::OPERATION_INEQUAL,
+			self::OPERATION_INEQUAL, // 注意，一定要把两种不等号放前面，因为后面有=、<或者>是不等号的子集，会分析出错。
 			self::OPERATION_INEQUAL1,
+			self::OPERATION_EQUAL,
 			self::OPERATION_GREATER,
 			self::OPERATION_LESS,
 			self::OPERATION_LIKE
@@ -81,8 +81,8 @@ namespace icms\Evaluation {
 		public function __construct ($str = null) {
 			if (! empty($str)) {
 				foreach (self::$SupportOperation as $op) {
-					$pos = strpos($str, $op);
-					if ($pos >= 0) {
+					$pos = stripos($str, $op);
+					if (false !== $pos) {
 						$item = new Item();
 						$item->key = trim(substr($str, 0, $pos));
 						$opLen = strlen($op);
@@ -168,9 +168,10 @@ namespace icms\Evaluation {
 			}
 			
 			$hisChildren = $cond->children;
+			$hisChildrenCount = count($hisChildren);
 			foreach ($this->children as $child) {
 				$found = false;
-				for ($i = 0; $i < $hisCCount; ++ $i) {
+				for ($i = 0; $i < $hisChildrenCount; ++ $i) {
 					if ($child->equal($hisChildren[$i])) {
 						unset($hisChildren[$i]);
 						$found = true;
@@ -189,7 +190,7 @@ namespace icms\Evaluation {
 	}
 }
 
-namespace Condition {
+namespace orm\Condition {
 
 	class Item {
 		

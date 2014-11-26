@@ -1,6 +1,8 @@
 <?php
 
-namespace icms\Evaluation;
+namespace orm;
+
+use hfc\exception\ParameterErrorException;
 
 /**
  * 数据类。对于私有的属性，调用__get和__set魔术方法获取和设置值，并构建对象属性的对象。
@@ -20,8 +22,14 @@ class DataClass {
 		return $this->setAttribute($name, $value);
 	}
 
-	protected function createFactory () {
-		return DatabaseFactory::Instance();
+	protected function getFactory () {
+		static $f = null;
+		if (null == $f) {
+			$c = new DatabaseFactoryCreator();
+			$f = $c->create();
+		}
+		
+		return $f;
 	}
 
 	/**
@@ -29,21 +37,19 @@ class DataClass {
 	 *
 	 * @param string $name        	
 	 */
-	public function getAttribute ($name) {
+	protected function getAttribute ($name) {
 		$val = $this->$name;
 		if (null !== $val) {
 			return $val;
 		}
 		
 		// 首先取得类的描述
-		static $clsDesc = null;
+		$clsName = get_class($this);
+		$clsDesc = DescFactory::Instance()->getDesc($clsName);
 		if (null == $clsDesc) {
-			$clsName = get_class($this);
-			$clsDesc = DescFactory::Instance()->getDesc($clsName);
-			if (null == $clsDesc) {
-				throw new \Exception('can not found the class desc. class: ' . $clsName);
-			}
+			throw new \Exception('can not found the class desc. class: ' . $clsName);
 		}
+		
 		$attr = $clsDesc->attribute[$name];
 		if (null == $attr) {
 			throw new \Exception('no attribute: ' . $name . ' in this object. class:' . $clsName);
@@ -53,19 +59,19 @@ class DataClass {
 			return $val;
 		}
 		
-		$belongClass = $attr->belongClass;
-		$factory = $belongClass::getFactory();
-		$cond = null;
 		$myProp = $attr->selfAttribute2Relationship;
 		$myVal = $this->$myProp;
+		$cond = new Condition($myProp . '=' . $myVal);
 		
-		$cond = new Condition();
+		$belongClass = $attr->belongClass;
+		
 		if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
 			$cond->add($attr->anotherAttribute2Relationship, '=', $myVal);
 		} else {
 			// 首先查询关系
 			$relationshipCond[$attr->selfAttributeInRelationship] = $val;
-			$relationship = $factory->getDataMapList($attr->relationshipName, $relationshipCond);
+			$relationship = $this->getFactory()->getDataMapList($attr->relationshipName, 
+					$relationshipCond);
 			
 			foreach ($relationship as $row) {
 				$rap = $attr->anotherAttributeInRelationship;
@@ -74,7 +80,7 @@ class DataClass {
 			}
 		}
 		
-		$val = $factory->getDataList($attr->belongClass, $cond);
+		$val = $this->getFactory()->getDataList($attr->belongClass, $cond);
 		
 		if (ClassAttribute::VALUE_ATTRIBUTE_SINGLE == $attr->valueAttribute) {
 			foreach ($val as $one) {
@@ -90,19 +96,76 @@ class DataClass {
 		return $val;
 	}
 
-	public function setAttribute ($name, $value) {
-		$this->$name = $value;
+	protected function setAttribute ($name, $value) {
+		$clsDesc = DescFactory::Instance()->getDesc(get_class($this));
+		
+		if (property_exists($this, $name)) {
+			$this->$name = $this->filterValue($value, $clsDesc->attribute[$name]->var);
+		} else {
+			throw new ParameterErrorException(
+					'the property not exists in class: ' . get_class($this));
+		}
 		
 		return $this;
 	}
 
-	static public function getFactory () {
-		static $f = null;
-		if (null == $f) {
-			$f = new DatabaseFactory();
+	/**
+	 * 根据变量类型，对变量进行过滤
+	 * 因为考虑select会比update多，所以，把值的过滤放这个函数里。
+	 *
+	 * @param object $val        	
+	 * @param string $type        	
+	 * @return object
+	 */
+	protected function filterValue ($val, $type) {
+		if (is_array($val)) {
+			$arr = array();
+			foreach ($val as $one) {
+				$arr[] = self::filterValue($one, $type);
+			}
+			
+			return $arr;
 		}
 		
-		return $f;
+		$v = null;
+		if ('string' == substr($type, 0, 6)) {
+			$v = (string) $val;
+		} else if ('int' == substr($type, 0, 3)) {
+			$v = (int) $val;
+		} else if ('float' == substr($type, 0, 5)) {
+			$v = (float) $val;
+		} else {
+			switch ($type) {
+				case 'date':
+					if (! $val instanceof \DateTime) {
+						$v = \DateTime::createFromFormat('Y-m-d H:i:s', $val . ' 00:00:00');
+					} else {
+						$v = $val;
+					}
+					break;
+				case 'time':
+					if (! $val instanceof \DateTime) {
+						$v = \DateTime::createFromFormat('H:i:s', $val);
+					} else {
+						$v = $val;
+					}
+					break;
+				case 'datetime':
+					if (! $val instanceof \DateTime) {
+						$v = \DateTime::createFromFormat('Y-m-d H:i:s', $val);
+					} else {
+						$v = $val;
+					}
+					break;
+				case 'boolean':
+					$v = (boolean) $val;
+					break;
+				default:
+					$v = $val;
+					break;
+			}
+		}
+		return $v;
 	}
 }
 ?>

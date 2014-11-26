@@ -1,6 +1,6 @@
 <?php
 
-namespace ORM;
+namespace orm;
 
 /**
  * 从存放于PHP的数组中取出各种数据类的工厂类。
@@ -16,6 +16,9 @@ class PhpFactory extends AbstractDataFactory {
 	 * @var string
 	 */
 	protected $mSaveDir = null;
+
+	protected function __construct () {
+	}
 
 	/**
 	 * 取得单一实例
@@ -135,10 +138,12 @@ class PhpFactory extends AbstractDataFactory {
 			$arr = $this->combinConditionItem($arr, $childRet, $condition->relationship);
 		}
 		
-		foreach ($condition->children as $child) {
-			$childRet = $this->filterResult($map, $clsDesc, $child);
-			
-			$arr = $this->combinConditionItem($arr, $childRet, $condition->relationship);
+		if (is_array($condition->children)) {
+			foreach ($condition->children as $child) {
+				$childRet = $this->filterResult($map, $clsDesc, $child);
+				
+				$arr = $this->combinConditionItem($arr, $childRet, $condition->relationship);
+			}
 		}
 		
 		return $arr;

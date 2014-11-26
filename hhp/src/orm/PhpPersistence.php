@@ -1,6 +1,8 @@
 <?php
 
-namespace ORM;
+namespace orm;
+
+use hfc\util\Sequence;
 
 /**
  * 根据AtrributeMap把数据对象持久化到PHP数组文件中。
@@ -13,7 +15,8 @@ class PhpPersistence extends AbstractPersistence {
 	/**
 	 * 保存的文件夹。
 	 */
-	protected $mSaveDir;
+	protected $mSaveDir = null;
+	protected $mSequenceDir = null;
 
 	/**
 	 * 取得唯一实例
@@ -49,12 +52,25 @@ class PhpPersistence extends AbstractPersistence {
 	}
 
 	/**
+	 * 设置产生序列所需要的文件夹。
+	 *
+	 * @param string $dir        	
+	 */
+	public function setSequenceDir ($dir) {
+		$this->mSequenceDir = $dir;
+	}
+
+	static public function ArrayToCode ($arr) {
+		return self::MapToCode($arr);
+	}
+
+	/**
 	 * 把php的关联数组转成php代码。
 	 *
 	 * @param array $arr        	
 	 * @return string
 	 */
-	static public function mapToCode ($arr) {
+	static public function MapToCode ($arr) {
 		if (! is_array($arr)) {
 			$strVal = $arr;
 			if (is_string($strVal)) {
@@ -65,6 +81,12 @@ class PhpPersistence extends AbstractPersistence {
 				$strVal = $strVal ? 'true' : 'false';
 			} else if (null === $strVal) {
 				$strVal = 'null';
+			} else if (is_object($strVal)) {
+				$cls = get_class($strVal);
+				if ('DateTime' == $cls) {
+					$strVal = $strVal->format('Y-m-d H:i:s');
+					$strVal = "'$strVal'";
+				}
 			}
 			return $strVal;
 		}
@@ -92,58 +114,46 @@ class PhpPersistence extends AbstractPersistence {
 	 *
 	 * @see \icms\Evaluation\AbstractPersistence::save()
 	 */
-	public function save ($dataObj, $className = null, $isSaveSub = false, $isDelete = false, 
-			ClassDesc $clsDesc = null) {
-		if (null == $className) {
-			$className = get_class($dataObj);
-		}
-		
+	public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
 		if (null == $clsDesc) {
 			$descFactory = DescFactory::Instance();
-			$clsDesc = $descFactory->getDesc($className);
-			if (null == $clsDesc) {
-				throw new \Exception('can not found class desc. class: ' . $className);
-			}
+			$clsDesc = $descFactory->getDesc(get_class($dataObj)); // clsDesc再怎么着也会返回一个默认的值
 		}
 		
-		$map = $this->createSaveMap($dataObj, $clsDesc, $isSaveSub);
-		
-		$oldMap = self::read2Map($clsDesc->persistentName, $this->mSaveDir);
+		$oldMap = self::Read2Map($clsDesc->persistentName, $this->mSaveDir);
 		if (null == $oldMap) {
 			$oldMap = array();
 		}
+		$map = $this->createSaveMap($dataObj, $clsDesc, $isSaveSub);
 		
-		// 对于只有一个键作为主键的，使用key=>value形式保存的数组。
-		$hasKey = 1 == count($clsDesc->primaryKey) ? true : false;
-		$pkey = null;
+		// 对于只有一个键作为主键的，使用key=>value形式保存的数组。对于多个主键的，用主键连接的方式作索引
 		$pkeyVal = null;
-		if ($hasKey) { // 有主键作索引，直接用索引。
-			$pkey = $clsDesc->primaryKey[0];
-			$pkeyVal = $dataObj->$pkey;
+		if (is_array($clsDesc->primaryKey)) {
+			$pkeyValArr = array();
+			foreach ($clsDesc->primaryKey as $key) {
+				$pkeyValArr[] = $dataObj->$key;
+			}
 			
-			if ($isDelete) {
-				unset($oldMap[$pkeyVal]);
-			} else {
-				$oldMap[$pkeyVal] = $map;
-			}
-		} else { // 没有主键作索引，挨个寻找
-			$index = $this->findObjIndex($dataObj, null, $clsDesc, $oldMap);
-			if ($index >= 0) {
-				if ($isDelete) {
-					unset($oldMap[$index]);
-				} else {
-					array_splice($oldMap, $index, 1, $map);
-				}
-			} else {
-				if ($isDelete) {
-					return;
-				} else { // 添加
-					$oldMap[] = $map;
-				}
-			}
+			$pkeyVal = implode(',', $pkeyValArr);
+		} else {
+			$pkey = $clsDesc->primaryKey;
+			$pkeyVal = $dataObj->$pkey;
 		}
 		
+		// 如果是更新，返回更新的条数。否则返回-1，自增长字段放入dataObj属性中。
+		$ret = - 1;
+		if (key_exists($pkeyVal, $oldMap)) {
+			$ret = 1;
+		}
+		$oldMap[$pkeyVal] = $map;
+		
 		$this->write2File($oldMap, $clsDesc);
+		
+		return $ret;
+	}
+
+	public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+		$this->add($dataObj, $isSaveSub, $clsDesc);
 	}
 
 	/**
@@ -200,7 +210,7 @@ class PhpPersistence extends AbstractPersistence {
 	 * @param string $fname        	
 	 * @param string $dir        	
 	 */
-	static public function read2Map ($fname, $dir) {
+	static public function Read2Map ($fname, $dir) {
 		if (empty($fname)) {
 			return array();
 		} else {
@@ -208,7 +218,11 @@ class PhpPersistence extends AbstractPersistence {
 			$path = $dir . $fname;
 		}
 		
-		return include $path;
+		if (file_exists($path)) {
+			return include $path;
+		}
+		
+		return false;
 	}
 
 	/**
@@ -219,44 +233,30 @@ class PhpPersistence extends AbstractPersistence {
 	 * attributeMap的目的是对比主键，先找主键，再找键，再对比其他元素。
 	 *
 	 * @param object $obj        	
-	 * @param array $map        	
-	 * @param ClassDesc $classDesc        	
 	 * @param array $map
 	 *        	要寻找的数组。注意，数组中存放的是map形式，不是对象。
+	 * @param ClassDesc $classDesc        	
+	 *
 	 */
-	protected function findObjIndex ($obj = null, array $map = null, ClassDesc $classDesc, array $map) {
-		$keyArr = array();
+	protected function findObjIndexForMultiPK ($obj, array $map, ClassDesc $classDesc) {
+		if (! is_array($map) || empty($map)) {
+			return - 1;
+		}
 		
-		foreach ($attributeMap as $attr) {
-			if (ClassAttribute::ATTRIBUTE_KEY == $attr->attribute ||
-					 ClassAttribute::ATTRIBUTE_AUTO_INCREMENT == $attr->attribute) {
-				$key = $attr->name;
-				$val = null;
-				if (! empty($map)) {
-					$val = $map[$key];
-				} else {
-					$val = $obj->$key;
-				}
-				
-				if (! empty($val)) {
-					$keyArr[$key] = $val;
-				}
-			}
+		$keyArr = array();
+		foreach ($classDesc->primaryKey as $key) {
+			$keyArr[$classDesc->attribute[$key]->persistentName] = $obj->$key;
 		}
 		
 		$i = 0;
-		foreach ($objArr as $o) {
+		foreach ($map as $o) {
 			$allSame = true;
 			
 			foreach ($keyArr as $key => $val) {
-				if (! empty($map)) {
-					if ($map[$key] != $val) {
-						$allSame = false;
-					}
-				} else {
-					if ($obj->$key != $val) {
-						$allSame = false;
-					}
+				if ($o[$key] != $val) {
+					$allSame = false;
+					
+					break;
 				}
 			}
 			
@@ -268,6 +268,76 @@ class PhpPersistence extends AbstractPersistence {
 		}
 		
 		return - 1;
+	}
+
+	/**
+	 * 创建出要保存的键值对（php数组）。
+	 *
+	 * @param object $dataObj        	
+	 * @param ClassDesc $classDesc        	
+	 * @param boolean $isSaveSub        	
+	 * @return array 对于只有一个键作为主键的，返回key=>value数组。
+	 */
+	public function createSaveMap ($dataObj, ClassDesc $classDesc, $isSaveSub = false) {
+		$map = array();
+		
+		foreach ($classDesc->attribute as $attr) {
+			$persistentName = $attr->persistentName; // 注意，empty不会调用__get方法
+			if (empty($persistentName) && ! $isSaveSub) {
+				continue;
+			}
+			
+			$name = $attr->name;
+			$val = null;
+			if ('class' == $attr->var) {
+				if (! $isSaveSub) {
+					continue;
+				}
+				
+				$val = $dataObj->$name; // 如果要保存属性类，那么其属性肯定有值，否则，会引起调用__get方法。
+				                        
+				// 首先保存关连的另外一个类。
+				if (is_array($val)) {
+					foreach ($val as $oneObj) {
+						$this->save($oneObj, $isSaveSub);
+					}
+				} else {
+					$this->save($val, $attr->belongClass, $isSaveSub);
+				}
+				
+				// 保存完，在map里就不需要再保留了。
+				continue;
+			} else {
+				$val = $dataObj->$name;
+				
+				if (null === $val && $attr->autoIncrement) {
+					$val = $this->autoIncrement($classDesc->persistentName);
+					$dataObj->$name = $val;
+				} else {
+					switch ($attr->var) {
+						case 'date':
+							$val = $val->format('Y-m-d');
+							break;
+						case 'datetime':
+							$val = $val->format('Y-m-d H:i:s');
+							break;
+						case 'time':
+							$val = $val->format('H:i:s');
+							break;
+					}
+				}
+			}
+			
+			$map[$attr->persistentName] = $val;
+		}
+		
+		return $map;
+	}
+
+	protected function autoIncrement ($name) {
+		$s = Sequence::Instance($this->mSequenceDir);
+		
+		return $s->next($name);
 	}
 }
 ?>

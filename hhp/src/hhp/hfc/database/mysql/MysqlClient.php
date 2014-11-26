@@ -24,5 +24,37 @@ class MysqlClient extends PDOClient {
 		
 		return $dsn;
 	}
+
+	public function change2SqlValue ($val, $type = 'string') {
+		if (null === $val) {
+			return 'null';
+		}
+		
+		$v = null;
+		if ('string' == substr($type, 0, 6)) {
+			$v = $this->getClient()->quote($val);
+		} else if ('int' == substr($type, 0, 3)) {
+			$v = (int) $val;
+		} else if ('float' == substr($type, 0, 5)) {
+			$v = (float) $val;
+		} else {
+			switch ($type) {
+				case 'date':
+					$v = $val->format('Y-m-d');
+					break;
+				case 'time':
+				case 'datetime':
+					$v = $val->format('Y-m-d H:i:s');
+					break;
+				case 'boolean':
+					$v = $val ? 1 : 0;
+					break;
+			}
+			
+			$v = "'$v'";
+		}
+		
+		return $v;
+	}
 }
 ?>

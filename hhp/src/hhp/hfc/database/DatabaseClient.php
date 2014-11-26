@@ -154,5 +154,11 @@ abstract class DatabaseClient {
 	 * 判断一个事务是否已经开始而没有提交。
 	 */
 	abstract public function inTransaction ();
+
+	/**
+	 * Quotes a string for use in a
+	 * query.如果是date、time、datetime，转换成对应数据库的SQL语句。比如，mysql就直接转换成字符串，oracle要用todate函数。
+	 */
+	abstract public function change2SqlValue ($str, $type = 'string');
 }
 ?>

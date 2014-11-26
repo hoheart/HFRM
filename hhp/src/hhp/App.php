@@ -356,6 +356,7 @@ namespace hhp\App {
 			// 确定要载入的类所在的模块别名。（要引用别的模块，用模块别名打头）
 			list ($moduleAlias, $relativeClassName) = $this->getClassModule($className);
 			
+			$moduleName = $moduleAlias;
 			$moduleDir = null;
 			// 任何模块都可以调用hhp和hfc
 			if ('hhp' == $moduleAlias) {
@@ -393,7 +394,7 @@ namespace hhp\App {
 					$moduleDir = $appConfModule['dir'];
 				}
 				
-				$className = $appConfModule['name'] . '\\' . $relativeClassName;
+				$moduleName = $appConfModule['name'];
 				
 				$this->recoredModuleDirIndex($moduleDir, $moduleAlias);
 			}
@@ -402,7 +403,7 @@ namespace hhp\App {
 			
 			$this->loadFile($path);
 			
-			return $appConfModule['name'] . '\\' . $relativeClassName;
+			return $moduleName . '\\' . $relativeClassName;
 		}
 
 		/**

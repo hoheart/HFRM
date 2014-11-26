@@ -1,6 +1,6 @@
 <?php
 
-namespace ORM;
+namespace orm;
 
 /**
  * 抽象的持久化类
@@ -11,7 +11,9 @@ namespace ORM;
 abstract class AbstractPersistence {
 
 	/**
-	 * 保存数据对象
+	 * 保存数据对象，包括了大多数的添加和更新情况。
+	 * 如果只有一个主键，且有值，视为更新操作，如果主键值为空，视为添加。
+	 * 如果是多个主键，统一视为更新。如果想添加，请调用add方法。
 	 *
 	 * @param object $dataObj        	
 	 * @param string $className        	
@@ -19,9 +21,27 @@ abstract class AbstractPersistence {
 	 * @param boolean $isDelete        	
 	 * @param ClassDesc $clsDesc
 	 *        	如果属性是对象，是否保存。
+	 * @return 如果是新增，dataObj的主键值将被改写，并返回-1；如果是更新，返回影响的行数。
 	 */
-	abstract public function save ($dataObj, $className = null, $isSaveSub = false, $isDelete = false, 
-			ClassDesc $clsDesc = null);
+	public function save ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+		if (null == $clsDesc) {
+			$clsDesc = DescFactory::Instance()->getDesc(get_class($dataObj));
+		}
+		
+		if (! is_array($clsDesc->primaryKey)) {
+			$pk = $clsDesc->primaryKey;
+			$pkVal = $dataObj->$pk;
+			if (null === $pkVal) {
+				return $this->add($dataObj, $isSaveSub, $clsDesc);
+			}
+		}
+		
+		return $this->update($dataObj, $isSaveSub, $clsDesc);
+	}
+
+	abstract public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null);
+
+	abstract public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null);
 
 	/**
 	 * 删除指定类的对象数据。
@@ -32,97 +52,21 @@ abstract class AbstractPersistence {
 	abstract public function delete ($className, Condition $condition = null);
 
 	/**
-	 * 创建出要保存的键值对（php数组）。
+	 * 更新是class属性对应的另一个非class属性的值。
+	 * 用于保存一个对象时，同时对其属性是class的属性也进行了保存，这时，就需要更新另一个非class的属性。
 	 *
-	 * @param object $dataObj        	
-	 * @param ClassDesc $classDesc        	
-	 * @param boolean $isSaveSub        	
-	 * @return array 对于只有一个键作为主键的，返回key=>value数组。
+	 * @param DataClass $mainObj
+	 *        	要更行的对象
+	 * @param ClassAttribute $attr
+	 *        	对应的属性是class的ClassAttribute
+	 * @param DataClass $anotherObj
+	 *        	mainObj对应的class属性的值
 	 */
-	public function createSaveMap ($dataObj, ClassDesc $classDesc, $isSaveSub = false) {
-		$map = array();
-		
-		foreach ($classDesc->attribute as $attr) {
-			$persistentName = $attr->persistentName; // 注意，empty不会调用__get方法
-			if (empty($persistentName) && ! $isSaveSub) {
-				continue;
-			}
-			
-			$name = $attr->name;
-			$val = $dataObj->$name;
-			if (ClassAttribute::DATA_TYPE_CLASS == $attr->dataType) {
-				if (null == $val || ! $isSaveSub) {
-					continue;
-				}
-				
-				// 首先保存关连的另外一个类。
-				if (is_array($val)) {
-					foreach ($val as $oneObj) {
-						$this->save($oneObj, $attr->belongClass, $isSaveSub);
-						
-						$this->updateForeignKey($map, $dataObj, $oneObj, $classDesc, $name);
-					}
-				} else {
-					$this->save($val, $attr->belongClass, $isSaveSub);
-					
-					$this->updateForeignKey($map, $dataObj, $oneObj, $classDesc, $name);
-				}
-				
-				// 保存完，在map里就不需要再保留了。
-				continue;
-			} else if (null === $val && ClassAttribute::ATTRIBUTE_AUTO_INCREMENT == $attr->attribute) {
-				$val = Sequence::Instance()->next($classDesc->persistentName);
-				$dataObj->$name = $val;
-			} else {
-				$val = AbstractDataFactory::filterValue($val, $attr->dataType);
-			}
-			
-			$map[$attr->persistentName] = $val;
-		}
-		
-		return $map;
-	}
-
-	/**
-	 * 保存关系对象。
-	 *
-	 * @param ClassAttribute $attr        	
-	 * @param object $mainObj        	
-	 * @param object $anotherObj        	
-	 */
-	public function saveRelationship (ClassAttribute $attr, $mainObj, $anotherObj) {
-		// 关系中的键名
-		$rKeyMain = $attr->selfAttributeInRelationship;
-		$rKeyAnother = $attr->anotherAttributeInRelationship;
-		
-		// 各自对象对应的键名
-		$keyMain = $attr->selfAttribute2Relationship;
-		$keyAnother = $attr->anotherAttribute2Relationship;
-		
-		// 给关系对象赋值
-		$rObj = new stdClass();
-		$rObj->$rKeyMain = $mainObj->$keyMain;
-		$rObj->$rKeyAnother = $anotherObj->$keyAnother;
-		
-		$this->save($rObj, $attr->relationshipName);
-	}
-
-	protected function updateForeignKey (&$map, $mainObj, $anotherObj, ClassDesc $clsDesc, $keyName) {
-		$attr = $clsDesc->attribute[$keyName];
-		
-		// 更新关系
-		if (! empty($attr->relationshipName)) {
-			$this->saveRelationship($attr, $mainObj, $anotherObj);
-		} else {
-			$keyAnother = $attr->anotherAttribute2Relationship;
-			$valAnother = $anotherObj->$keyAnother;
-			$keySelf = $attr->selfAttribute2Relationship;
-			$mainObj->$keySelf = $valAnother;
-			
-			// 修改已经生成的map里的值
-			$attrFKey = $clsDesc->attribute[$keySelf];
-			$map[$attrFKey->persistentName] = $valAnother;
-		}
+	protected function updateForeignKey (DataClass $mainObj, ClassAttribute $attr, $anotherObj) {
+		$mainKey = $attr->selfAttribute2Relationship;
+		$anotherKey = $attr->anotherAttribute2Relationship;
+		$anotherVal = $anotherObj->$anotherKey;
+		$mainObj->$mainKey = $anotherVal;
 	}
 }
 ?>

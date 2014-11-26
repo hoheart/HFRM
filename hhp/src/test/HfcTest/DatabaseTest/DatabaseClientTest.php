@@ -32,6 +32,7 @@ class DatabaseClientTest extends AbstractTest {
 		$this->selectRow();
 		$this->selectOne();
 		$this->query();
+		$this->change2SqlValue();
 	}
 
 	public function connect () {
@@ -74,7 +75,7 @@ class DatabaseClientTest extends AbstractTest {
 
 	public function exec () {
 		$db = App::Instance()->getService('db');
-		$now = time();
+		$now = microtime();
 		$sql = "UPDATE test123 SET name = 'update$now' WHERE id = 2";
 		$affectedCount = $db->exec($sql);
 		if (1 != $affectedCount) {
@@ -163,6 +164,46 @@ class DatabaseClientTest extends AbstractTest {
 
 	public function beginTransaction () {
 		return true; // 放DatabaseTransaction测试。
+	}
+
+	public function change2SqlValue () {
+		$str = '\'`like"=!=<>';
+		$db = App::Instance()->getService('db');
+		$ret = $db->change2SqlValue($str);
+		$r = '\'\\\'`like\\"=!=<>\'';
+		if ($r !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+		
+		$val = '234';
+		$ret = $db->change2SqlValue($val, 'int');
+		if (234 !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+		
+		$val = '23.4';
+		$ret = $db->change2SqlValue($val, 'float');
+		if (23.4 !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+		
+		$val = \DateTime::createFromFormat('Y-m-d', '2000-08-08');
+		$ret = $db->change2SqlValue($val, 'date');
+		if ("'2000-08-08'" !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+		
+		$val = \DateTime::createFromFormat('Y-m-d H:i:s', '2000-08-08 23:23:23');
+		$ret = $db->change2SqlValue($val, 'time');
+		if ("'2000-08-08 23:23:23'" !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+		
+		$val = \DateTime::createFromFormat('Y-m-d H:i:s', '2000-08-08 23:23:23');
+		$ret = $db->change2SqlValue($val, 'datetime');
+		if ("'2000-08-08 23:23:23'" !== $ret) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
 	}
 }
 ?>

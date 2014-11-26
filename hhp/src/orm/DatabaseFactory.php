@@ -1,6 +1,9 @@
 <?php
 
-namespace ORM;
+namespace orm;
+
+use hfc\database\DatabaseClient;
+use hfc\exception\ParameterErrorException;
 
 /**
  * 从数据库中取出各种数据类的工厂类。
@@ -9,51 +12,44 @@ namespace ORM;
  *        
  */
 class DatabaseFactory extends AbstractDataFactory {
-	protected $mDb = null;
+	
+	/**
+	 *
+	 * @var DatabaseClient
+	 */
+	protected $mDatabaseClient = null;
 
 	public function __construct () {
 	}
 
-	static public function Instance () {
-		static $me = null;
-		if (null === $me) {
-			$me = new DatabaseFactory();
-		}
-		
-		return $me;
+	public function setDatabaseClient (DatabaseClient $client) {
+		$this->mDatabaseClient = $client;
 	}
 
-	public function setDBClient ($client) {
-		$this->mDb = $client;
-	}
-
-	/**
-	 * (non-PHPdoc)
-	 *
-	 * @see \icms\Evaluation\AbstractDataFactory::getDataMapList()
-	 */
 	public function getDataMapList ($className, Condition $condition = null, ClassDesc $clsDesc = null) {
 		if (null == $clsDesc) {
 			$descFactory = DescFactory::Instance();
 			$clsDesc = $descFactory->getDesc($className);
 			
 			if (null == $clsDesc) {
-				throw new \Exception('Can not found desc for class: ' . $className);
+				throw new ParameterErrorException('Can not found desc for class: ' . $className);
 			}
 		}
 		
 		$sql = $this->createSqlSelect($clsDesc);
-		$sqlWhere = $this->createSqlWhere($clsDesc, $condition);
+		$sqlWhere = self::CreateSqlWhere($clsDesc, $condition);
 		if (! empty($sqlWhere)) {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
 		
-		$dbret = $this->mDb->query($sql)->execute();
+		$dbret = $this->mDatabaseClient->query($sql)->execute();
 		
 		// 取得结果value
 		$arr = array();
-		while ($row = $dbret->next()) {
+		$row = $dbret->next();
+		while ($row) {
 			$arr[] = $row;
+			$row = $dbret->next();
 		}
 		
 		return $arr;
@@ -87,7 +83,8 @@ class DatabaseFactory extends AbstractDataFactory {
 	 * @param ClassDesc $clsDesc        	
 	 * @return string
 	 */
-	protected function createSqlWhere (ClassDesc $clsDesc, Condition $condition = null) {
+	static public function CreateSqlWhere (ClassDesc $clsDesc, Condition $condition = null, 
+			DatabaseClient $db) {
 		if (null == $condition) {
 			return '';
 		}
@@ -97,7 +94,7 @@ class DatabaseFactory extends AbstractDataFactory {
 			$attr = $clsDesc->attribute[$item->key];
 			
 			$key = $attr->persistentName;
-			$val = $this->changeValue2Sql($item->value, $attr->dataType);
+			$val = $db->change2SqlValue($item->value, $attr->dataType);
 			
 			$condSqlArr[] = $key . $item->operation . $val;
 		}
@@ -113,39 +110,6 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		
 		return $sql;
-	}
-
-	protected function changeValue2Sql ($val, $dataType) {
-		$v = null;
-		switch ($type) {
-			case ClassAttribute::DATA_TYPE_STRING:
-			case ClassAttribute::DATA_TYPE_FILE:
-			case ClassAttribute::DATA_TYPE_DATE:
-			case ClassAttribute::DATA_TYPE_TIME:
-			case ClassAttribute::DATA_TYPE_DATE_TIME:
-				$v = "'$val'";
-				break;
-			case ClassAttribute::DATA_TYPE_NUMERICAL:
-			case ClassAttribute::DATA_TYPE_SMALL_INTEGER:
-			case ClassAttribute::DATA_TYPE_INTEGER:
-			case ClassAttribute::DATA_TYPE_LONG_INTEGER:
-				$v = (int) $val;
-				break;
-			case ClassAttribute::DATA_TYPE_FLOAT:
-				$v = (float) $val;
-				break;
-			case ClassAttribute::DATA_TYPE_CLASS:
-				$v = null;
-				break;
-			case ClassAttribute::DATA_TYPE_BOOLEAN:
-				$v = $val ? 1 : 0;
-				break;
-			default:
-				$v = $val;
-				break;
-		}
-		
-		return $v;
 	}
 }
 ?>

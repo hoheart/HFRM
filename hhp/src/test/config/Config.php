@@ -28,6 +28,11 @@ return array(
 			'name' => 'InnerSub',
 			'enable' => true,
 			'dir' => 'test/AppTest/inner/InnerDirSub/'
+		),
+		'orm' => array(
+			'name' => 'orm',
+			'enable' => true,
+			'dir' => 'orm/'
 		)
 	),
 	
@@ -64,6 +69,10 @@ return array(
 			'config' => array(
 				'param' => 234
 			)
+		),
+		'databasePersistence' => array(
+			'class' => 'orm\DatabasePersistenceCreator',
+			'method' => 'create'
 		)
 	),
 	
@@ -87,6 +96,9 @@ return array(
 		),
 		'test\controller\ErrorHandlerTestController' => array(
 			'enable' => true
+		),
+		'test\controller\ORMTestController' => array(
+			'enable' => true
 		)
 	),
 	
@@ -95,7 +107,8 @@ return array(
 	 */
 	'depends' => array(
 		'TestSub' => array(),
-		'innerDirSub' => array()
+		'innerDirSub' => array(),
+		'orm' => array()
 	)
 );
 ?>

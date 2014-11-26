@@ -1,9 +1,9 @@
 <?php
 
-namespace icms\Evaluation;
+namespace orm;
 
 /**
- * 产生各种数据类的描述的工厂类。
+ * 产生各种数据类的描述（即产生数据类的ClassDesc类）的工厂类。
  *
  * @author Hoheart
  *        
@@ -11,11 +11,14 @@ namespace icms\Evaluation;
 class DescFactory {
 	
 	/**
-	 * 保存数据的文件夹。
+	 * 存放类描述的map，如果已经解析过的类，就不重复解析。
 	 *
-	 * @var string
+	 * @var array
 	 */
-	public static $SaveDir = null;
+	protected $mClassDescMap = array();
+
+	public function __construct () {
+	}
 
 	/**
 	 * 取得单一实例
@@ -31,195 +34,84 @@ class DescFactory {
 		return $me;
 	}
 
-	/**
-	 * 根据类名，取得该类的描述
-	 *
-	 * @param string $className        	
-	 * @return \icms\Evaluation\ClassDesc
-	 */
 	public function getDesc ($className) {
-		$clsDesc = null;
+		$clsDesc = $this->mClassDescMap[$className];
+		if (! empty($clsDesc)) {
+			return $clsDesc;
+		}
 		
-		if (ClassDesc::CLASS_NAME == $className) {
-			$clsDesc = $this->createDescClassDesc();
-		} else if (ClassAttribute::CLASS_NAME == $className) {
-			$clsDesc = $this->createAttributeClassDesc();
+		$rc = new \ReflectionClass($className);
+		
+		// 取得类的描述。
+		$doc = $rc->getDocComment();
+		$keyVal = $this->parseDocComment($doc);
+		$clsDesc = new ClassDesc();
+		$clsDesc->persistentName = $keyVal['persistentName'];
+		$clsDesc->desc = $keyVal['desc'];
+		$primaryKey = explode(',', $keyVal['primaryKey']);
+		if (1 == count($primaryKey)) {
+			$clsDesc->primaryKey = $primaryKey[0];
 		} else {
-			static $phpFactory = null;
-			if (null == $phpFactory) {
-				$phpFactory = new PhpFactory();
-				$phpFactory->setSaveDir(self::$SaveDir);
+			$clsDesc->primaryKey = $primaryKey;
+		}
+		
+		// 取得每个属性的描述
+		$attrNameArr = $rc->getProperties(
+				\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PRIVATE |
+						 \ReflectionProperty::IS_PROTECTED);
+		foreach ($attrNameArr as $rp) {
+			$doc = $rp->getDocComment();
+			$keyVal = $this->parseDocComment($doc);
+			
+			$attr = new ClassAttribute();
+			$attr->name = $rp->getName();
+			$attr->desc = $keyVal['desc'];
+			
+			$attr->var = $keyVal['var'];
+			if (empty($attr->var)) {
+				$attr->var = 'string256';
 			}
 			
-			$cond = new Condition('name=' . $className);
-			$clsDesc = $phpFactory->getDataObject(ClassDesc::CLASS_NAME, $cond);
-			if (null == $clsDesc) {
-				return $clsDesc;
+			$attr->persistentName = $keyVal['persistentName'];
+			$attr->key = 'true' == $keyVal['key'];
+			$attr->autoIncrement = 'true' == $keyVal['autoIncrement'];
+			$attr->amountType = $keyVal['amountType'];
+			$attr->belongClass = $keyVal['belongClass'];
+			$attr->relationshipName = $keyVal['relationshipName'];
+			$attr->selfAttributeInRelationship = $keyVal['selfAttributeInRelationship'];
+			$attr->selfAttribute2Relationship = $keyVal['selfAttribute2Relationship'];
+			$attr->anotherAttributeInRelationship = $keyVal['anotherAttributeInRelationship'];
+			$attr->anotherAttribute2Relationship = $keyVal['anotherAttribute2Relationship'];
+			
+			$clsDesc->attribute[$rp->getName()] = $attr;
+		}
+		
+		$this->mClassDescMap[$className] = $clsDesc;
+		
+		return $clsDesc;
+	}
+
+	protected function parseDocComment ($doc) {
+		$keyVal = array();
+		$tag = '@hhp:orm';
+		$pos = $pos1 = 0;
+		while (true) {
+			$pos = strpos($doc, $tag, $pos1);
+			if (false === $pos) {
+				break;
 			}
-			
-			$persistentName = self::getClassBasename($className);
-			$attrDesc = $this->createAttributeClassDesc();
-			$attrDesc->persistentName = $clsDesc->attributeFilePath;
-			$map = $phpFactory->getDataList(ClassAttribute::CLASS_NAME, null, $attrDesc);
-			
-			$clsDesc->attribute = $map;
+			$pos += strlen($tag) + 1;
+			$pos1 = strpos($doc, "\n", $pos);
+			if (false === $pos1) {
+				$pos1 = strpos($doc, '*/', $pos);
+			}
+			$row = substr($doc, $pos, $pos1 - $pos);
+			$row = trim($row);
+			$rowArr = preg_split('/ +/', $row);
+			$keyVal[$rowArr[0]] = trim($rowArr[1]);
 		}
 		
-		return $clsDesc;
-	}
-
-	/**
-	 * 取得不带名字空间的类名 。
-	 *
-	 * @param string $clsName        	
-	 * @return string
-	 */
-	static public function getClassBasename ($clsName) {
-		$pos = strrpos($clsName, '\\');
-		if ($pos < 0) {
-			return $clsName;
-		}
-		
-		$bname = substr($clsName, $pos + 1);
-		
-		return $bname;
-	}
-
-	/**
-	 * 创建描述类的描述对象。即ClassDesc这个类对应的描述。
-	 *
-	 * @return array
-	 */
-	protected function createDescClassDesc () {
-		static $clsDesc = null;
-		if (null == $clsDesc) {
-			$bname = self::getClassBasename(ClassDesc::CLASS_NAME);
-			
-			$clsDesc = new ClassDesc();
-			$clsDesc->name = ClassDesc::CLASS_NAME;
-			$clsDesc->persistentName = $bname;
-			$clsDesc->attributeFilePath = $bname;
-			$clsDesc->primaryKey = array(
-				'name'
-			);
-			
-			$clsDesc->attribute = $this->createDescClassAtrribute();
-		}
-		
-		return $clsDesc;
-	}
-
-	/**
-	 * 创建描述类的属性。
-	 *
-	 * @return array
-	 */
-	protected function createDescClassAtrribute () {
-		$arr = null;
-		
-		$propArr = array(
-			'name',
-			'persistentName',
-			'attributeFilePath',
-			'attribute',
-			'desc',
-			'primaryKey'
-		);
-		
-		foreach ($propArr as $prop) {
-			$attr = new ClassAttribute();
-			$attr->name = $prop;
-			$attr->persistentName = $prop;
-			$attr->dataType = ClassAttribute::DATA_TYPE_STRING;
-			$attr->attribute = ClassAttribute::ATTRIBUTE_COMMON;
-			$attr->valueAttribute = ClassAttribute::VALUE_ATTRIBUTE_SINGLE;
-			
-			$arr[$prop] = $attr;
-		}
-		
-		$arr['name']->attribute = ClassAttribute::ATTRIBUTE_KEY;
-		
-		$arr['attribute']->persistentName = null;
-		$arr['attribute']->belongClass = 'icms\Evaluation\ClassAttribute';
-		$arr['attribute']->dataType = ClassAttribute::DATA_TYPE_CLASS;
-		$arr['attribute']->valueAttribute = ClassAttribute::VALUE_ATTRIBUTE_LITTLE_ARRAY;
-		$arr['attribute']->selfAttribute2Relationship = 'attributeFilePath';
-		$arr['attribute']->anotherAttribute2Relationship = 'className';
-		
-		$arr['primaryKey']->valueAttribute = ClassAttribute::VALUE_ATTRIBUTE_LITTLE_ARRAY;
-		
-		return $arr;
-	}
-
-	/**
-	 * 创建属性类的描述。
-	 *
-	 * @return \icms\Evaluation\ClassDesc
-	 */
-	public function createAttributeClassDesc () {
-		static $clsDesc = null;
-		if (null == $clsDesc) {
-			$bname = self::getClassBasename(ClassAttribute::CLASS_NAME);
-			
-			$clsDesc = new ClassDesc();
-			$clsDesc->name = ClassAttribute::CLASS_NAME;
-			$clsDesc->persistentName = $bname;
-			$clsDesc->attributeFilePath = $bname;
-			$clsDesc->primaryKey = array(
-				'name'
-			);
-			
-			$clsDesc->attribute = $this->createAttributeClassAttribute();
-		}
-		
-		return $clsDesc;
-	}
-
-	/**
-	 * 创建属性类中，各属性的描述。
-	 *
-	 * @return array
-	 */
-	protected function createAttributeClassAttribute () {
-		$arr = null;
-		
-		$propArr = array(
-			'name',
-			'persistentName',
-			'dataType',
-			'attribute',
-			'valueAttribute',
-			'belongClass',
-			'relationshipName',
-			'selfAttributeInRelationship',
-			'selfAttribute2Relationship',
-			'anotherAttributeInRelationship',
-			'anotherAttribute2Relationship'
-		);
-		
-		foreach ($propArr as $prop) {
-			$attr = new ClassAttribute();
-			$attr->name = $prop;
-			$attr->persistentName = $prop;
-			$attr->dataType = ClassAttribute::DATA_TYPE_STRING;
-			$attr->attribute = ClassAttribute::ATTRIBUTE_COMMON;
-			$attr->valueAttribute = ClassAttribute::VALUE_ATTRIBUTE_SINGLE;
-			
-			$arr[$prop] = $attr;
-		}
-		
-		$arr['name']->attribute = ClassAttribute::ATTRIBUTE_KEY;
-		$arr['dataType']->dataType = ClassAttribute::DATA_TYPE_SMALL_INTEGER;
-		$arr['attribute']->dataType = ClassAttribute::DATA_TYPE_SMALL_INTEGER;
-		$arr['valueAttribute']->dataType = ClassAttribute::DATA_TYPE_SMALL_INTEGER;
-		$arr['valueAttribute']->dataType = ClassAttribute::DATA_TYPE_SMALL_INTEGER;
-		
-		return $arr;
+		return $keyVal;
 	}
 }
-
-/**
- * 对静态变量进行赋值
- */
-DescFactory::$SaveDir = __DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR;
 ?>
