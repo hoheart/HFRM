@@ -3,6 +3,9 @@
 namespace orm;
 
 use hfc\exception\ParameterErrorException;
+use hhp\App;
+use orm\exception\ParseClassDescErrorException;
+use orm\exception\NoPropertyException;
 
 /**
  * 数据类。对于私有的属性，调用__get和__set魔术方法获取和设置值，并构建对象属性的对象。
@@ -13,6 +16,13 @@ use hfc\exception\ParameterErrorException;
  *        
  */
 class DataClass {
+	
+	/**
+	 * 是否被保存过。如果一旦某个属性被修改了，就不是true了。
+	 *
+	 * @var boolean
+	 */
+	protected $mSaved = false;
 
 	public function __get ($name) {
 		return $this->getAttribute($name);
@@ -23,13 +33,7 @@ class DataClass {
 	}
 
 	protected function getFactory () {
-		static $f = null;
-		if (null == $f) {
-			$c = new DatabaseFactoryCreator();
-			$f = $c->create();
-		}
-		
-		return $f;
+		return App::Instance()->getService('DataFactory');
 	}
 
 	/**
@@ -39,71 +43,77 @@ class DataClass {
 	 */
 	protected function getAttribute ($name) {
 		$val = $this->$name;
-		if (null !== $val) {
-			return $val;
-		}
-		
-		// 首先取得类的描述
-		$clsName = get_class($this);
-		$clsDesc = DescFactory::Instance()->getDesc($clsName);
-		if (null == $clsDesc) {
-			throw new \Exception('can not found the class desc. class: ' . $clsName);
-		}
-		
-		$attr = $clsDesc->attribute[$name];
-		if (null == $attr) {
-			throw new \Exception('no attribute: ' . $name . ' in this object. class:' . $clsName);
-		}
-		// 只对属于另外一个类的属性去取值。
-		if (! $attr->isClass()) {
-			return $val;
-		}
-		
-		$myProp = $attr->selfAttribute2Relationship;
-		$myVal = $this->$myProp;
-		$cond = new Condition($myProp . '=' . $myVal);
-		
-		$belongClass = $attr->belongClass;
-		
-		if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
-			$cond->add($attr->anotherAttribute2Relationship, '=', $myVal);
-		} else {
-			// 首先查询关系
-			$relationshipCond[$attr->selfAttributeInRelationship] = $val;
-			$relationship = $this->getFactory()->getDataMapList($attr->relationshipName, 
-					$relationshipCond);
+		if (null === $val) {
+			// 首先取得类的描述
+			$clsName = get_class($this);
+			$clsDesc = DescFactory::Instance()->getDesc($clsName);
+			if (null == $clsDesc) {
+				throw new ParseClassDescErrorException(
+						'can not parse class desc for class:' . $clsName);
+			}
 			
-			foreach ($relationship as $row) {
-				$rap = $attr->anotherAttributeInRelationship;
-				$ap = $attr->anotherAttribute2Relationship;
-				$cond->add($ap, '=', $row[$rap]);
-			}
-		}
-		
-		$val = $this->getFactory()->getDataList($attr->belongClass, $cond);
-		
-		if (ClassAttribute::VALUE_ATTRIBUTE_SINGLE == $attr->valueAttribute) {
-			foreach ($val as $one) {
-				$this->$name = $one;
-				$val = $one;
+			$attr = $clsDesc->attribute[$name];
+			// 只对属于另外一个类的属性去取值。
+			if ($attr->isClass()) {
+				$myProp = $attr->selfAttribute2Relationship;
+				$myVal = $this->$myProp;
+				$cond = new Condition($myProp . '=' . $myVal);
 				
-				break;
+				$belongClass = $attr->belongClass;
+				
+				if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
+					$cond->add($attr->anotherAttribute2Relationship, '=', $myVal);
+				} else {
+					// 首先查询关系
+					$relationshipCond[$attr->selfAttributeInRelationship] = $val;
+					$relationship = $this->getFactory()->getDataMapList($attr->relationshipName, 
+							$relationshipCond);
+					
+					foreach ($relationship as $row) {
+						$rap = $attr->anotherAttributeInRelationship;
+						$ap = $attr->anotherAttribute2Relationship;
+						$cond->add($ap, '=', $row[$rap]);
+					}
+				}
+				
+				$val = $this->getFactory()->getDataList($attr->belongClass, $cond);
+				
+				if (ClassAttribute::VALUE_ATTRIBUTE_SINGLE == $attr->valueAttribute) {
+					foreach ($val as $one) {
+						$this->$name = $one;
+						$val = $one;
+						
+						break;
+					}
+				} else {
+					$this->$name = $val;
+				}
 			}
-		} else {
-			$this->$name = $val;
 		}
 		
-		return $val;
+		$methodName = 'get' . ucfirst($name);
+		if (method_exists($this, $methodName)) {
+			return $this->$methodName();
+		} else {
+			throw new NoPropertyException(
+					'Property:' . $name . ' not exists in class: ' . get_class($this) .
+							 ' or no get mutator defined.');
+		}
 	}
 
 	protected function setAttribute ($name, $value) {
 		$clsDesc = DescFactory::Instance()->getDesc(get_class($this));
 		
-		if (property_exists($this, $name)) {
-			$this->$name = $this->filterValue($value, $clsDesc->attribute[$name]->var);
+		$methodName = 'set' . ucfirst($name);
+		if (method_exists($this, $methodName)) {
+			$val = $this->filterValue($value, $clsDesc->attribute[$name]->var);
+			$this->$methodName($val);
+			
+			$this->mSaved = false;
 		} else {
-			throw new ParameterErrorException(
-					'the property not exists in class: ' . get_class($this));
+			throw new NoPropertyException(
+					'Property:' . $name . ' not exists in class: ' . get_class($this) .
+							 ' or no set mutator defined.');
 		}
 		
 		return $this;

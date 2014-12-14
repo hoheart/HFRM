@@ -153,8 +153,8 @@ namespace orm {
 			foreach ($this->itemList as $item) {
 				$found = false;
 				$hisItemCount = count($hisItemList);
-				for ($i = 0; $i < $hisItemCount; ++ $i) {
-					if ($item->equal($hisItemList[$i])) {
+				foreach ($hisItemList as $i => $hisItem) {
+					if ($item->equal($hisItem)) {
 						unset($hisItemList[$i]);
 						$found = true;
 						
@@ -168,11 +168,10 @@ namespace orm {
 			}
 			
 			$hisChildren = $cond->children;
-			$hisChildrenCount = count($hisChildren);
 			foreach ($this->children as $child) {
 				$found = false;
-				for ($i = 0; $i < $hisChildrenCount; ++ $i) {
-					if ($child->equal($hisChildren[$i])) {
+				foreach ($hisChildren as $i => $hisChild) {
+					if ($child->equal($hisChild)) {
 						unset($hisChildren[$i]);
 						$found = true;
 						

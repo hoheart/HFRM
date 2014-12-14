@@ -43,6 +43,20 @@ abstract class AbstractPersistence {
 
 	abstract public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null);
 
+	protected function setPropertyVal ($dataObj, $attrName, $val) {
+		$refCls = new \ReflectionClass(get_class($dataObj));
+		$refProperty = $refCls->getProperty($attrName);
+		$refProperty->setAccessible(true);
+		$refProperty->setValue($dataObj, $val);
+	}
+
+	protected function getPropertyVal ($dataObj, $attrName) {
+		$refCls = new \ReflectionClass(get_class($dataObj));
+		$refProperty = $refCls->getProperty($attrName);
+		$refProperty->setAccessible(true);
+		return $refProperty->getValue($dataObj);
+	}
+
 	/**
 	 * 删除指定类的对象数据。
 	 *

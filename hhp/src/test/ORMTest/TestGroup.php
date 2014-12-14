@@ -35,6 +35,22 @@ class TestGroup extends DataClass {
 	protected $userArr;
 	
 	/**
+	 * @hhp:orm desc 组中的一个用户
+	 * @hhp:orm var class
+	 * @hhp:orm key false
+	 * @hhp:orm amountType
+	 * @hhp:orm belongClass test\ORMTest\TestUser
+	 * @hhp:orm relationshipName group2user
+	 * @hhp:orm selfAttributeInRelationship group_id
+	 * @hhp:orm selfAttribute2Relationship id
+	 * @hhp:orm anotherAttributeInRelationship user_id
+	 * @hhp:orm anotherAttribute2Relationship id
+	 *
+	 * @var TestUser
+	 */
+	protected $oneUser;
+	
+	/**
 	 * @hhp:orm persistentName name
 	 */
 	protected $name;
@@ -51,5 +67,45 @@ class TestGroup extends DataClass {
 	 * @hhp:orm dataType 5
 	 */
 	protected $valFloat = '3.1415';
+
+	public function setId ($id) {
+		$this->id = $id;
+	}
+
+	public function getId () {
+		return $this->id;
+	}
+
+	public function setName ($name) {
+		$this->name = $name;
+	}
+
+	public function getName () {
+		return $this->name;
+	}
+
+	public function setUserArr ($arr) {
+		$this->userArr = $arr;
+	}
+
+	public function getUserArr () {
+		return $this->userArr;
+	}
+
+	public function setOneUser ($user) {
+		$this->oneUser = $user;
+	}
+
+	public function getOneUser () {
+		return $this->oneUser;
+	}
+
+	public function getValString () {
+		return $this->valString;
+	}
+
+	public function getValFloat () {
+		return $this->valFloat;
+	}
 }
 ?>

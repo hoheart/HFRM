@@ -37,6 +37,12 @@ class DatabasePersistence extends AbstractPersistence {
 	 * @see \orm\AbstractPersistence::save()
 	 */
 	public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+		if ($this->getPropertyVal($dataObj, 'mSaved')) {
+			return - 1;
+		}
+		// 只要开始保存这个对象，就设置保存成功，否则会死循环。
+		$this->setPropertyVal($dataObj, 'mSaved', true);
+		
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc(get_class($dataObj));
 		}
@@ -52,7 +58,8 @@ class DatabasePersistence extends AbstractPersistence {
 		if ($id > 0 && ! is_array($clsDesc->primaryKey) &&
 				 $clsDesc->attribute[$clsDesc->primaryKey]->autoIncrement) {
 			$onePK = $clsDesc->primaryKey;
-			$dataObj->$onePK = $id;
+			
+			$this->setPropertyVal($dataObj, $onePK, $id);
 		}
 		
 		return - 1;
@@ -64,6 +71,12 @@ class DatabasePersistence extends AbstractPersistence {
 	 * @see \orm\AbstractPersistence::update()
 	 */
 	public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+		if ($this->getPropertyVal($dataObj, 'mSaved')) {
+			return - 1;
+		}
+		// 只要开始保存这个对象，就设置保存成功，否则会死循环。
+		$this->setPropertyVal($dataObj, 'mSaved', true);
+		
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc(get_class($dataObj));
 		}
@@ -94,7 +107,9 @@ class DatabasePersistence extends AbstractPersistence {
 		}
 		$sql .= ' WHERE ' . implode(' AND ', $condArr);
 		
-		return $this->mDatabaseClient->exec($sql);
+		$ret = $this->mDatabaseClient->exec($sql);
+		
+		return $ret;
 	}
 
 	/**
@@ -116,15 +131,26 @@ class DatabasePersistence extends AbstractPersistence {
 			if ($attrObj->autoIncrement) {
 				continue;
 			} else if ('class' == $attrObj->var) {
-				if ($isSaveSub && isset($dataObj->$attrName)) {
-					$val = $dataObj->$attrName; // 如果不是连子也保存，很可能这个值就为空，如果放在前面，DataClass因为空就会去取值。
-					if ($isAdd) {
-						$this->add($val, $isSaveSub);
-					} else {
-						$this->update($val, $isSaveSub);
+				if ($isSaveSub) {
+					$val = $this->getPropertyVal($dataObj, $attrName);
+					if (empty($val)) {
+						continue;
+					}
+					
+					$tmpValArr = is_array($val) ? $val : array(
+						$val
+					);
+					foreach ($tmpValArr as $oneVal) {
+						if ($isAdd) {
+							$this->add($oneVal, $isSaveSub);
+						} else {
+							$this->update($oneVal, $isSaveSub);
+						}
 					}
 				}
 				
+				continue;
+			} else if (empty($attrObj->persistentName)) {
 				continue;
 			}
 			

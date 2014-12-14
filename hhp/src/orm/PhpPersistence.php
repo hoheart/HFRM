@@ -115,6 +115,12 @@ class PhpPersistence extends AbstractPersistence {
 	 * @see \icms\Evaluation\AbstractPersistence::save()
 	 */
 	public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+		if ($this->getPropertyVal($dataObj, 'mSaved')) {
+			return - 1;
+		}
+		// 只要开始保存这个对象，就设置保存成功，否则会死循环。
+		$this->setPropertyVal($dataObj, 'mSaved', true);
+		
 		if (null == $clsDesc) {
 			$descFactory = DescFactory::Instance();
 			$clsDesc = $descFactory->getDesc(get_class($dataObj)); // clsDesc再怎么着也会返回一个默认的值
@@ -288,14 +294,15 @@ class PhpPersistence extends AbstractPersistence {
 			}
 			
 			$name = $attr->name;
-			$val = null;
+			$val = $this->getPropertyVal($dataObj, $name);
 			if ('class' == $attr->var) {
 				if (! $isSaveSub) {
 					continue;
 				}
+				if (empty($val)) {
+					continue;
+				}
 				
-				$val = $dataObj->$name; // 如果要保存属性类，那么其属性肯定有值，否则，会引起调用__get方法。
-				                        
 				// 首先保存关连的另外一个类。
 				if (is_array($val)) {
 					foreach ($val as $oneObj) {
@@ -307,9 +314,9 @@ class PhpPersistence extends AbstractPersistence {
 				
 				// 保存完，在map里就不需要再保留了。
 				continue;
+			} else if (empty($attr->persistentName)) {
+				continue;
 			} else {
-				$val = $dataObj->$name;
-				
 				if (null === $val && $attr->autoIncrement) {
 					$val = $this->autoIncrement($classDesc->persistentName);
 					$dataObj->$name = $val;

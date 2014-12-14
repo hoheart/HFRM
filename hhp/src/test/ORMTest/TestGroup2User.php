@@ -27,5 +27,29 @@ class TestGroup2User extends DataClass {
 	 * @hhp:orm persistentName val
 	 */
 	protected $val;
+	
+	public function setUserId($id){
+		$this->userId = $id;
+	}
+	
+	public function getUserId(){
+		return $this->userId;
+	}
+	
+	public function setGroupId($id){
+		$this->groupId = $id;
+	}
+	
+	public function getGroupId(){
+		return $this->groupId;
+	}
+	
+	public function setVal($val){
+		$this->val = $val;
+	}
+	
+	public function getVal(){
+		return $this->val;
+	}
 }
 ?>

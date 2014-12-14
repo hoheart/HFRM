@@ -60,5 +60,82 @@ class TestUser extends DataClass {
 	 * @hhp:orm var boolean
 	 */
 	protected $female;
+	
+	/**
+	 * @hhp:orm var class
+	 * @hhp:orm belongClass test\ORMTest\TestGroup
+	 * @hhp:orm relationshipName group2user
+	 * @hhp:orm selfAttributeInRelationship user_id
+	 * @hhp:orm selfAttribute2Relationship id
+	 * @hhp:orm anotherAttributeInRelationship group_id
+	 * @hhp:orm anotherAttribute2Relationship id
+	 *
+	 * @var TestGroup
+	 */
+	protected $group;
+
+	public function setId ($id) {
+		$this->id = $id;
+	}
+
+	public function getId () {
+		return $this->id;
+	}
+
+	public function setName ($name) {
+		$this->name = $name;
+	}
+
+	public function getName () {
+		return $this->name;
+	}
+
+	public function setAge ($age) {
+		$this->age = $age;
+	}
+
+	public function getAge () {
+		return $this->age;
+	}
+
+	public function setAmount ($amount) {
+		$this->amount = $amount;
+	}
+
+	public function getAmount () {
+		return $this->amount;
+	}
+
+	public function setBirthday ($day) {
+		$this->birthday = $day;
+	}
+
+	public function getBirthday () {
+		return $this->birthday;
+	}
+
+	public function setRegisterTime ($time) {
+		$this->registerTime = $time;
+	}
+
+	public function getRegisterTime () {
+		return $this->registerTime;
+	}
+
+	public function setFemale ($female) {
+		$this->female = $female;
+	}
+
+	public function getFemale () {
+		return $this->female;
+	}
+
+	public function setGroup ($group) {
+		$this->group = $group;
+	}
+
+	public function getGroup () {
+		return $this->group;
+	}
 }
 ?>

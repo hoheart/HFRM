@@ -94,7 +94,7 @@ class DatabaseFactory extends AbstractDataFactory {
 			$attr = $clsDesc->attribute[$item->key];
 			
 			$key = $attr->persistentName;
-			$val = $db->change2SqlValue($item->value, $attr->dataType);
+			$val = $db->change2SqlValue($item->value, $attr->var);
 			
 			$condSqlArr[] = $key . $item->operation . $val;
 		}

@@ -3,7 +3,6 @@
 namespace test\ORMTest;
 
 use test\AbstractTest;
-use hfc\exception\ParameterErrorException;
 use hhp\App;
 
 class DataClassTest extends AbstractTest {
@@ -14,40 +13,11 @@ class DataClassTest extends AbstractTest {
 	}
 
 	public function set () {
-		$u = new TestUser();
+		$g = new TestGroup();
+		$g->name = 'group1';
 		
-		$pass = false;
-		try {
-			$u->aaa = 1;
-		} catch (ParameterErrorException $e) {
-			$pass = true;
-		}
-		if (! $pass) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		
-		$u->name = 'user1';
-		$u->age = '34';
-		$u->amount = '1500.23';
-		$u->birthday = '2000-08-08';
-		$u->registerTime = '2014-10-20 22:22:22';
-		$u->female = 1;
-		if ('user1' !== $u->name) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		if (34 !== $u->age) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		if (1500.23 !== $u->amount) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		if ('2000-08-08 00:00:00' !== $u->birthday->format('Y-m-d H:i:s')) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		if ('2014-10-20 22:22:22' !== $u->registerTime->format('Y-m-d H:i:s')) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		if (true !== $u->female) {
+		// 测试普通的get
+		if ('group1' !== $g->name) {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
 	}
