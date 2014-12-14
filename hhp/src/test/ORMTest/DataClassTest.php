@@ -42,11 +42,9 @@ class DataClassTest extends AbstractTest {
 			$u2
 		);
 		
-		$gu = new TestGroup2User();
-		$gu->userId = $u1->id;
-		$gu->groupId = $g->id;
+		$p = App::Instance()->getService('orm');
 		
-		$p = App::Instance()->getService('databasePersistence');
+		$gu = new TestGroup2User();
 		
 		$p->delete(get_class($g));
 		$p->delete(get_class($u1));
@@ -54,20 +52,24 @@ class DataClassTest extends AbstractTest {
 		
 		$p->save($g, true);
 		
+		$gu->userId = $u1->id;
+		$gu->groupId = $g->id;
+		
+		$gu1 = new TestGroup2User();
+		$gu1->groupId = $g->id;
+		$gu1->userId = $u2->id;
+		
+		$p->add($gu);
+		$p->add($gu1);
+		
 		$groupId = $g->id;
 		
 		$g1 = new TestGroup();
 		$g1->id = $groupId;
 		
 		$userArr = $g1->userArr;
-		if ($userArr !== $g->userArr) {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		
-		// 测试单个类的获取
-		$u1 = new TestUser1();
-		$u1->groupId = $g->id;
-		if ($u1->group == $g) {
+		if (count($userArr) != count($g->userArr) || $userArr[0]->id != $g->userArr[0]->id ||
+				 $userArr[1]->id != $g->userArr[1]->id) {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
 	}

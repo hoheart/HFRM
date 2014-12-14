@@ -26,7 +26,7 @@ class TestGroup extends DataClass {
 	 * @hhp:orm key false
 	 * @hhp:orm amountType little
 	 * @hhp:orm belongClass test\ORMTest\TestUser
-	 * @hhp:orm relationshipName group2user
+	 * @hhp:orm relationshipName test_group2user
 	 * @hhp:orm selfAttributeInRelationship group_id
 	 * @hhp:orm selfAttribute2Relationship id
 	 * @hhp:orm anotherAttributeInRelationship user_id
@@ -40,7 +40,7 @@ class TestGroup extends DataClass {
 	 * @hhp:orm key false
 	 * @hhp:orm amountType
 	 * @hhp:orm belongClass test\ORMTest\TestUser
-	 * @hhp:orm relationshipName group2user
+	 * @hhp:orm relationshipName test_group2user
 	 * @hhp:orm selfAttributeInRelationship group_id
 	 * @hhp:orm selfAttribute2Relationship id
 	 * @hhp:orm anotherAttributeInRelationship user_id

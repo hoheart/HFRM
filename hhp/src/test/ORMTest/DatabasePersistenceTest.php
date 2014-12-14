@@ -33,7 +33,7 @@ class DatabasePersistenceTest extends AbstractTest {
 	}
 
 	protected function insertOneKey () {
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$db = App::Instance()->getService('db');
 		
 		// 测试一个主键
@@ -53,7 +53,7 @@ class DatabasePersistenceTest extends AbstractTest {
 	}
 
 	protected function insertMultiKey () {
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$db = App::Instance()->getService('db');
 		
 		// 测试多个主键
@@ -104,7 +104,7 @@ class DatabasePersistenceTest extends AbstractTest {
 		$gu->userId = $u1->id;
 		$gu->groupId = $g->id;
 		
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		
 		$p->delete(get_class($g));
 		$p->delete(get_class($u1));
@@ -125,7 +125,7 @@ class DatabasePersistenceTest extends AbstractTest {
 	}
 
 	protected function updateOneKey () {
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$db = App::Instance()->getService('db');
 		
 		// 测试一个主键
@@ -148,7 +148,7 @@ class DatabasePersistenceTest extends AbstractTest {
 	}
 
 	protected function updateMultiKey () {
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$db = App::Instance()->getService('db');
 		
 		// 测试多个主键
@@ -186,7 +186,7 @@ class DatabasePersistenceTest extends AbstractTest {
 		$u->registerTime = \DateTime::createFromFormat('Y-m-d H:i:s', '2014-10-20 22:22:22');
 		$u->female = true;
 		
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$clsDesc = DescFactory::Instance()->getDesc(get_class($u));
 		$ret = $p->change2SqlValue($u, $clsDesc->attribute, false);
 		
@@ -233,7 +233,7 @@ class DatabasePersistenceTest extends AbstractTest {
 	}
 
 	public function delete () {
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$db = App::Instance()->getService('db');
 		
 		// 测试多个主键

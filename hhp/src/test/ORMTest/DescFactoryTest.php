@@ -41,7 +41,7 @@ class DescFactoryTest extends AbstractTest {
 		if ('userArr' != $attr->name || $attr->persistentName != '' || '用户对象数组' != $attr->desc ||
 				 'class' != $attr->var || false !== $attr->key || false !== $attr->autoIncrement ||
 				 'little' != $attr->amountType || $attr->belongClass != 'test\ORMTest\TestUser' ||
-				 $attr->relationshipName != 'group2user' ||
+				 $attr->relationshipName != 'test_group2user' ||
 				 $attr->selfAttributeInRelationship != 'group_id' ||
 				 $attr->selfAttribute2Relationship != 'id' ||
 				 $attr->anotherAttributeInRelationship != 'user_id' ||

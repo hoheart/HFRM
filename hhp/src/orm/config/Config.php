@@ -55,6 +55,22 @@ return array(
 	 */
 	'controller' => array(),
 	
+	'service' => array(
+		'orm' => array(
+			'class' => 'orm\ORMService',
+			'config' => array(
+				'factory' => array(
+					'class' => 'orm\DatabasePersistenceCreator',
+					'method' => 'create'
+				),
+				'persistence' => array(
+					'class' => 'orm\DatabasePersistenceCreator',
+					'method' => 'create'
+				)
+			)
+		)
+	),
+	
 	/**
 	 * 本模块依赖的其他模块，用数组的key给出名字，其值暂时保留以后扩展。
 	 */

@@ -70,9 +70,18 @@ return array(
 				'param' => 234
 			)
 		),
-		'databasePersistence' => array(
-			'class' => 'orm\DatabasePersistenceCreator',
-			'method' => 'create'
+		'orm' => array(
+			'class' => 'orm\ORMService',
+			'config' => array(
+				'factory' => array(
+					'class' => 'orm\DatabaseFactoryCreator',
+					'method' => 'create'
+				),
+				'persistence' => array(
+					'class' => 'orm\DatabasePersistenceCreator',
+					'method' => 'create'
+				)
+			)
 		)
 	),
 	

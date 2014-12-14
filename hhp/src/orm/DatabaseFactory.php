@@ -37,28 +37,64 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		
 		$sql = $this->createSqlSelect($clsDesc);
-		$sqlWhere = self::CreateSqlWhere($clsDesc, $condition);
+		$sqlWhere = self::CreateSqlWhere($clsDesc, $condition, $this->mDatabaseClient);
 		if (! empty($sqlWhere)) {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
 		
-		$dbret = $this->mDatabaseClient->query($sql)->execute();
+		$dbret = $this->mDatabaseClient->select($sql);
 		
-		// 取得结果value
-		$arr = array();
-		$row = $dbret->next();
-		while ($row) {
-			$arr[] = $row;
-			$row = $dbret->next();
+		return $dbret;
+	}
+
+	/**
+	 * 从关系中取得数据数组
+	 *
+	 * @param ClassAttribute $attr
+	 *        	本类中对应属性的ClassAtrribute
+	 *        	比如Group类中有个userArr的属性，要取得userArr对应的dataMap，就传userArr的ClassAttribute。
+	 * @param object $val
+	 *        	本类中该属性的值
+	 */
+	public function getDataMapListFromRelation (ClassDesc $clsDesc = null, $attrName, $val) {
+		$attr = $clsDesc->attribute[$attrName];
+		$relationshipName = $attr->relationshipName;
+		$anotherAttrInRelationship = $attr->anotherAttributeInRelationship;
+		$myAttrInRelationship = $attr->selfAttributeInRelationship;
+		$selfAttr2Relationship = $clsDesc->attribute[$attr->selfAttribute2Relationship];
+		$sqlVal = $this->mDatabaseClient->change2SqlValue($val, $selfAttr2Relationship->var);
+		$amountType = $attr->amountType;
+		$sql = "SELECT $anotherAttrInRelationship FROM $relationshipName WHERE $myAttrInRelationship = $sqlVal";
+		
+		$ret = array();
+		switch ($amountType) {
+			case 'little':
+				$ret = $this->mDatabaseClient->select($sql, 0, 100);
+				
+				break;
+			case 'large':
+				$ret = $this->mDatabaseClient->select($sql);
+				break;
+			case 'single':
+			default:
+				$ret[] = $this->mDatabaseClient->getOne($sql);
+				break;
 		}
 		
-		return $arr;
+		$anotherAttr2Relationship = $attr->anotherAttribute2Relationship;
+		$cond = new Condition();
+		$cond->setRelationship(Condition::RELATIONSHIP_OR);
+		foreach ($ret as $row) {
+			$cond->add($anotherAttr2Relationship, '=', $row[$anotherAttrInRelationship]);
+		}
+		
+		return $this->getDataMapList($attr->belongClass, $cond);
 	}
 
 	protected function createSqlSelect (ClassDesc $clsDesc) {
 		$sql = 'SELECT ';
 		foreach ($clsDesc->attribute as $attr) {
-			if (ClassAttribute::DATA_TYPE_CLASS == $attr->dataType) {
+			if ('class' == $attr->var) {
 				continue;
 			}
 			

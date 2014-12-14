@@ -33,7 +33,7 @@ class DataClass {
 	}
 
 	protected function getFactory () {
-		return App::Instance()->getService('DataFactory');
+		return App::Instance()->getService('orm');
 	}
 
 	/**
@@ -55,39 +55,39 @@ class DataClass {
 			$attr = $clsDesc->attribute[$name];
 			// 只对属于另外一个类的属性去取值。
 			if ($attr->isClass()) {
+				$f = $this->getFactory();
+				
 				$myProp = $attr->selfAttribute2Relationship;
 				$myVal = $this->$myProp;
-				$cond = new Condition($myProp . '=' . $myVal);
-				
-				$belongClass = $attr->belongClass;
 				
 				if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
+					$cond = new Condition();
 					$cond->add($attr->anotherAttribute2Relationship, '=', $myVal);
-				} else {
-					// 首先查询关系
-					$relationshipCond[$attr->selfAttributeInRelationship] = $val;
-					$relationship = $this->getFactory()->getDataMapList($attr->relationshipName, 
-							$relationshipCond);
 					
-					foreach ($relationship as $row) {
-						$rap = $attr->anotherAttributeInRelationship;
-						$ap = $attr->anotherAttribute2Relationship;
-						$cond->add($ap, '=', $row[$rap]);
-					}
+					$val = $f->getDataMapList($attr->belongClass, $cond);
+				} else { // 有关系表记录
+					$val = $f->getDataMapListFromRelation($clsDesc, $name, $myVal);
 				}
 				
-				$val = $this->getFactory()->getDataList($attr->belongClass, $cond);
-				
-				if (ClassAttribute::VALUE_ATTRIBUTE_SINGLE == $attr->valueAttribute) {
-					foreach ($val as $one) {
-						$this->$name = $one;
-						$val = $one;
-						
+				$tmpVal = null;
+				$belongClsDesc = DescFactory::Instance()->getDesc($attr->belongClass);
+				$cls = $attr->belongClass;
+				foreach ($val as $row) {
+					$obj = new $cls();
+					foreach ($belongClsDesc->attribute as $belongClsAttr) {
+						$attrName = $belongClsAttr->name;
+						$obj->$attrName = $row[$belongClsAttr->persistentName];
+					}
+					
+					if ('single' == $attr->amountType) {
+						$tmpVal = $obj;
 						break;
+					} else {
+						$tmpVal[] = $obj;
 					}
-				} else {
-					$this->$name = $val;
 				}
+				
+				$this->$name = $tmpVal;
 			}
 		}
 		

@@ -34,7 +34,7 @@ class DatabaseFactoryTest extends AbstractTest {
 		$u->female = true;
 		
 		$clsName = get_class($u);
-		$p = App::Instance()->getService('databasePersistence');
+		$p = App::Instance()->getService('orm');
 		$p->delete($clsName);
 		$p->save($u);
 		
