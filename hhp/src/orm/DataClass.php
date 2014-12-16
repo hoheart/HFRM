@@ -2,7 +2,6 @@
 
 namespace orm;
 
-use hfc\exception\ParameterErrorException;
 use hhp\App;
 use orm\exception\ParseClassDescErrorException;
 use orm\exception\NoPropertyException;
@@ -18,11 +17,20 @@ use orm\exception\NoPropertyException;
 class DataClass {
 	
 	/**
-	 * 是否被保存过。如果一旦某个属性被修改了，就不是true了。
+	 * 该类对象的存在状态定义。
 	 *
-	 * @var boolean
+	 * @var integer
 	 */
-	protected $mSaved = false;
+	const DATA_OBJECT_EXISTING_STATUS_NEW = 1; // 新创建的，还没有被修改过。
+	const DATA_OBJECT_EXISTING_STATUS_DIRTY = 2; // 脏数据，需要被更新到数据库。
+	const DATA_OBJECT_EXISTING_STATUS_SAVED = 3; // 已经被保存，还没有任何属性被修改。
+	
+	/**
+	 * 框架用的属性。不能被继承。
+	 *
+	 * @var integer
+	 */
+	protected $mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW;
 
 	public function __get ($name) {
 		return $this->getAttribute($name);
@@ -109,7 +117,8 @@ class DataClass {
 			$val = $this->filterValue($value, $clsDesc->attribute[$name]->var);
 			$this->$methodName($val);
 			
-			$this->mSaved = false;
+			$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW ==
+					 $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
 		} else {
 			throw new NoPropertyException(
 					'Property:' . $name . ' not exists in class: ' . get_class($this) .

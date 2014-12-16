@@ -33,6 +33,10 @@ class ORMService {
 	public function delete ($className, Condition $condition = null) {
 		return $this->mPersistence->delete($className, $condition);
 	}
+	
+	public function get(){
+		
+	}
 
 	public function getDataMapList ($className, Condition $condition = null, ClassDesc $clsDesc = null) {
 		return $this->mFactory->getDataMapList($className, $condition, $clsDesc);

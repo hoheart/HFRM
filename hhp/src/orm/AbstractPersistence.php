@@ -11,37 +11,34 @@ namespace orm;
 abstract class AbstractPersistence {
 
 	/**
-	 * 保存数据对象，包括了大多数的添加和更新情况。
-	 * 如果只有一个主键，且有值，视为更新操作，如果主键值为空，视为添加。
-	 * 如果是多个主键，统一视为更新。如果想添加，请调用add方法。
+	 * 保存数据对象，包括了的添加和更新情况，会自己判断是更新还是添加操作。
 	 *
 	 * @param object $dataObj        	
-	 * @param string $className        	
-	 * @param boolean $isSaveSub        	
-	 * @param boolean $isDelete        	
-	 * @param ClassDesc $clsDesc
-	 *        	如果属性是对象，是否保存。
-	 * @return 如果是新增，dataObj的主键值将被改写，并返回-1；如果是更新，返回影响的行数。
+	 * @param ClassDesc $clsDesc        	
+	 * @return 如果是新增，dataObj的主键值将被改写，并返回-1；如果是更新，返回影响的行数；如果该对象不需要保存，则反回0。
 	 */
-	public function save ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+	public function save ($dataObj, ClassDesc $clsDesc = null) {
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc(get_class($dataObj));
 		}
 		
-		if (! is_array($clsDesc->primaryKey)) {
-			$pk = $clsDesc->primaryKey;
-			$pkVal = $dataObj->$pk;
-			if (null === $pkVal) {
-				return $this->add($dataObj, $isSaveSub, $clsDesc);
-			}
-		}
+		$status = $this->getPropertyVal($dataObj, 'mDataObjectExistingStatus');
+		// 只要开始保存这个对象，就设置保存成功，否则两个类相互引用会死循环。
+		$this->setPropertyVal($dataObj, 'mDataObjectExistingStatus', 
+				DataClass::DATA_OBJECT_EXISTING_STATUS_SAVED);
 		
-		return $this->update($dataObj, $isSaveSub, $clsDesc);
+		if (DataClass::DATA_OBJECT_EXISTING_STATUS_NEW == $status) {
+			return $this->add($dataObj, $clsDesc);
+		} else if (DataClass::DATA_OBJECT_EXISTING_STATUS_DIRTY == $status) {
+			return $this->update($dataObj, $clsDesc);
+		} else {
+			return 0;
+		}
 	}
 
-	abstract public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null);
+	abstract protected function add ($dataObj, ClassDesc $clsDesc);
 
-	abstract public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null);
+	abstract protected function update ($dataObj, ClassDesc $clsDesc);
 
 	protected function setPropertyVal ($dataObj, $attrName, $val) {
 		$refCls = new \ReflectionClass(get_class($dataObj));
