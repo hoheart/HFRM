@@ -39,6 +39,7 @@ class DatabasePersistence extends AbstractPersistence {
 	protected function add ($dataObj, ClassDesc $clsDesc) {
 		$keyArr = array();
 		$valArr = array();
+		$relationArr = array();
 		foreach ($clsDesc->attribute as $attrName => $attrObj) {
 			if ($attrObj->autoIncrement || empty($attrObj->persistentName)) {
 				continue;
@@ -48,11 +49,10 @@ class DatabasePersistence extends AbstractPersistence {
 					continue;
 				}
 				
-				$tmpValArr = is_array($val) ? $val : array(
-					$val
-				);
+				$tmpValArr = is_array($val) ? $val : array($val);
 				foreach ($tmpValArr as $oneVal) {
 					$this->save($oneVal);
+					$relationArr[] = array($attrObj,$oneVal);
 				}
 				
 				continue;
@@ -63,19 +63,52 @@ class DatabasePersistence extends AbstractPersistence {
 			$valArr[] = $v;
 		}
 		
-		$tbName = $clsDesc->persistentName;
-		$sql = 'INSERT INTO ' . $tbName . '( ' . implode(',', $keyArr) . ' ) VALUES( ' .
-				 implode(',', $valArr) . ')';
-		$statment = $this->mDatabaseClient->query($sql);
-		$id = $statment->lastInsertId();
-		if ($id > 0 && ! is_array($clsDesc->primaryKey) &&
-				 $clsDesc->attribute[$clsDesc->primaryKey]->autoIncrement) {
+		$id = $this->insertIntoDB($clsDesc->persistentName, $keyArr, $valArr);
+		if ($id > 0 && ! is_array($clsDesc->primaryKey) && $clsDesc->attribute[$clsDesc->primaryKey]->autoIncrement) {
 			$onePK = $clsDesc->primaryKey;
 			
 			$this->setPropertyVal($dataObj, $onePK, $id);
 		}
 		
+		$this->saveRelation($relationArr, $dataObj);
+		
 		return - 1;
+	}
+
+	protected function saveRelation ($relationArr, $dataObj) {
+		foreach ($relationArr as $row) {
+			list ($attr, $anotherObj) = $row;
+			$attr = new ClassAttribute();
+			if (empty($attr->relationshipName)) {
+				// 如果是空，说明存放在本类中
+				$attrName = $attr->selfAttribute2Relationship;
+				if (! empty($attrName)) {
+					$anotherAttrName = $attr->anotherAttribute2Relationship;
+					$dataObj->$attrName = $anotherObj->$anotherAttrName;
+				} // 如果本类中也不保存这个类的属性，那就没有关系可以保存
+			} else {
+				$table = $attr->relationshipName;
+				$attrName = $attr->selfAttribute2Relationship;
+				$anotherAttrName = $attr->anotherAttribute2Relationship;
+				$tableAttrName = $attr->selfAttributeInRelationship;
+				$tableAnotherAttrName = $attr->selfAttributeInRelationship;
+				$keyArr = array($tableAttrName,$tableAnotherAttrName);
+				$valArr = array($dataObj->$attrName,$anotherObj->$anotherAttrName);
+				
+				$this->insertIntoDB($table, $keyArr, $valArr);
+			}
+		}
+		
+		$this->save($dataObj); // 有可能属性被修改过，重新保存一下，save方法里会判断是否真的需要重新保存。
+	}
+
+	protected function insertIntoDB ($tbName, $keyArr, $valArr) {
+		$tbName = $clsDesc->persistentName;
+		$sql = 'INSERT INTO ' . $tbName . '( ' . implode(',', $keyArr) . ' ) VALUES( ' . implode(',', $valArr) . ')';
+		$statment = $this->mDatabaseClient->query($sql);
+		$id = $statment->lastInsertId();
+		
+		return $id;
 	}
 
 	/**
@@ -95,9 +128,7 @@ class DatabasePersistence extends AbstractPersistence {
 					continue;
 				}
 				
-				$tmpValArr = is_array($val) ? $val : array(
-					$val
-				);
+				$tmpValArr = is_array($val) ? $val : array($val);
 				foreach ($tmpValArr as $oneVal) {
 					$this->save($oneVal);
 				}
@@ -119,9 +150,7 @@ class DatabasePersistence extends AbstractPersistence {
 		
 		$pkArr = $clsDesc->primaryKey;
 		if (! is_array($pkArr)) {
-			$pkArr = array(
-				$clsDesc->primaryKey
-			);
+			$pkArr = array($clsDesc->primaryKey);
 		}
 		$condArr = array();
 		foreach ($pkArr as $k) {
