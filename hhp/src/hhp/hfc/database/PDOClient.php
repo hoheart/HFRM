@@ -50,7 +50,26 @@ abstract class PDOClient extends DatabaseClient {
 				$this->throwError($sql, $stmt);
 			}
 		} catch (\Exception $e) {
-			$this->throwError($sql, $stmt);
+			$this->throwError($sql, $stmt, $e);
+		}
+		
+		return $ret;
+	}
+
+	public function select2Object ($sql, $clsName, $start = 0, $size = self::MAX_ROW_COUNT) {
+		$sql = $this->transLimitSelect($sql, $start, $size);
+		
+		try {
+			$stmt = $this->getClient()->query($sql);
+			if (false === $stmt) {
+				$this->throwError($sql);
+			}
+			$ret = $stmt->fetchAll(\PDO::FETCH_CLASS, $clsName);
+			if (false === $stmt->closeCursor()) {
+				$this->throwError($sql, $stmt);
+			}
+		} catch (\Exception $e) {
+			$this->throwError($sql, $stmt, $e);
 		}
 		
 		return $ret;
@@ -58,10 +77,7 @@ abstract class PDOClient extends DatabaseClient {
 
 	public function query ($sql, $cursorType = self::CURSOR_FWDONLY) {
 		try {
-			$stmt = $this->getClient()->prepare($sql, 
-					array(
-						self::ATTR_CURSOR => $cursorType
-					));
+			$stmt = $this->getClient()->prepare($sql, array(self::ATTR_CURSOR => $cursorType));
 			if (false === $stmt) {
 				$this->throwError($sql);
 			}
@@ -135,12 +151,16 @@ abstract class PDOClient extends DatabaseClient {
 		return $this->mClient;
 	}
 
-	protected function throwError ($sql, $stmt = null) {
+	protected function throwError ($sql, $stmt = null,\Exception $e = null) {
 		$obj = null == $stmt ? $this->getClient() : $stmt;
 		$info = $obj->errorInfo();
+		$originalMsg = '';
+		if (null != $e) {
+			$originalMsg = '<br>The original message is: ' . $e->getMessage();
+		}
 		throw new DatabaseQueryException(
-				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] .
-						 '. SQL: ' . $sql);
+				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] . '. SQL: ' . $sql .
+						 $originalMsg);
 	}
 
 	public function change2SqlValue ($str, $type = 'string') {

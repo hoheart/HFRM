@@ -37,40 +37,30 @@ class DataClassTest extends AbstractTest {
 		$u2 = new TestUser();
 		$u2->name = 'user2';
 		
-		$g->userArr = array(
-			$u1,
-			$u2
-		);
+		$g = new TestGroup();
+		$g->name = 'group1';
+		$g->userArr = array($u1,$u2);
+		$g->oneUser = $u2;
+		
+		$u1->group = $g;
 		
 		$p = App::Instance()->getService('orm');
 		
-		$gu = new TestGroup2User();
-		
 		$p->delete(get_class($g));
 		$p->delete(get_class($u1));
-		$p->delete(get_class($gu));
+		$o = new TestGroup2User();
+		$p->delete(get_class($o));
 		
-		$p->save($g, true);
+		$p->save($u1);
+		$p->save($u2);
+		$p->save($g);
 		
-		$gu->userId = $u1->id;
-		$gu->groupId = $g->id;
-		
-		$gu1 = new TestGroup2User();
-		$gu1->groupId = $g->id;
-		$gu1->userId = $u2->id;
-		
-		$p->save($gu);
-		$p->save($gu1);
-		
-		$groupId = $g->id;
-		
-		$g1 = new TestGroup();
-		$g1->id = $groupId;
-		
-		$userArr = $g1->userArr;
-		if (count($userArr) != count($g->userArr) || $userArr[0]->id != $g->userArr[0]->id ||
-				 $userArr[1]->id != $g->userArr[1]->id) {
-			$this->throwError('', __METHOD__, __LINE__);
+		$gg = $p->get(get_class($g), $g->id);
+		$userArr = $gg->userArr;
+		foreach ($userArr as $user) {
+			if (! in_array($user->name, array('user1','user2'))) {
+				$this->throwError('', __METHOD__, __LINE__);
+			}
 		}
 	}
 }

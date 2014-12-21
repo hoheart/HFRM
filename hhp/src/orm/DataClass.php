@@ -2,8 +2,6 @@
 
 namespace orm;
 
-use hhp\App;
-use orm\exception\ParseClassDescErrorException;
 use orm\exception\NoPropertyException;
 
 /**
@@ -41,7 +39,8 @@ class DataClass {
 	}
 
 	protected function getFactory () {
-		return App::Instance()->getService('orm');
+		$c = new DatabaseFactoryCreator();
+		return $c->create(array());
 	}
 
 	/**
@@ -55,47 +54,11 @@ class DataClass {
 			// 首先取得类的描述
 			$clsName = get_class($this);
 			$clsDesc = DescFactory::Instance()->getDesc($clsName);
-			if (null == $clsDesc) {
-				throw new ParseClassDescErrorException(
-						'can not parse class desc for class:' . $clsName);
-			}
 			
 			$attr = $clsDesc->attribute[$name];
 			// 只对属于另外一个类的属性去取值。
 			if ($attr->isClass()) {
-				$f = $this->getFactory();
-				
-				$myProp = $attr->selfAttribute2Relationship;
-				$myVal = $this->$myProp;
-				
-				if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
-					$cond = new Condition();
-					$cond->add($attr->anotherAttribute2Relationship, '=', $myVal);
-					
-					$val = $f->getDataMapList($attr->belongClass, $cond);
-				} else { // 有关系表记录
-					$val = $f->getDataMapListFromRelation($clsDesc, $name, $myVal);
-				}
-				
-				$tmpVal = null;
-				$belongClsDesc = DescFactory::Instance()->getDesc($attr->belongClass);
-				$cls = $attr->belongClass;
-				foreach ($val as $row) {
-					$obj = new $cls();
-					foreach ($belongClsDesc->attribute as $belongClsAttr) {
-						$attrName = $belongClsAttr->name;
-						$obj->$attrName = $row[$belongClsAttr->persistentName];
-					}
-					
-					if ('single' == $attr->amountType) {
-						$tmpVal = $obj;
-						break;
-					} else {
-						$tmpVal[] = $obj;
-					}
-				}
-				
-				$this->$name = $tmpVal;
+				$this->$name = $this->getFactory()->getRelatedAttribute($attr, $this, $clsDesc);
 			}
 		}
 		
@@ -104,8 +67,7 @@ class DataClass {
 			return $this->$methodName();
 		} else {
 			throw new NoPropertyException(
-					'Property:' . $name . ' not exists in class: ' . get_class($this) .
-							 ' or no get mutator defined.');
+					'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no get mutator defined.');
 		}
 	}
 
@@ -117,12 +79,16 @@ class DataClass {
 			$val = $this->filterValue($value, $clsDesc->attribute[$name]->var);
 			$this->$methodName($val);
 			
-			$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW ==
-					 $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
+			$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW == $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
 		} else {
+			// 有可能是persistentName
+			$attr = $clsDesc->persistentNameIndexAttr[$name];
+			if (! empty($attr)) {
+				$name = $attr->name;
+				return $this->setAttribute($name, $value);
+			}
 			throw new NoPropertyException(
-					'Property:' . $name . ' not exists in class: ' . get_class($this) .
-							 ' or no set mutator defined.');
+					'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no set mutator defined.');
 		}
 		
 		return $this;

@@ -25,9 +25,8 @@ use test\ORMTest\ConditionTest;
 class ORMTestController extends Controller {
 
 	public function indexAction () {
-		$arr = array(new ConditionTest(),		// new DataClassTest(),
-		new DatabaseFactoryTest(),new DatabaseFactoryCreatorTest(),new DatabasePersistenceTest(),
-			new DatabasePersistenceCreatorTest(),new AbstractDataFactoryTest(),
+		$arr = array(new ConditionTest(),new DataClassTest(),new DatabaseFactoryTest(),new DatabaseFactoryCreatorTest(),
+			new DatabasePersistenceTest(),new DatabasePersistenceCreatorTest(),new AbstractDataFactoryTest(),
 			// new PhpFactoryTest(),
 			// new PhpPersistenceTest(),
 			new AbstractPersistenceTest(),new DescFactoryTest());

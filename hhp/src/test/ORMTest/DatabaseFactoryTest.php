@@ -5,11 +5,14 @@ namespace test\ORMTest;
 use test\AbstractTest;
 use hhp\App;
 use orm\DatabaseFactory;
-use orm\DatabaseFactoryCreator;
+use orm\Condition;
 
 class DatabaseFactoryTest extends AbstractTest {
 
 	public function test () {
+		$this->setDatabaseClient();
+		$this->get();
+		$this->where();
 	}
 
 	public function setDatabaseClient () {
@@ -18,29 +21,48 @@ class DatabaseFactoryTest extends AbstractTest {
 		$f = new DatabaseFactory();
 		$f->setDatabaseClient($db);
 		
-		$f->getDataMapList('test\ORMTest\TestGroup'); // 不报错，就说明对了
+		new TestGroup();
+		$f->get('test\ORMTest\TestGroup', 1); // 不报错，就说明对了
 	}
 
-	public function getDataMapList () {
-		$c = new DatabaseFactoryCreator();
-		$f = $c->create();
+	public function get () {
+		$db = App::Instance()->getService('db');
+		$f = new DatabaseFactory();
+		$f->setDatabaseClient($db);
 		
-		$u = new TestUser();
-		$u->name = 'user1';
-		$u->age = '34';
-		$u->amount = 1500.23;
-		$u->birthday = \DateTime::createFromFormat('2000-08-08');
-		$u->registerTime = \DateTime::createFromFormat('2014-10-20 22:22:22');
-		$u->female = true;
-		
-		$clsName = get_class($u);
+		$u1 = new TestUser();
+		$u1->name = 'user1';
 		$p = App::Instance()->getService('orm');
-		$p->delete($clsName);
-		$p->save($u);
+		$p->save($u1);
 		
-		$arr = array();
-		$ret = $f->getDataMapList($clsName);
-		if ($arr != $ret) {
+		$u = $f->get(get_class($u1), $u1->id);
+		if ($u->id !== $u1->id || $u->name !== $u1->name) {
+			$this->throwError('', __METHOD__, __LINE__);
+		}
+	}
+
+	public function where () {
+		$db = App::Instance()->getService('db');
+		$f = new DatabaseFactory();
+		$f->setDatabaseClient($db);
+		
+		$u1 = new TestUser();
+		$u1->name = 'user1';
+		$u1->age = 6;
+		
+		$p = App::Instance()->getService('orm');
+		$p->delete(get_class($u1));
+		
+		$p->save($u1);
+		
+		$u2 = new TestUser();
+		$u2->name = 'user2';
+		$u2->age = 6;
+		$p->save($u2);
+		
+		
+		$ret = $f->where(get_class($u1), new Condition('age=6'));
+		if (! is_array($ret) || 2 != count($ret) || 6 != $ret[0]->age || 6 != $ret[1]->age) {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
 	}

@@ -26,6 +26,7 @@ namespace orm {
 		const OPERATION_GREATER = '>';
 		const OPERATION_LESS = '<';
 		const OPERATION_LIKE = 'LIKE';
+		const OPERATION_IN = 'IN';
 		
 		/**
 		 * 子条件组合关系类型
@@ -52,31 +53,23 @@ namespace orm {
 		 *
 		 * @var array
 		 */
-		protected $children;
+		protected $children = array();
 		
 		/**
 		 * 支持的操作。
 		 *
 		 * @var array
 		 */
-		protected static $SupportOperation = array(
-			self::OPERATION_INEQUAL, // 注意，一定要把两种不等号放前面，因为后面有=、<或者>是不等号的子集，会分析出错。
-			self::OPERATION_INEQUAL1,
-			self::OPERATION_EQUAL,
-			self::OPERATION_GREATER,
-			self::OPERATION_LESS,
-			self::OPERATION_LIKE
-		);
+		protected static $SupportOperation = array(self::OPERATION_INEQUAL,		// 注意，一定要把两种不等号放前面，因为后面有=、<或者>是不等号的子集，会分析出错。
+		self::OPERATION_INEQUAL1,self::OPERATION_EQUAL,self::OPERATION_GREATER,self::OPERATION_LESS,self::OPERATION_LIKE,
+			self::OPERATION_IN);
 		
 		/**
 		 * 支持的子条件之间的关系。
 		 *
 		 * @var array
 		 */
-		protected static $SupportRelationship = array(
-			self::RELATIONSHIP_AND,
-			self::RELATIONSHIP_OR
-		);
+		protected static $SupportRelationship = array(self::RELATIONSHIP_AND,self::RELATIONSHIP_OR);
 
 		public function __construct ($str = null) {
 			if (! empty($str)) {
@@ -117,7 +110,7 @@ namespace orm {
 		public function add ($key, $operation, $value) {
 			if (in_array($operation, self::$SupportRelationship)) {
 				$item = new Item();
-				$item->operation = $operation;
+				$item->operation = strtoupper($operation);
 				$item->key = $key;
 				$item->value = $value;
 				
@@ -215,8 +208,7 @@ namespace orm\Condition {
 		public $operation;
 
 		public function equal (Item $item) {
-			if ($this->key == $item->key && $this->value == $item->value &&
-					 $this->operation == $item->operation) {
+			if ($this->key == $item->key && $this->value == $item->value && $this->operation == $item->operation) {
 				return true;
 			}
 			

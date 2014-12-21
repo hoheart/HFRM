@@ -28,6 +28,12 @@ class ClassDesc {
 	public $attribute;
 	
 	/**
+	 * 存储名作索引的属性列表
+	 * @var array
+	 */
+	public $persistentNameIndexAttr;
+	
+	/**
 	 * 类的描述
 	 *
 	 * @var string

@@ -57,8 +57,7 @@ class DescFactory {
 		
 		// 取得每个属性的描述
 		$attrNameArr = $rc->getProperties(
-				\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PRIVATE |
-						 \ReflectionProperty::IS_PROTECTED);
+				\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);
 		foreach ($attrNameArr as $rp) {
 			$doc = $rp->getDocComment();
 			$keyVal = $this->parseDocComment($doc);
@@ -84,6 +83,9 @@ class DescFactory {
 			$attr->anotherAttribute2Relationship = $keyVal['anotherAttribute2Relationship'];
 			
 			$clsDesc->attribute[$rp->getName()] = $attr;
+			if (! empty($attr->persistentName)) {
+				$clsDesc->persistentNameIndexAttr[$attr->persistentName] = $attr;
+			}
 		}
 		
 		$this->mClassDescMap[$className] = $clsDesc;

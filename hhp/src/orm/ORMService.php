@@ -38,14 +38,11 @@ class ORMService {
 		return $this->mPersistence->delete($className, $condition);
 	}
 
-	public function get () {
+	public function get ($clsName, $id) {
+		return $this->mFactory->get($clsName, $id);
 	}
 
-	public function getDataMapList ($className, Condition $condition = null, ClassDesc $clsDesc = null) {
-		return $this->mFactory->getDataMapList($className, $condition, $clsDesc);
-	}
-
-	public function getDataMapListFromRelation (ClassDesc $clsDesc = null, $attrName, $val) {
-		return $this->mFactory->getDataMapListFromRelation($clsDesc, $attrName, $val);
+	public function where ($clsName, Condition $cond = null) {
+		return $this->mFactory->where($clsName, $cond);
 	}
 }

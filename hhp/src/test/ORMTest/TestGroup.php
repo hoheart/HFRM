@@ -100,8 +100,16 @@ class TestGroup extends DataClass {
 		return $this->oneUser;
 	}
 
+	public function setValString ($val) {
+		$this->valString = $val;
+	}
+
 	public function getValString () {
 		return $this->valString;
+	}
+
+	public function setValFloat ($val) {
+		$this->valFloat = $val;
 	}
 
 	public function getValFloat () {

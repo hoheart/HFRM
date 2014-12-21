@@ -39,6 +39,9 @@ return array(
 		'orm\AbstractDataFactory' => array(
 			'enable' => true
 		),
+		'orm\DatabaseFactory' => array(
+			'enable' => true
+		),
 		'orm\DatabasePersistence' => array(
 			'enable' => true
 		),

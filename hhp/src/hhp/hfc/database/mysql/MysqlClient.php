@@ -30,6 +30,15 @@ class MysqlClient extends PDOClient {
 			return 'null';
 		}
 		
+		if (is_array($val)) {
+			$ret = array();
+			foreach ($val as $oneVal) {
+				$ret[] = $this->change2SqlValue($oneVal, $type);
+			}
+			
+			return $ret;
+		}
+		
 		$v = null;
 		if ('string' == substr($type, 0, 6)) {
 			$v = $this->getClient()->quote($val);

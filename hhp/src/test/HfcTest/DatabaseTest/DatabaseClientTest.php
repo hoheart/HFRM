@@ -29,6 +29,7 @@ class DatabaseClientTest extends AbstractTest {
 		$this->connect();
 		$this->exec();
 		$this->select();
+		$this->select2Object();
 		$this->selectRow();
 		$this->selectOne();
 		$this->query();
@@ -117,6 +118,10 @@ class DatabaseClientTest extends AbstractTest {
 				$this->throwError('', __METHOD__, __LINE__);
 			}
 		}
+	}
+	
+	public function select2Object(){
+		//主要是为orm定做的，所以在orm测试
 	}
 
 	public function selectRow () {

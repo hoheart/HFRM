@@ -3,8 +3,6 @@
 namespace orm;
 
 use hfc\database\DatabaseClient;
-use hfc\exception\ParameterErrorException;
-use hhp\exception\ConfigErrorException;
 use hfc\exception\MethodCallErrorException;
 
 /**
@@ -14,6 +12,13 @@ use hfc\exception\MethodCallErrorException;
  *        
  */
 class DatabaseFactory extends AbstractDataFactory {
+	
+	/**
+	 * 属性为一个数组时，取出的最大数量
+	 *
+	 * @var integer
+	 */
+	const MAX_AMOUNT = 50;
 	
 	/**
 	 *
@@ -38,11 +43,56 @@ class DatabaseFactory extends AbstractDataFactory {
 		$cond = new Condition($pk . '=' . $id);
 		
 		$ret = $this->where($className, $cond, $clsDesc);
-		
-		return $ret[0];
+		if (is_array($ret) && count($ret) > 0) {
+			return $ret[0];
+		} else {
+			return null;
+		}
 	}
 
-	public function where ($className, Condition $cond = null, ClassDesc $clsDesc = null) {
+	public function getRelatedAttribute (ClassAttribute $attr, DataClass $dataObj, ClassDesc $clsDesc) {
+		$myProp = $attr->selfAttribute2Relationship;
+		if (empty($myProp)) {
+			return null;
+		}
+		
+		$myVal = $dataObj->$myProp;
+		
+		$amount = 1;
+		if ('little' == $attr->amountType || 'large' == $attr->amountType) {
+			$amount = 50;
+		}
+		$val = null;
+		if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
+			$val = $this->where($attr->belongClass, new Condition($attr->anotherAttribute2Relationship . '=' . $myVal), 
+					null, 0, $amount);
+		} else { // 有关系表记录
+			$sqlMyVal = $this->mDatabaseClient->change2SqlValue($myVal, $clsDesc->attribute[$myProp]->var);
+			$sql = "SELECT {$attr->anotherAttributeInRelationship} FROM {$attr->relationshipName} WHERE {$attr->selfAttributeInRelationship}=$sqlMyVal";
+			$ret = $this->mDatabaseClient->select($sql);
+			
+			$idArr = array();
+			foreach ($ret as $row) {
+				$idArr[] = $row[$attr->anotherAttributeInRelationship];
+			}
+			$cond = new Condition();
+			$cond->add($attr->anotherAttribute2Relationship, 'in', $idArr);
+			
+			$val = $this->where($attr->belongClass, $cond);
+		}
+		
+		if (1 == $amount) {
+			if (count($val) > 0) {
+				return $val[0];
+			} else {
+				return null;
+			}
+		} else {
+			return $val;
+		}
+	}
+
+	public function where ($className, Condition $cond = null, ClassDesc $clsDesc = null, $start = 0, $num = self::MAX_AMOUNT) {
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc($className);
 		}
@@ -52,7 +102,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		if (! empty($sqlWhere)) {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
-		$ret = $this->mDatabaseClient->select($sql);
+		$ret = $this->mDatabaseClient->select2Object($sql, $className, $start, $num);
 		
 		return $ret;
 	}
@@ -97,7 +147,11 @@ class DatabaseFactory extends AbstractDataFactory {
 			$key = $attr->persistentName;
 			$val = $db->change2SqlValue($item->value, $attr->var);
 			
-			$condSqlArr[] = $key . $item->operation . $val;
+			if (Condition::OPERATION_IN == $item->operation) {
+				$condSqlArr[] = "$key {$item->operation} (" . implode(',', $val) . ')';
+			} else {
+				$condSqlArr[] = $key . $item->operation . $val;
+			}
 		}
 		
 		foreach ($condition->children as $child) {
