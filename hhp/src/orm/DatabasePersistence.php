@@ -36,12 +36,12 @@ class DatabasePersistence extends AbstractPersistence {
 	 *
 	 * @see \orm\AbstractPersistence::save()
 	 */
-	protected function add ($dataObj, ClassDesc $clsDesc) {
+	protected function add (DataClass $dataObj, ClassDesc $clsDesc) {
 		$keyArr = array();
 		$valArr = array();
 		$relationArr = array();
 		foreach ($clsDesc->attribute as $attrName => $attrObj) {
-			if ($attrObj->autoIncrement || empty($attrObj->persistentName)) {
+			if ($attrObj->autoIncrement) {
 				continue;
 			} else if ('class' == $attrObj->var) {
 				$val = $this->getPropertyVal($dataObj, $attrName);
@@ -51,14 +51,17 @@ class DatabasePersistence extends AbstractPersistence {
 				
 				$tmpValArr = is_array($val) ? $val : array($val);
 				foreach ($tmpValArr as $oneVal) {
-					$this->save($oneVal);
-					$relationArr[] = array($attrObj,$oneVal);
+					if (- 1 == $this->save($oneVal)) { // 只有当其属性（属性代表关系）是新增时，才需要保存这新增的关系
+						$relationArr[] = array($attrObj,$oneVal);
+					}
 				}
 				
 				continue;
+			} else if (empty($attrObj->persistentName)) {
+				continue;
 			}
 			
-			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attr->var);
+			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attrObj->var);
 			$keyArr[] = $attrObj->persistentName;
 			$valArr[] = $v;
 		}
@@ -75,10 +78,9 @@ class DatabasePersistence extends AbstractPersistence {
 		return - 1;
 	}
 
-	protected function saveRelation ($relationArr, $dataObj) {
+	protected function saveRelation ($relationArr, DataClass $dataObj) {
 		foreach ($relationArr as $row) {
 			list ($attr, $anotherObj) = $row;
-			$attr = new ClassAttribute();
 			if (empty($attr->relationshipName)) {
 				// 如果是空，说明存放在本类中
 				$attrName = $attr->selfAttribute2Relationship;
@@ -91,9 +93,14 @@ class DatabasePersistence extends AbstractPersistence {
 				$attrName = $attr->selfAttribute2Relationship;
 				$anotherAttrName = $attr->anotherAttribute2Relationship;
 				$tableAttrName = $attr->selfAttributeInRelationship;
-				$tableAnotherAttrName = $attr->selfAttributeInRelationship;
-				$keyArr = array($tableAttrName,$tableAnotherAttrName);
-				$valArr = array($dataObj->$attrName,$anotherObj->$anotherAttrName);
+				$anotherTableAttrName = $attr->anotherAttributeInRelationship;
+				$anotherVal = $anotherObj->$anotherAttrName;
+				if (null == $anotherVal) {
+					continue;
+				}
+				
+				$keyArr = array($tableAttrName,$anotherTableAttrName);
+				$valArr = array($dataObj->$attrName,$anotherVal);
 				
 				$this->insertIntoDB($table, $keyArr, $valArr);
 			}
@@ -103,7 +110,6 @@ class DatabasePersistence extends AbstractPersistence {
 	}
 
 	protected function insertIntoDB ($tbName, $keyArr, $valArr) {
-		$tbName = $clsDesc->persistentName;
 		$sql = 'INSERT INTO ' . $tbName . '( ' . implode(',', $keyArr) . ' ) VALUES( ' . implode(',', $valArr) . ')';
 		$statment = $this->mDatabaseClient->query($sql);
 		$id = $statment->lastInsertId();
@@ -116,11 +122,12 @@ class DatabasePersistence extends AbstractPersistence {
 	 *
 	 * @see \orm\AbstractPersistence::update()
 	 */
-	protected function update ($dataObj, ClassDesc $clsDesc) {
+	protected function update (DataClass $dataObj, ClassDesc $clsDesc) {
 		$keyArr = array();
 		$valArr = array();
+		$pkArr = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey : array($clsDesc->primaryKey);
 		foreach ($clsDesc->attribute as $attrName => $attrObj) {
-			if (empty($attrObj->persistentName)) {
+			if (in_array($attrName, $pkArr)) {
 				continue;
 			} else if ('class' == $attrObj->var) {
 				$val = $this->getPropertyVal($dataObj, $attrName);
@@ -134,9 +141,11 @@ class DatabasePersistence extends AbstractPersistence {
 				}
 				
 				continue;
+			} else if (empty($attrObj->persistentName)) {
+				continue;
 			}
 			
-			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attr->var);
+			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attrObj->var);
 			$keyArr[] = $attrObj->persistentName;
 			$valArr[] = $v;
 		}
@@ -148,10 +157,6 @@ class DatabasePersistence extends AbstractPersistence {
 			$sql .= $keyArr[$i] . '=' . $valArr[$i];
 		}
 		
-		$pkArr = $clsDesc->primaryKey;
-		if (! is_array($pkArr)) {
-			$pkArr = array($clsDesc->primaryKey);
-		}
 		$condArr = array();
 		foreach ($pkArr as $k) {
 			$dbCol = $clsDesc->attribute[$k]->persistentName;

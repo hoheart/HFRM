@@ -3,7 +3,19 @@
 namespace orm;
 
 class ORMService {
+	
+	/**
+	 * 数据获取类
+	 *
+	 * @var AbstractDataFactory
+	 */
 	protected $mFactory = null;
+	
+	/**
+	 * 数据保存类
+	 *
+	 * @var AbstractPersistence
+	 */
 	protected $mPersistence = null;
 
 	public function __construct ($conf) {
@@ -18,24 +30,15 @@ class ORMService {
 		$this->mPersistence = $fobj->create();
 	}
 
-	public function save ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
-		return $this->mPersistence->save($dataObj, $isSaveSub, $clsDesc);
-	}
-
-	public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
-		return $this->mPersistence->add($dataObj, $isSaveSub, $clsDesc);
-	}
-
-	public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
-		return $this->mPersistence->update($dataObj, $isSaveSub, $clsDesc);
+	public function save (DataClass $dataObj) {
+		return $this->mPersistence->save($dataObj, null);
 	}
 
 	public function delete ($className, Condition $condition = null) {
 		return $this->mPersistence->delete($className, $condition);
 	}
-	
-	public function get(){
-		
+
+	public function get () {
 	}
 
 	public function getDataMapList ($className, Condition $condition = null, ClassDesc $clsDesc = null) {
@@ -44,9 +47,5 @@ class ORMService {
 
 	public function getDataMapListFromRelation (ClassDesc $clsDesc = null, $attrName, $val) {
 		return $this->mFactory->getDataMapListFromRelation($clsDesc, $attrName, $val);
-	}
-
-	public function change2SqlValue ($dataObj, $attrArr, $isSaveSub, $isAdd = true) {
-		return $this->mPersistence->change2SqlValue($dataObj, $attrArr, $isSaveSub, $isAdd);
 	}
 }

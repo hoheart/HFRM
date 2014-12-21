@@ -6,7 +6,8 @@ namespace orm;
  * 从存放于PHP的数组中取出各种数据类的工厂类。
  *
  * @author Hoheart
- *        
+ * @deprecated 该类暂时废弃
+ *            
  */
 class PhpFactory extends AbstractDataFactory {
 	

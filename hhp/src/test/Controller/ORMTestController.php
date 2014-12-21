@@ -11,8 +11,8 @@ use hhp\Controller;
  * Test相关
  */
 use test\ORMTest\DescFactoryTest;
-use test\ORMTest\PhpPersistenceTest;
-use test\ORMTest\PhpFactoryTest;
+// use test\ORMTest\PhpPersistenceTest;
+// use test\ORMTest\PhpFactoryTest;
 use test\ORMTest\AbstractDataFactoryTest;
 use test\ORMTest\DatabasePersistenceTest;
 use test\ORMTest\DatabasePersistenceCreatorTest;
@@ -25,19 +25,12 @@ use test\ORMTest\ConditionTest;
 class ORMTestController extends Controller {
 
 	public function indexAction () {
-		$arr = array(
-			new ConditionTest(),
-			new DataClassTest(),
-			new DatabaseFactoryTest(),
-			new DatabaseFactoryCreatorTest(),
-			new DatabasePersistenceTest(),
-			new DatabasePersistenceCreatorTest(),
-			new AbstractDataFactoryTest(),
-			new PhpFactoryTest(),
-			new PhpPersistenceTest(),
-			new AbstractPersistenceTest(),
-			new DescFactoryTest()
-		);
+		$arr = array(new ConditionTest(),		// new DataClassTest(),
+		new DatabaseFactoryTest(),new DatabaseFactoryCreatorTest(),new DatabasePersistenceTest(),
+			new DatabasePersistenceCreatorTest(),new AbstractDataFactoryTest(),
+			// new PhpFactoryTest(),
+			// new PhpPersistenceTest(),
+			new AbstractPersistenceTest(),new DescFactoryTest());
 		
 		$success = true;
 		foreach ($arr as $t) {

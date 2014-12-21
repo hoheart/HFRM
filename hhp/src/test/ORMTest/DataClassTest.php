@@ -59,8 +59,8 @@ class DataClassTest extends AbstractTest {
 		$gu1->groupId = $g->id;
 		$gu1->userId = $u2->id;
 		
-		$p->add($gu);
-		$p->add($gu1);
+		$p->save($gu);
+		$p->save($gu1);
 		
 		$groupId = $g->id;
 		

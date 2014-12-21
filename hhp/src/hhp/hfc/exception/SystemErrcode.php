@@ -9,5 +9,6 @@ class SystemErrcode {
 	const DatabaseQuery = 5003;
 	const DatabaseConnect = 5004;
 	const FileNotFound = 5005;
+	const MethodCallError = 5006; // 函数调用错误，不应该调用该函数。
 }
 ?>

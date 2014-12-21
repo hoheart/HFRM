@@ -11,14 +11,13 @@ namespace orm;
 abstract class AbstractDataFactory {
 
 	/**
-	 * 不用把数据对象转成对象格式，直接返回取得数组。为了保持数据的顺序，不用主键作索引。
+	 * 根据类的唯一主键的值进行查询
 	 *
-	 * @param string $className        	
-	 * @param Condition $condition        	
-	 * @param ClassDesc $clsDesc        	
-	 * @return array
+	 * @param integer $id        	
+	 * @return DataClass 返回一个对象
 	 */
-	abstract public function getDataMapList ($className, Condition $condition = null, 
-			ClassDesc $clsDesc = null);
+	abstract public function get ($className, $id);
+
+	abstract public function where ($className, Condition $cond = null);
 }
 ?>

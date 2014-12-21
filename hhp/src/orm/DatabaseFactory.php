@@ -4,6 +4,8 @@ namespace orm;
 
 use hfc\database\DatabaseClient;
 use hfc\exception\ParameterErrorException;
+use hhp\exception\ConfigErrorException;
+use hfc\exception\MethodCallErrorException;
 
 /**
  * 从数据库中取出各种数据类的工厂类。
@@ -26,69 +28,33 @@ class DatabaseFactory extends AbstractDataFactory {
 		$this->mDatabaseClient = $client;
 	}
 
-	public function getDataMapList ($className, Condition $condition = null, ClassDesc $clsDesc = null) {
-		if (null == $clsDesc) {
-			$descFactory = DescFactory::Instance();
-			$clsDesc = $descFactory->getDesc($className);
-			
-			if (null == $clsDesc) {
-				throw new ParameterErrorException('Can not found desc for class: ' . $className);
-			}
+	public function get ($className, $id) {
+		$clsDesc = DescFactory::Instance()->getDesc($className);
+		if (empty($clsDesc->primaryKey) || (is_array($clsDesc->primaryKey) && count($clsDesc->primaryKey) != 1)) {
+			throw new MethodCallErrorException('the calss ' . $className . ' does not has one primary key.');
 		}
 		
+		$pk = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey[0] : $clsDesc->primaryKey;
+		$cond = new Condition($pk . '=' . $id);
+		
+		$ret = $this->where($className, $cond, $clsDesc);
+		
+		return $ret[0];
+	}
+
+	public function where ($className, Condition $cond = null, ClassDesc $clsDesc = null) {
+		if (null == $clsDesc) {
+			$clsDesc = DescFactory::Instance()->getDesc($className);
+		}
+		
+		$sqlWhere = self::CreateSqlWhere($clsDesc, $cond, $this->mDatabaseClient);
 		$sql = $this->createSqlSelect($clsDesc);
-		$sqlWhere = self::CreateSqlWhere($clsDesc, $condition, $this->mDatabaseClient);
 		if (! empty($sqlWhere)) {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
+		$ret = $this->mDatabaseClient->select($sql);
 		
-		$dbret = $this->mDatabaseClient->select($sql);
-		
-		return $dbret;
-	}
-
-	/**
-	 * 从关系中取得数据数组
-	 *
-	 * @param ClassAttribute $attr
-	 *        	本类中对应属性的ClassAtrribute
-	 *        	比如Group类中有个userArr的属性，要取得userArr对应的dataMap，就传userArr的ClassAttribute。
-	 * @param object $val
-	 *        	本类中该属性的值
-	 */
-	public function getDataMapListFromRelation (ClassDesc $clsDesc = null, $attrName, $val) {
-		$attr = $clsDesc->attribute[$attrName];
-		$relationshipName = $attr->relationshipName;
-		$anotherAttrInRelationship = $attr->anotherAttributeInRelationship;
-		$myAttrInRelationship = $attr->selfAttributeInRelationship;
-		$selfAttr2Relationship = $clsDesc->attribute[$attr->selfAttribute2Relationship];
-		$sqlVal = $this->mDatabaseClient->change2SqlValue($val, $selfAttr2Relationship->var);
-		$amountType = $attr->amountType;
-		$sql = "SELECT $anotherAttrInRelationship FROM $relationshipName WHERE $myAttrInRelationship = $sqlVal";
-		
-		$ret = array();
-		switch ($amountType) {
-			case 'little':
-				$ret = $this->mDatabaseClient->select($sql, 0, 100);
-				
-				break;
-			case 'large':
-				$ret = $this->mDatabaseClient->select($sql);
-				break;
-			case 'single':
-			default:
-				$ret[] = $this->mDatabaseClient->getOne($sql);
-				break;
-		}
-		
-		$anotherAttr2Relationship = $attr->anotherAttribute2Relationship;
-		$cond = new Condition();
-		$cond->setRelationship(Condition::RELATIONSHIP_OR);
-		foreach ($ret as $row) {
-			$cond->add($anotherAttr2Relationship, '=', $row[$anotherAttrInRelationship]);
-		}
-		
-		return $this->getDataMapList($attr->belongClass, $cond);
+		return $ret;
 	}
 
 	protected function createSqlSelect (ClassDesc $clsDesc) {
@@ -119,8 +85,7 @@ class DatabaseFactory extends AbstractDataFactory {
 	 * @param ClassDesc $clsDesc        	
 	 * @return string
 	 */
-	static public function CreateSqlWhere (ClassDesc $clsDesc, Condition $condition = null, 
-			DatabaseClient $db) {
+	static public function CreateSqlWhere (ClassDesc $clsDesc, Condition $condition = null, DatabaseClient $db) {
 		if (null == $condition) {
 			return '';
 		}

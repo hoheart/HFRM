@@ -64,7 +64,7 @@ class TestUser extends DataClass {
 	/**
 	 * @hhp:orm var class
 	 * @hhp:orm belongClass test\ORMTest\TestGroup
-	 * @hhp:orm relationshipName group2user
+	 * @hhp:orm relationshipName test_group2user
 	 * @hhp:orm selfAttributeInRelationship user_id
 	 * @hhp:orm selfAttribute2Relationship id
 	 * @hhp:orm anotherAttributeInRelationship group_id

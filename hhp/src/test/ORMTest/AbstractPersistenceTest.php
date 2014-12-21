@@ -6,15 +6,16 @@ use test\AbstractTest;
 use orm\AbstractPersistence;
 use orm\ClassDesc;
 use orm\Condition;
+use orm\DataClass;
 
 class TestAbstractPersistence extends AbstractPersistence {
 	public $mRet;
 
-	public function add ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+	public function add (DataClass $dataObj, ClassDesc $clsDesc = null) {
 		$this->mRet = 'add';
 	}
 
-	public function update ($dataObj, $isSaveSub = false, ClassDesc $clsDesc = null) {
+	public function update (DataClass $dataObj, ClassDesc $clsDesc = null) {
 		$this->mRet = 'update';
 	}
 
@@ -37,21 +38,13 @@ class AbstractPersistenceTest extends AbstractTest {
 		if ($p->mRet != 'add') {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
-		$u->id = 2;
+		$u->name = 'user11';
 		$p->save($u);
 		if ($p->mRet != 'update') {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
 		
-		$gu = new TestGroup2User();
-		$p->save($gu);
-		if ($p->mRet != 'update') {
-			$this->throwError('', __METHOD__, __LINE__);
-		}
-		$gu->userId = 1;
-		$gu->groupId = 2;
-		$p->save($gu);
-		if ($p->mRet != 'update') {
+		if (0 !== $p->save($u)) {
 			$this->throwError('', __METHOD__, __LINE__);
 		}
 	}

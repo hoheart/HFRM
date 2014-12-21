@@ -5,8 +5,11 @@ namespace orm;
 use hfc\util\Sequence;
 
 /**
+ *
+ *
  * 根据AtrributeMap把数据对象持久化到PHP数组文件中。
  *
+ * @deprecated 该类暂时废弃
  * @author Hoheart
  *        
  */
