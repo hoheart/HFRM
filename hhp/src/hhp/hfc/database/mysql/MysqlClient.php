@@ -30,6 +30,7 @@ class MysqlClient extends PDOClient {
 			return 'null';
 		}
 		
+		$type = strtolower($type);
 		if (is_array($val)) {
 			$ret = array();
 			foreach ($val as $oneVal) {
