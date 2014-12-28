@@ -49,10 +49,18 @@ class DatabasePersistence extends AbstractPersistence {
 					continue;
 				}
 				
-				$tmpValArr = is_array($val) ? $val : array($val);
+				$tmpValArr = is_array($val) ? $val : array(
+					$val
+				);
 				foreach ($tmpValArr as $oneVal) {
-					if (- 1 == $this->save($oneVal)) { // 只有当其属性（属性代表关系）是新增时，才需要保存这新增的关系
-						$relationArr[] = array($attrObj,$oneVal);
+					$this->save($oneVal); // 不管是否是新增，都需要保存关系，因为本对象执行到这儿，肯定是新增，那么关系中就应该新增一条关系
+					if (empty($attr->relationshipName)) { // 如果是空，说明存放在本类中
+						$this->saveSelfAttribute($attrObj, $oneVal, $dataObj, $keyArr, $valArr);
+					} else {
+						$relationArr[] = array(
+							$attrObj,
+							$oneVal
+						);
 					}
 				}
 				
@@ -78,32 +86,50 @@ class DatabasePersistence extends AbstractPersistence {
 		return - 1;
 	}
 
+	/**
+	 */
+	protected function saveSelfAttribute (ClassAttribute $attr, DataClass $anotherObj, DataClass $dataObj, &$keyArr, 
+			&$valArr) {
+		$attrName = $attr->selfAttribute2Relationship;
+		if (! empty($attrName)) {
+			$anotherAttrName = $attr->anotherAttribute2Relationship;
+			$attrVal = $anotherObj->$anotherAttrName;
+			$dataObj->$attrName = $attrVal;
+			
+			foreach ($keyArr as $i => $val) {
+				if ($attrName == $val) {
+					$valArr[$i] = $attrVal;
+					
+					break;
+				}
+			}
+		} // 如果本类中也不保存这个类的属性，那就没有关系可以保存
+	}
+
 	protected function saveRelation ($relationArr, DataClass $dataObj) {
 		foreach ($relationArr as $row) {
 			list ($attr, $anotherObj) = $row;
-			if (empty($attr->relationshipName)) {
-				// 如果是空，说明存放在本类中
-				$attrName = $attr->selfAttribute2Relationship;
-				if (! empty($attrName)) {
-					$anotherAttrName = $attr->anotherAttribute2Relationship;
-					$dataObj->$attrName = $anotherObj->$anotherAttrName;
-				} // 如果本类中也不保存这个类的属性，那就没有关系可以保存
-			} else {
-				$table = $attr->relationshipName;
-				$attrName = $attr->selfAttribute2Relationship;
-				$anotherAttrName = $attr->anotherAttribute2Relationship;
-				$tableAttrName = $attr->selfAttributeInRelationship;
-				$anotherTableAttrName = $attr->anotherAttributeInRelationship;
-				$anotherVal = $anotherObj->$anotherAttrName;
-				if (null == $anotherVal) {
-					continue;
-				}
-				
-				$keyArr = array($tableAttrName,$anotherTableAttrName);
-				$valArr = array($dataObj->$attrName,$anotherVal);
-				
-				$this->insertIntoDB($table, $keyArr, $valArr);
+			
+			$table = $attr->relationshipName;
+			$attrName = $attr->selfAttribute2Relationship;
+			$anotherAttrName = $attr->anotherAttribute2Relationship;
+			$tableAttrName = $attr->selfAttributeInRelationship;
+			$anotherTableAttrName = $attr->anotherAttributeInRelationship;
+			$anotherVal = $anotherObj->$anotherAttrName;
+			if (null == $anotherVal) {
+				continue;
 			}
+			
+			$keyArr = array(
+				$tableAttrName,
+				$anotherTableAttrName
+			);
+			$valArr = array(
+				$dataObj->$attrName,
+				$anotherVal
+			);
+			
+			$this->insertIntoDB($table, $keyArr, $valArr);
 		}
 		
 		$this->save($dataObj); // 有可能属性被修改过，重新保存一下，save方法里会判断是否真的需要重新保存。
@@ -125,7 +151,9 @@ class DatabasePersistence extends AbstractPersistence {
 	protected function update (DataClass $dataObj, ClassDesc $clsDesc) {
 		$keyArr = array();
 		$valArr = array();
-		$pkArr = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey : array($clsDesc->primaryKey);
+		$pkArr = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey : array(
+			$clsDesc->primaryKey
+		);
 		foreach ($clsDesc->attribute as $attrName => $attrObj) {
 			if (in_array($attrName, $pkArr)) {
 				continue;
@@ -135,7 +163,9 @@ class DatabasePersistence extends AbstractPersistence {
 					continue;
 				}
 				
-				$tmpValArr = is_array($val) ? $val : array($val);
+				$tmpValArr = is_array($val) ? $val : array(
+					$val
+				);
 				foreach ($tmpValArr as $oneVal) {
 					$this->save($oneVal);
 				}
