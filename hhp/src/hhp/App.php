@@ -136,8 +136,7 @@ namespace hhp {
 		 */
 		public function run () {
 			// 1.取得系统配置文件
-			$this->mAppConf = $this->mClassLoader->loadFile(
-					'config' . DIRECTORY_SEPARATOR . 'Config.php');
+			$this->mAppConf = $this->mClassLoader->loadFile('config' . DIRECTORY_SEPARATOR . 'Config.php');
 			
 			// 2.根据请求，取得请求模块的配置文件。
 			list ($moduleAlias, $ctrlName, $actionName) = $this->getRedirection();
@@ -162,8 +161,7 @@ namespace hhp {
 				throw new RequestErrorException('Request resource is not available.');
 			}
 			
-			$this->mBootModuleConf = $this->combinActionConf($ctrlClassName, $this->mBootModuleConf, 
-					$actionName);
+			$this->mBootModuleConf = $this->combinActionConf($ctrlClassName, $this->mBootModuleConf, $actionName);
 			
 			// 4.这时，就可以根据配置，进行路由了
 			$confExecutorArr = $this->getConfigValue('executor');
@@ -219,11 +217,7 @@ namespace hhp {
 			
 			$moduleAlias = substr($uri, 1, $pos1 - $uriLen);
 			
-			$this->mRedirection = array(
-				$moduleAlias,
-				$ctrlName,
-				$actionName
-			);
+			$this->mRedirection = array($moduleAlias,$ctrlName,$actionName);
 			
 			return $this->mRedirection;
 		}
@@ -271,8 +265,7 @@ namespace hhp {
 			if (empty($conf)) {
 				$appConfigModuleArr = $this->getConfigValue('module');
 				$appConfigModule = $appConfigModuleArr[$moduleAlias];
-				$configFilePath = $appConfigModule['dir'] . 'config' . DIRECTORY_SEPARATOR .
-						 'config.php';
+				$configFilePath = $appConfigModule['dir'] . 'config' . DIRECTORY_SEPARATOR . 'config.php';
 				$conf = $this->mClassLoader->loadFile($configFilePath);
 				$this->mModuleConfMap[$moduleAlias] = $conf;
 			}
@@ -329,10 +322,8 @@ namespace hhp\App {
 		private $mModuleDirIndex = array();
 
 		public function __construct () {
-			$this->mModuleDirIndex = array(
-				'hhp' . DIRECTORY_SEPARATOR => 'hhp',
-				'hhp' . DIRECTORY_SEPARATOR . 'hfc' . DIRECTORY_SEPARATOR
-			);
+			$this->mModuleDirIndex = array('hhp' . DIRECTORY_SEPARATOR => 'hhp',
+				'hhp' . DIRECTORY_SEPARATOR . 'hfc' . DIRECTORY_SEPARATOR);
 		}
 
 		/**
@@ -340,10 +331,7 @@ namespace hhp\App {
 		 * );注册给PHP解释器。
 		 */
 		public function register2System () {
-			spl_autoload_register(array(
-				$this,
-				'autoload'
-			));
+			spl_autoload_register(array($this,'autoload'));
 		}
 
 		/**
@@ -378,15 +366,16 @@ namespace hhp\App {
 				
 				// 优先处理自己模块的调用关系。
 				// hhp和hfc可以调用任何模块
-				if ($callerName == $moduleAlias || 'hhp' == $callerAlias || 'hfc' == $callerAlias) {
+				if ($callerName == $moduleAlias || 'hhp' == $callerAlias || 'hfc' == $callerAlias ||
+						 'orm' == $callerAlias) {
 					// 是自己调用自己，就取调用者的模块路径。
 					$moduleDir = $appConfModule['dir'];
 				} else {
 					$callerModuleConf = $app->getModuleConf($callerAlias);
 					$moduleConf = $app->getModuleConf($moduleAlias);
 					try {
-						$this->checkModuleConf($appConfModule, $callerModuleConf, $moduleConf, 
-								$moduleAlias, $relativeClassName);
+						$this->checkModuleConf($appConfModule, $callerModuleConf, $moduleConf, $moduleAlias, 
+								$relativeClassName);
 					} catch (\Exception $e) {
 						return false;
 					}
@@ -412,8 +401,7 @@ namespace hhp\App {
 		 * @return array 第一个值是模块的别名，第二个值是模块名。
 		 */
 		protected function getCallerModule () {
-			$callerStackInfo = debug_backtrace(
-					~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+			$callerStackInfo = debug_backtrace(~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 4);
 			$callerPath = $callerStackInfo[2]['file'];
 			if (empty($callerPath)) { // 如果是class_exists这种系统调用，类文件在第三个数组元素里。
 				$callerPath = $callerStackInfo[3]['file'];
@@ -447,10 +435,7 @@ namespace hhp\App {
 				}
 			}
 			
-			return array(
-				$callerModuleAlias,
-				$callerModuleName
-			);
+			return array($callerModuleAlias,$callerModuleName);
 		}
 
 		/**
@@ -472,12 +457,11 @@ namespace hhp\App {
 		 * @throws RequestErrorException
 		 * @throws APINotAvailableException
 		 */
-		protected function checkModuleConf ($appConfModule, $callerModuleConf, $moduleConfig, 
-				$moduleAlias, $relativeClassName) {
+		protected function checkModuleConf ($appConfModule, $callerModuleConf, $moduleConfig, $moduleAlias, 
+				$relativeClassName) {
 			// 1.检查被调用模块有没有被开启
 			if (! $appConfModule['enable']) {
-				throw new ModuleNotAvailableException(
-						"Module: {$appConfModule['name']} not enabled.");
+				throw new ModuleNotAvailableException("Module: {$appConfModule['name']} not enabled.");
 			}
 			
 			// 2.检查调用者有没有依赖这个模块
@@ -504,8 +488,7 @@ namespace hhp\App {
 			$app = App::Instance();
 			$appConfModule = $app->getConfigValue('module')[$moduleAlias];
 			if (! $appConfModule['enable']) {
-				throw new ModuleNotAvailableException(
-						"Module: $moduleAlias not exists or not enabled.");
+				throw new ModuleNotAvailableException("Module: $moduleAlias not exists or not enabled.");
 			}
 			$moduleConf = $app->getModuleConf($moduleAlias);
 			
@@ -517,8 +500,7 @@ namespace hhp\App {
 			if (DIRECTORY_SEPARATOR == '\\') {
 				$ctrlClassName = $ctrlClassName . $ctrlDir . $relativeClassName;
 			} else {
-				$ctrlClassName = $ctrlClassName . str_replace('/', '\\', $ctrlDir) .
-						 $relativeClassName;
+				$ctrlClassName = $ctrlClassName . str_replace('/', '\\', $ctrlDir) . $relativeClassName;
 			}
 			
 			$controllerConf = $moduleConf['controller'][$ctrlClassName];
@@ -567,10 +549,7 @@ namespace hhp\App {
 		 */
 		protected function getClassModule ($className) {
 			$pos = strpos($className, '\\');
-			return array(
-				substr($className, 0, $pos),
-				substr($className, $pos + 1)
-			);
+			return array(substr($className, 0, $pos),substr($className, $pos + 1));
 		}
 	}
 	

@@ -42,7 +42,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		$pk = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey[0] : $clsDesc->primaryKey;
 		$cond = new Condition($pk . '=' . $id);
 		
-		$ret = $this->where($className, $cond, $clsDesc);
+		$ret = $this->where($className, $cond, 0, 1, $clsDesc);
 		if (is_array($ret) && count($ret) > 0) {
 			return $ret[0];
 		} else {
@@ -92,7 +92,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 	}
 
-	public function where ($className, Condition $cond = null, ClassDesc $clsDesc = null, $start = 0, $num = self::MAX_AMOUNT) {
+	public function where ($className, Condition $cond = null, $start = 0, $num = self::MAX_AMOUNT, ClassDesc $clsDesc = null) {
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc($className);
 		}
