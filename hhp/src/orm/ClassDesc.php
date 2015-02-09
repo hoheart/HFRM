@@ -5,10 +5,7 @@ namespace orm;
 /**
  * 对数据类进行描述的类。
  *
- * @author Hoheart
- *         @hhp:orm persistentName
- *         @hhp:orm desc 数据类的描述
- *         @hhp:orm primaryKey name
+ * @author Jejim
  *        
  */
 class ClassDesc {
@@ -18,7 +15,7 @@ class ClassDesc {
 	 *
 	 * @var string
 	 */
-	public $persistentName;
+	public $saveName;
 	
 	/**
 	 * ClassAttribute的map，key为属性名称。
@@ -29,9 +26,10 @@ class ClassDesc {
 	
 	/**
 	 * 存储名作索引的属性列表
+	 * 
 	 * @var array
 	 */
-	public $persistentNameIndexAttr;
+	public $saveNameIndexAttr;
 	
 	/**
 	 * 类的描述

@@ -2,6 +2,8 @@
 
 namespace orm;
 
+use orm\exception\ParseClassDescErrorException;
+
 /**
  * 产生各种数据类的描述（即产生数据类的ClassDesc类）的工厂类。
  *
@@ -34,6 +36,15 @@ class DescFactory {
 		return $me;
 	}
 
+	protected function getBaseClassName ($clsName) {
+		$pos = strrpos($clsName, '\\');
+		if ($pos > 0) {
+			return substr($clsName, $pos + 1);
+		} else {
+			return $clsName;
+		}
+	}
+
 	public function getDesc ($className) {
 		$clsDesc = $this->mClassDescMap[$className];
 		if (! empty($clsDesc)) {
@@ -46,13 +57,27 @@ class DescFactory {
 		$doc = $rc->getDocComment();
 		$keyVal = $this->parseDocComment($doc);
 		$clsDesc = new ClassDesc();
-		$clsDesc->persistentName = $keyVal['persistentName'];
-		$clsDesc->desc = $keyVal['desc'];
-		$primaryKey = explode(',', $keyVal['primaryKey']);
-		if (1 == count($primaryKey)) {
-			$clsDesc->primaryKey = $primaryKey[0];
+		if (! key_exists('entity', $keyVal)) {
+			throw new ParseClassDescErrorException('not a entity.');
+		}
+		
+		if (key_exists('saveName', $keyVal)) {
+			$clsDesc->saveName = $keyVal['saveName'];
 		} else {
-			$clsDesc->primaryKey = $primaryKey;
+			$clsDesc->saveName = $this->getBaseClassName($className);
+		}
+		
+		$clsDesc->desc = $keyVal['desc'];
+		
+		if (key_exists('primaryKey', $keyVal)) {
+			$primaryKey = explode(',', $keyVal['primaryKey']);
+			if (1 == count($primaryKey)) {
+				$clsDesc->primaryKey = $primaryKey[0];
+			} else {
+				$clsDesc->primaryKey = $primaryKey;
+			}
+		} else {
+			$clsDesc->primaryKey = 'id';
 		}
 		
 		// 取得每个属性的描述
@@ -71,7 +96,12 @@ class DescFactory {
 				$attr->var = 'string256';
 			}
 			
-			$attr->persistentName = $keyVal['persistentName'];
+			if (key_exists('saveName', $keyVal)) {
+				$attr->saveName = $keyVal['saveName'];
+			} else {
+				$attr->saveName = $rp->name;
+			}
+			
 			$attr->key = 'true' == $keyVal['key'];
 			$attr->autoIncrement = 'true' == $keyVal['autoIncrement'];
 			$attr->amountType = $keyVal['amountType'];
@@ -83,8 +113,8 @@ class DescFactory {
 			$attr->anotherAttribute2Relationship = $keyVal['anotherAttribute2Relationship'];
 			
 			$clsDesc->attribute[$rp->getName()] = $attr;
-			if (! empty($attr->persistentName)) {
-				$clsDesc->persistentNameIndexAttr[$attr->persistentName] = $attr;
+			if (! empty($attr->saveName)) {
+				$clsDesc->saveNameIndexAttr[$attr->saveName] = $attr;
 			}
 		}
 		
@@ -94,23 +124,37 @@ class DescFactory {
 	}
 
 	protected function parseDocComment ($doc) {
+		if ('' == $doc) {
+			return;
+		}
+		$doc = ltrim(substr($doc, 3, strlen($doc) - 5), ' \t'); // ReflectionClass只支持/**格式的注释
+		
+		$desc = '';
+		$docEnded = false;
 		$keyVal = array();
-		$tag = '@hhp:orm';
-		$pos = $pos1 = 0;
-		while (true) {
-			$pos = strpos($doc, $tag, $pos1);
-			if (false === $pos) {
-				break;
+		$var = '';
+		$arr = preg_split('/@|(\n[ \t\*]*)/', $doc, - 1, PREG_SPLIT_OFFSET_CAPTURE);
+		foreach ($arr as $item) {
+			list ($str, $pos) = $item;
+			if ('@' == $doc[$pos - 1]) {
+				$docEnded = true;
+				
+				$rowArr = preg_split('/[ \t]/', $str);
+				if ('hhp:orm' == $rowArr[0]) {
+					$keyVal[$rowArr[1]] = $rowArr[2];
+				} else if ('var' == $rowArr[0]) {
+					$var = $rowArr[1];
+				}
+			} else if (! $docEnded) {
+				$desc .= $str;
 			}
-			$pos += strlen($tag) + 1;
-			$pos1 = strpos($doc, "\n", $pos);
-			if (false === $pos1) {
-				$pos1 = strpos($doc, '*/', $pos);
-			}
-			$row = substr($doc, $pos, $pos1 - $pos);
-			$row = trim($row);
-			$rowArr = preg_split('/ +/', $row);
-			$keyVal[$rowArr[0]] = trim($rowArr[1]);
+		}
+		
+		if (! key_exists('var', $keyVal)) {
+			$keyVal['var'] = $var;
+		}
+		if (! key_exists('desc', $keyVal)) {
+			$keyVal['desc'] = $desc;
 		}
 		
 		return $keyVal;

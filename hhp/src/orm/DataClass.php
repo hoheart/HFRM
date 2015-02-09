@@ -25,6 +25,7 @@ class DataClass {
 	
 	/**
 	 * 框架用的属性。不能被继承。
+	 * @hhp:orm saveName
 	 *
 	 * @var integer
 	 */
@@ -71,7 +72,15 @@ class DataClass {
 		}
 	}
 
-	protected function setAttribute ($name, $value) {
+	protected function setAttribute ($name, $value, $isSaveName = false) {
+		if (null === $value) {
+			if (property_exists($this, $name)) {
+				$this->$name = $value;
+				
+				return $this;
+			}
+		}
+		
 		$clsDesc = DescFactory::Instance()->getDesc(get_class($this));
 		
 		$methodName = 'set' . ucfirst($name);
@@ -81,12 +90,14 @@ class DataClass {
 			
 			$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW == $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
 		} else {
-			// 有可能是persistentName
-			$attr = $clsDesc->persistentNameIndexAttr[$name];
-			if (! empty($attr)) {
-				$name = $attr->name;
-				return $this->setAttribute($name, $value);
-			}
+			// 有可能是saveName
+			// if (! $isSaveName) {
+			// $attr = $clsDesc->saveNameIndexAttr[$name];
+			// if (! empty($attr)) {
+			// $name = $attr->name;
+			// return $this->setAttribute($name, $value, true);
+			// }
+			// }
 			throw new NoPropertyException(
 					'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no set mutator defined.');
 		}
@@ -103,6 +114,8 @@ class DataClass {
 	 * @return object
 	 */
 	protected function filterValue ($val, $type) {
+		$type = strtolower($type);
+		
 		if (is_array($val)) {
 			$arr = array();
 			foreach ($val as $one) {

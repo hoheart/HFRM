@@ -65,20 +65,20 @@ class DatabasePersistence extends AbstractPersistence {
 				}
 				
 				continue;
-			} else if (empty($attrObj->persistentName)) {
+			} else if (empty($attrObj->saveName)) {
 				continue;
 			}
 			
 			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attrObj->var);
-			$keyArr[] = $attrObj->persistentName;
+			$keyArr[] = $attrObj->saveName;
 			$valArr[] = $v;
 		}
 		
-		$id = $this->insertIntoDB($clsDesc->persistentName, $keyArr, $valArr);
+		$id = $this->insertIntoDB($clsDesc->saveName, $keyArr, $valArr);
 		if ($id > 0 && ! is_array($clsDesc->primaryKey) && $clsDesc->attribute[$clsDesc->primaryKey]->autoIncrement) {
 			$onePK = $clsDesc->primaryKey;
 			
-			$this->setPropertyVal($dataObj, $onePK, $id);
+			self::SetPropertyVal($dataObj, $onePK, $id);
 		}
 		
 		$this->saveRelation($relationArr, $dataObj);
@@ -171,16 +171,16 @@ class DatabasePersistence extends AbstractPersistence {
 				}
 				
 				continue;
-			} else if (empty($attrObj->persistentName)) {
+			} else if (empty($attrObj->saveName)) {
 				continue;
 			}
 			
 			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$attrName, $attrObj->var);
-			$keyArr[] = $attrObj->persistentName;
+			$keyArr[] = $attrObj->saveName;
 			$valArr[] = $v;
 		}
 		
-		$tbName = $clsDesc->persistentName;
+		$tbName = $clsDesc->saveName;
 		$sql = "UPDATE $tbName SET {$keyArr[0]} = {$valArr[0]} ";
 		for ($i = 1; $i < count($keyArr); ++ $i) {
 			$sql .= ',';
@@ -189,7 +189,7 @@ class DatabasePersistence extends AbstractPersistence {
 		
 		$condArr = array();
 		foreach ($pkArr as $k) {
-			$dbCol = $clsDesc->attribute[$k]->persistentName;
+			$dbCol = $clsDesc->attribute[$k]->saveName;
 			$condArr[] = $dbCol . '=' . $dataObj->$k;
 		}
 		$sql .= ' WHERE ' . implode(' AND ', $condArr);
@@ -203,12 +203,40 @@ class DatabasePersistence extends AbstractPersistence {
 		$clsDesc = DescFactory::Instance()->getDesc($className);
 		$whereSql = DatabaseFactory::CreateSqlWhere($clsDesc, $condition, $this->mDatabaseClient);
 		
-		$sql = 'DELETE FROM ' . $clsDesc->persistentName;
+		$sql = 'DELETE FROM ' . $clsDesc->saveName;
 		if (! empty($whereSql)) {
 			$sql .= ' WHERE ' . $whereSql;
 		}
 		
 		$this->mDatabaseClient->exec($sql);
+	}
+
+	/**
+	 * 通过ReflectionClass设置属性的值。
+	 *
+	 * @param DataClass $dataObj        	
+	 * @param string $attrName        	
+	 * @param mixed $val        	
+	 */
+	static public function SetPropertyVal ($dataObj, $attrName, $val) {
+		$refCls = new \ReflectionClass(get_class($dataObj));
+		$refProperty = $refCls->getProperty($attrName);
+		$refProperty->setAccessible(true);
+		$refProperty->setValue($dataObj, $val);
+	}
+
+	/**
+	 * 通过ReflectionClass取得属性的值。
+	 *
+	 * @param DataClass $dataObj        	
+	 * @param string $attrName        	
+	 * @return mixed
+	 */
+	protected function getPropertyVal ($dataObj, $attrName) {
+		$refCls = new \ReflectionClass(get_class($dataObj));
+		$refProperty = $refCls->getProperty($attrName);
+		$refProperty->setAccessible(true);
+		return $refProperty->getValue($dataObj);
 	}
 }
 ?>

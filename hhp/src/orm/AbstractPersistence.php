@@ -52,34 +52,6 @@ abstract class AbstractPersistence {
 	abstract protected function update (DataClass $dataObj, ClassDesc $clsDesc);
 
 	/**
-	 * 通过ReflectionClass设置属性的值。
-	 *
-	 * @param DataClass $dataObj        	
-	 * @param string $attrName        	
-	 * @param mixed $val        	
-	 */
-	protected function setPropertyVal ($dataObj, $attrName, $val) {
-		$refCls = new \ReflectionClass(get_class($dataObj));
-		$refProperty = $refCls->getProperty($attrName);
-		$refProperty->setAccessible(true);
-		$refProperty->setValue($dataObj, $val);
-	}
-
-	/**
-	 * 通过ReflectionClass取得属性的值。
-	 *
-	 * @param DataClass $dataObj        	
-	 * @param string $attrName        	
-	 * @return mixed
-	 */
-	protected function getPropertyVal ($dataObj, $attrName) {
-		$refCls = new \ReflectionClass(get_class($dataObj));
-		$refProperty = $refCls->getProperty($attrName);
-		$refProperty->setAccessible(true);
-		return $refProperty->getValue($dataObj);
-	}
-
-	/**
 	 * 删除指定类的对象数据。
 	 *
 	 * @param string $className        	

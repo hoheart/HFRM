@@ -102,9 +102,32 @@ class DatabaseFactory extends AbstractDataFactory {
 		if (! empty($sqlWhere)) {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
-		$ret = $this->mDatabaseClient->select2Object($sql, $className, $start, $num);
 		
-		return $ret;
+		$objArr = array();
+		// 本来想用PDO::FETCH_CLASS，但如果类的属性值与表的键相同，则不会执行__set函数。
+		$ret = $this->mDatabaseClient->select($sql, $start, $num);
+		foreach ($ret as $row) {
+			$obj = new $className();
+			
+			foreach ($clsDesc->attribute as $attrName => $attr) {
+				if (empty($attr->saveName)) {
+					continue;
+				}
+				
+				if ($attr->autoIncrement) {
+					DatabasePersistence::SetPropertyVal($obj, $attrName, $row[$attr->saveName]);
+				} else {
+					$obj->$attrName = $row[$attr->saveName];
+				}
+			}
+			
+			DatabasePersistence::SetPropertyVal($obj, 'mDataObjectExistingStatus', 
+					DataClass::DATA_OBJECT_EXISTING_STATUS_SAVED);
+			
+			$objArr[] = $obj;
+		}
+		
+		return $objArr;
 	}
 
 	protected function createSqlSelect (ClassDesc $clsDesc) {
@@ -114,7 +137,7 @@ class DatabaseFactory extends AbstractDataFactory {
 				continue;
 			}
 			
-			$name = $attr->persistentName;
+			$name = $attr->saveName;
 			if (empty($name)) {
 				continue;
 			}
@@ -123,7 +146,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		$sql[strlen($sql) - 1] = ' ';
 		
-		$sql .= 'FROM ' . $clsDesc->persistentName . ' ';
+		$sql .= 'FROM ' . $clsDesc->saveName . ' ';
 		
 		return $sql;
 	}
@@ -144,7 +167,11 @@ class DatabaseFactory extends AbstractDataFactory {
 		foreach ($condition->itemList as $item) {
 			$attr = $clsDesc->attribute[$item->key];
 			
-			$key = $attr->persistentName;
+			$key = $attr->saveName;
+			if (empty($key)) {
+				continue;
+			}
+			
 			$val = $db->change2SqlValue($item->value, $attr->var);
 			
 			if (Condition::OPERATION_IN == $item->operation) {

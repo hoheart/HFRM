@@ -45,7 +45,7 @@ class ClassAttribute {
 	 *
 	 * @var string
 	 */
-	public $persistentName;
+	public $saveName;
 	
 	/**
 	 * 是否是键，但不一定是主键。
