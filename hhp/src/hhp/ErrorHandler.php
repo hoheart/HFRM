@@ -3,6 +3,7 @@
 namespace hhp;
 
 use hhp\view\JsonRender;
+use hhp\exception\UserErrcode;
 
 class ErrorHandler {
 
@@ -11,10 +12,10 @@ class ErrorHandler {
 		ini_set('display_errors', 'Off');
 		error_reporting(0);
 		
-		// set_error_handler(array(
-		// $this,
-		// 'handle'
-		// ), E_ALL | E_STRICT);
+		set_error_handler(array(
+			$this,
+			'handle'
+		), E_ALL | E_STRICT);
 		set_exception_handler(array(
 			$this,
 			'handleException'
@@ -42,8 +43,11 @@ class ErrorHandler {
 
 	public function handle ($errno, $errstr, $errfile, $errline, $e = null) {
 		$notProcessError = array(
-			E_NOTICE
+			E_NOTICE,
+			E_STRICT
 		);
+		
+		$errcode = UserErrcode::ErrorOK;
 		if (in_array($errno, $notProcessError)) {
 			return;
 		}
@@ -56,14 +60,30 @@ class ErrorHandler {
 			echo '<pre>';
 			print_r($e);
 			echo '</pre>';
-		} else if (E_ERROR == $errno || E_PARSE == $errno) {
+		} else {
+			try {
+				// echo $errno;
+				// Log::e("Error:$errno:$errstr.\nIn file:$errfile:$errline.");
+			} catch (\Exception $e) {
+			}
+			
 			header('Nothing', '', 200); // 因为到这儿说明脚本出现了致命错误，虽然handle了，但还是会抛出http错误码500，所以这儿手动改一下。
 			
 			$render = new JsonRender();
-			// 一旦出现致命错误，之前的chdir就没用了。
-			$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', 50000, 
-					'System error, the Administrator has informed, looking for other pages.');
+			
+			$outErrcode = 0;
+			if ($errno > 0 && ($errno < 400000 || $errno >= 500000)) {
+				// 一旦出现致命错误，之前的chdir就没用了。
+				$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', 50000, 
+						'System error, the Administrator has informed, looking for other pages.');
+			} else {
+				$outErrcode = $errno;
+				$outErrstr = $errstr;
+				$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', $outErrcode, $outErrstr);
+			}
 		}
+		
+		exit(0);
 	}
 }
 ?>

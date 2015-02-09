@@ -2,6 +2,8 @@
 
 namespace hhp\view;
 
+use hhp\App;
+
 /**
  * 视图类。
  * 其就是一个容器，包含了数据、模版、布局。
@@ -30,6 +32,20 @@ class View {
 	 * @var string
 	 */
 	protected $mLayoutPath = '';
+
+	public function __construct ($name, $layoutPath = null) {
+		if (null === $layoutPath) {
+			$layoutPath = App::Instance()->getConfigValue('default_layout');
+			$this->mLayoutPath = $layoutPath;
+		}
+		
+		list ($moduleName, $ctrlName, $actionName) = explode('/', $name);
+		$confModuleArr = App::Instance()->getConfigValue('module');
+		$moduleDir = $confModuleArr[$moduleName]['dir'];
+		
+		$path = $moduleDir . 'view' . DIRECTORY_SEPARATOR . $ctrlName . DIRECTORY_SEPARATOR . $actionName . '.php';
+		$this->mTemplatePath = $path;
+	}
 
 	/**
 	 * 数据赋值

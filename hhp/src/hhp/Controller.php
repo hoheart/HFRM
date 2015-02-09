@@ -5,14 +5,23 @@ namespace hhp;
 use hhp\view\View;
 
 abstract class Controller {
+	
 	/**
 	 * 试图类
 	 *
 	 * @var View
 	 */
 	protected $mView = null;
+	
+	/**
+	 * 请求
+	 *
+	 * @var IRequest
+	 */
+	protected $mRequest = null;
 
-	public function __construct () {
+	public function __construct (IRequest $request = null) {
+		$this->mRequest = $request;
 	}
 
 	public function getView () {

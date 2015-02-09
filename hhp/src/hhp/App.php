@@ -137,9 +137,10 @@ namespace hhp {
 		public function run () {
 			// 1.取得系统配置文件
 			$this->mAppConf = $this->mClassLoader->loadFile('config' . DIRECTORY_SEPARATOR . 'Config.php');
+			$request = $this->generateRequest();
 			
 			// 2.根据请求，取得请求模块的配置文件。
-			list ($moduleAlias, $ctrlName, $actionName) = $this->getRedirection();
+			list ($moduleAlias, $ctrlName, $actionName) = $this->getRedirection($request);
 			if (empty($moduleAlias)) {
 				$moduleAlias = $this->mAppConf['default_module'];
 			}
@@ -171,8 +172,8 @@ namespace hhp {
 				$dataObj = $executor->run($dataObj);
 			}
 			
-			$this->mBootController = new $ctrlClassName();
-			$this->mBootController->$actionMethodName($_REQUEST);
+			$this->mBootController = new $ctrlClassName($this->generateRequest());
+			$dataObj = $this->mBootController->$actionMethodName($request);
 			
 			foreach ($confExecutorArr['later_executor'] as $class) {
 				$executor = $class::Instance();
@@ -180,17 +181,26 @@ namespace hhp {
 			}
 		}
 
+		protected function generateRequest () {
+			if ('cli' == PHP_SAPI) {
+				return new CliRequest();
+			} else {
+				return new HttpRequest(true);
+			}
+		}
+
 		/**
 		 * 根据请求的url，取得重定向相关信息。
 		 *
-		 * @return array
+		 * @param IRequest $request        	
+		 * @return multitype:
 		 */
-		protected function getRedirection () {
+		protected function getRedirection (IRequest $request) {
 			if (! empty($this->mRedirection)) {
 				return $this->mRedirection;
 			}
 			
-			$uri = $_SERVER['REQUEST_URI'];
+			$uri = $request->getResource();
 			$uriLen = strlen($uri);
 			
 			$actionName = '';
@@ -217,13 +227,21 @@ namespace hhp {
 			
 			$moduleAlias = substr($uri, 1, $pos1 - $uriLen);
 			
-			$this->mRedirection = array($moduleAlias,$ctrlName,$actionName);
+			$this->mRedirection = array(
+				$moduleAlias,
+				$ctrlName,
+				$actionName
+			);
 			
 			return $this->mRedirection;
 		}
 
 		protected function combinActionConf ($ctrlClassName, $oldConf, $action) {
-			$actionConf = $ctrlClassName::getConfig($action);
+			$actionConf = array();
+			
+			if (method_exists($ctrlClassName, 'getConfig')) {
+				$actionConf = $ctrlClassName::getConfig($action);
+			}
 			return Util::mergeArray($oldConf, $actionConf);
 		}
 
@@ -265,7 +283,7 @@ namespace hhp {
 			if (empty($conf)) {
 				$appConfigModuleArr = $this->getConfigValue('module');
 				$appConfigModule = $appConfigModuleArr[$moduleAlias];
-				$configFilePath = $appConfigModule['dir'] . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+				$configFilePath = $appConfigModule['dir'] . 'config' . DIRECTORY_SEPARATOR . 'Config.php';
 				$conf = $this->mClassLoader->loadFile($configFilePath);
 				$this->mModuleConfMap[$moduleAlias] = $conf;
 			}
@@ -322,8 +340,10 @@ namespace hhp\App {
 		private $mModuleDirIndex = array();
 
 		public function __construct () {
-			$this->mModuleDirIndex = array('hhp' . DIRECTORY_SEPARATOR => 'hhp',
-				'hhp' . DIRECTORY_SEPARATOR . 'hfc' . DIRECTORY_SEPARATOR);
+			$this->mModuleDirIndex = array(
+				'hhp' . DIRECTORY_SEPARATOR => 'hhp',
+				'hhp' . DIRECTORY_SEPARATOR . 'hfc' . DIRECTORY_SEPARATOR
+			);
 		}
 
 		/**
@@ -331,7 +351,10 @@ namespace hhp\App {
 		 * );注册给PHP解释器。
 		 */
 		public function register2System () {
-			spl_autoload_register(array($this,'autoload'));
+			spl_autoload_register(array(
+				$this,
+				'autoload'
+			));
 		}
 
 		/**
@@ -435,7 +458,10 @@ namespace hhp\App {
 				}
 			}
 			
-			return array($callerModuleAlias,$callerModuleName);
+			return array(
+				$callerModuleAlias,
+				$callerModuleName
+			);
 		}
 
 		/**
@@ -549,7 +575,10 @@ namespace hhp\App {
 		 */
 		protected function getClassModule ($className) {
 			$pos = strpos($className, '\\');
-			return array(substr($className, 0, $pos),substr($className, $pos + 1));
+			return array(
+				substr($className, 0, $pos),
+				substr($className, $pos + 1)
+			);
 		}
 	}
 	

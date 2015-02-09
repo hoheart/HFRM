@@ -2,7 +2,24 @@
 
 namespace hhp\view;
 
-class JsonRender {
+use hhp\IExecutor;
+
+class JsonRender implements IExecutor {
+
+	static public function Instance () {
+		static $me = null;
+		if (null == $me) {
+			$me = new self();
+		}
+		
+		return $me;
+	}
+
+	public function run ($do = null) {
+		if (null != $do && $do instanceof View) {
+			$this->render($do);
+		}
+	}
 
 	/**
 	 * 渲染试图
@@ -18,8 +35,12 @@ class JsonRender {
 	}
 
 	public function renderLayout ($data, $layoutPath, $errcode, $errstr) {
-		$jsonObj = include ($layoutPath);
-		echo json_encode($jsonObj);
+		if (file_exists($layoutPath)) {
+			$jsonObj = include ($layoutPath);
+			echo json_encode($jsonObj);
+		} else {
+			echo $data;
+		}
 	}
 
 	protected function renderTemplate ($data, $templatePath) {
