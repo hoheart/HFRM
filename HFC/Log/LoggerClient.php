@@ -3,7 +3,6 @@
 namespace HFC\Log;
 
 use Framework\Facade\Module;
-use Framework\Facade\Config;
 use HFC\Log\Logger;
 use Framework\IService;
 
@@ -20,8 +19,16 @@ class LoggerClient implements IService {
 	 * @var \AMQPExchange
 	 */
 	protected $mExchange = null;
+	
+	/**
+	 *
+	 * @var array $mConf
+	 */
+	protected $mConf = array();
 
 	public function __construct ($conf) {
+		$this->mConf = $conf;
+		
 		$this->mConnection = new \AMQPConnection($conf);
 		$this->mConnection->connect();
 		
@@ -67,8 +74,8 @@ class LoggerClient implements IService {
 			'result' => $result,
 			'sessionId' => session_id(),
 			'desc' => $desc,
-			'clientIp' => Config::get('app.localIP'),
-			'platformId' => Config::get('log.platformId'),
+			'clientIp' => $this->mConf['localMachineName'],
+			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
 		
@@ -81,8 +88,8 @@ class LoggerClient implements IService {
 			'moduleName' => $modulePath,
 			'desc' => $str,
 			'level' => $level,
-			'clientIp' => Config::get('app.localIP'),
-			'platformId' => Config::get('log.platformId'),
+			'clientIp' => $this->mConf['localMachineName'],
+			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
 		
