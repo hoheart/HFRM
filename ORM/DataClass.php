@@ -32,6 +32,12 @@ class DataClass {
 	protected $terminalType;
 	
 	/**
+	 *
+	 * @var string
+	 */
+	protected $guid;
+	
+	/**
 	 * 框架用的属性。不能被继承。
 	 * @orm saveName
 	 *
