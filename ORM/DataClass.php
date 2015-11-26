@@ -52,6 +52,7 @@ class DataClass {
 	public function __construct ($t = null) {
 		$this->setCreatedTime($t);
 		$this->setTerminalType();
+                $this->setGuid();
 	}
 
 	public function __get ($name) {
@@ -249,7 +250,11 @@ class DataClass {
 		
 		return $this;
 	}
-
+        public function setGuid () {
+		$this->guid = uuid_create();
+		
+		return $this;
+	}
 	public function __toString () {
 		$this->mFactory = null;
 		
