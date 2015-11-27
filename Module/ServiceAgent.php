@@ -86,18 +86,18 @@ class ServiceAgent implements IModuleService {
 				}
 				
 				// 判断所实现的接口有没有该方法
-				$arr = class_implements($this->mLocalInstance);
-				$exists = false;
-				foreach ($arr as $api) {
-					if (method_exists($api, $name)) {
-						$exists = true;
-						break;
-					}
-				}
+// 				$arr = class_implements($this->mLocalInstance);
+// 				$exists = false;
+// 				foreach ($arr as $api) {
+// 					if (method_exists($api, $name)) {
+// 						$exists = true;
+// 						break;
+// 					}
+// 				}
 				
-				if (! $exists) {
-					throw new NotImplementedException('no interface has method: ' . $name . ',class: ' . $clsName);
-				}
+// 				if (! $exists) {
+// 					throw new NotImplementedException('no interface has method: ' . $name . ',class: ' . $clsName);
+// 				}
 				
 				$this->mLocalInstance->init(
 						array(
