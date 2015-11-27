@@ -94,7 +94,6 @@ class ServiceAgent implements IModuleService {
 // 						break;
 // 					}
 // 				}
-				
 // 				if (! $exists) {
 // 					throw new NotImplementedException('no interface has method: ' . $name . ',class: ' . $clsName);
 // 				}
