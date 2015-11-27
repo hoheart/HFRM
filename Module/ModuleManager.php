@@ -31,7 +31,7 @@ class ModuleManager implements IService {
 	 *
 	 * @var array
 	 */
-	protected $mAliasIndexedConfig = null;
+	protected $mAliasIndexedConfig = array();
 	
 	/**
 	 * 模块的实例

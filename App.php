@@ -380,7 +380,7 @@ namespace Framework\App {
 			$moduleDir = null;
 			
 			$moduleName = App::GetModuleNameByClass($className);
-			if( null == $moduleName ){
+			if (null == $moduleName) {
 				return;
 			}
 			
