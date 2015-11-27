@@ -58,7 +58,9 @@ class PathParseRouter implements IRouter {
 		$uri = $this->getRequestUri($req);
 		$uri = preg_replace('/\/{2,}/', '/', $uri);
 		$arr = explode('/', $uri);
-		array_shift($arr);
+		if (empty($arr[0])) {
+			array_shift($arr);
+		}
 		$moduleAlias = $arr[0];
 		$mm = ModuleManager::Instance();
 		if (! $mm->isModuleEnable($moduleAlias)) {
@@ -152,19 +154,26 @@ class PathParseRouter implements IRouter {
 	}
 
 	protected function getRequestUri (IRequest $req) {
+		$retUri = '/';
+		
 		$uri = $req->getResource();
 		$baseUrl = Config::Instance()->get('app.baseUrl');
 		$baseUrlArr = parse_url($baseUrl);
-		$path = $baseUrlArr['path'];
+		$path = $baseUrlArr['path']; // path是域名之后，问号之前的东西
 		if (! empty($path)) {
 			$pos = strpos($uri, $path);
-			if (1 != $pos) {
+			// 配置的baseUrl只能是url的开头部分。1表示baseUrl里没有带/
+			if (0 != $pos && 1 != $pos) {
 				throw new ConfigErrorException('app.baseUrl config error.');
 			}
 			
-			return substr($uri, strlen($path));
-		} else {
-			return $uri;
+			$uri = substr($uri, strlen($path));
 		}
+		
+		if (null != $uri) {
+			$retUri = $uri;
+		}
+		
+		return $retUri;
 	}
 }

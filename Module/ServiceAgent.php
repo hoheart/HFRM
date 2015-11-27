@@ -7,6 +7,7 @@ use Framework\Config;
 use Framework\Exception\APINotAvailableException;
 use Framework\App;
 use Framework;
+use Framework\Exception\RPCServiceErrorException;
 
 class ServiceAgent implements IModuleService {
 	
@@ -117,15 +118,24 @@ class ServiceAgent implements IModuleService {
 		);
 		$httpBody = serialize($rpParam);
 		
+		$strCookies = http_build_query($_COOKIE, '', ';');
+		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_COOKIE, $strCookies);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $httpBody);
 		$resp = curl_exec($ch);
 		curl_close($ch);
 		
-		return unserialize($resp);
+		$oResp = json_decode($resp);
+		
+		if (0 != $oResp->errcode) {
+			throw new RPCServiceErrorException($oResp->errstr);
+		}
+		
+		return json_decode($oResp->data);
 	}
 
 	protected function choseRemoteServer ($urlArr) {
