@@ -32,6 +32,12 @@ class DataClass {
 	protected $terminalType;
 	
 	/**
+	 *
+	 * @var string
+	 */
+	protected $guid;
+	
+	/**
 	 * 框架用的属性。不能被继承。
 	 * @orm saveName
 	 *
@@ -52,6 +58,7 @@ class DataClass {
 	public function __construct ($t = null) {
 		$this->setCreatedTime($t);
 		$this->setTerminalType();
+                $this->setGuid();
 	}
 
 	public function __get ($name) {
@@ -249,7 +256,11 @@ class DataClass {
 		
 		return $this;
 	}
-
+        public function setGuid () {
+		$this->guid = uuid_create();
+		
+		return $this;
+	}
 	public function __toString () {
 		$this->mFactory = null;
 		
