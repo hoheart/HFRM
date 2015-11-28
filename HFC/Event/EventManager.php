@@ -22,11 +22,11 @@ class EventManager implements IService {
 	 */
 	protected $mConfig = null;
 
-	public function __construct (array $conf) {
-		$this->mConfig = $conf;
+	public function __construct () {
 	}
 
 	public function init (array $conf) {
+		$this->mConfig = $conf;
 	}
 
 	public function start () {

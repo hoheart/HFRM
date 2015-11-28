@@ -22,7 +22,10 @@ class ORMService implements IService {
 	 */
 	protected $mPersistence = null;
 
-	public function __construct ($conf) {
+	public function __construct () {
+	}
+
+	public function init (array $conf) {
 		$fConf = $conf['factory'];
 		$fcls = $fConf['class'];
 		$fobj = new $fcls();
@@ -32,9 +35,6 @@ class ORMService implements IService {
 		$fcls = $fConf['class'];
 		$fobj = new $fcls();
 		$this->mPersistence = $fobj->create();
-	}
-
-	public function init (array $conf) {
 	}
 
 	public function start () {
