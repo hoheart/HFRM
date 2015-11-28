@@ -88,6 +88,8 @@ namespace Framework {
 			
 			date_default_timezone_set(Config::Instance()->get('app.localTimezone'));
 			
+			ob_start();
+			
 			$this->mModuleManager = ModuleManager::Instance();
 		}
 
@@ -100,6 +102,8 @@ namespace Framework {
 			}
 			
 			$this->mModuleManager->stop();
+			
+			ob_clean();
 		}
 
 		/**
@@ -125,8 +129,6 @@ namespace Framework {
 				$dataObj = $executor->run($dataObj);
 			}
 			
-			// 禁止Controller里直接输出，破坏程序的机构。把Controller里的输出放入Render进行。
-			ob_start();
 			$this->mBootController = new $ctrlClassName($moduleAlias);
 			$actionMethodName = $actionName;
 			
@@ -144,8 +146,6 @@ namespace Framework {
 			}
 			
 			$this->stop();
-			
-			ob_clean();
 		}
 
 		public function getRequest () {

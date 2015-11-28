@@ -2,6 +2,8 @@
 
 namespace Framework\View;
 
+use Framework\Config;
+
 /**
  * 注意，一个HTMLRender一次只能render一个view，
  *
@@ -45,6 +47,13 @@ class HTMLRender {
 	 * @param View $view        	
 	 */
 	public function render ($view) {
+		if (Config::Instance()->get('app.debugOutput')) {
+			ob_flush();
+			flush();
+		} else {
+			ob_clean();
+		}
+		
 		$this->mCurrentView = $view;
 		
 		$this->renderTemplate($view->getDataMap(), $view->getTemplatePath());
@@ -53,6 +62,9 @@ class HTMLRender {
 		foreach ($this->mSectionMap as $section) {
 			$this->out($section);
 		}
+		echo ob_get_clean();
+		ob_flush();
+		flush();
 		
 		$this->mSectionMap = array();
 		$this->mSectionNameStack = array();
