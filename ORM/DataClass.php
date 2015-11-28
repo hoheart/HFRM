@@ -58,7 +58,7 @@ class DataClass {
 	public function __construct ($t = null) {
 		$this->setCreatedTime($t);
 		$this->setTerminalType();
-                $this->setGuid();
+		$this->setGuid();
 	}
 
 	public function __get ($name) {
@@ -256,17 +256,31 @@ class DataClass {
 		
 		return $this;
 	}
-        public function setGuid () {
+
+	public function setGuid () {
 		$this->guid = uuid_create();
 		
 		return $this;
 	}
+
 	public function __toString () {
 		$this->mFactory = null;
 		
 		$arr = get_object_vars($this);
 		
 		return json_encode($arr);
+	}
+
+	public function assignByArray ($arr) {
+		$clsName = get_class($this);
+		$clsDesc = DescFactory::Instance()->getDesc($clsName);
+		foreach ($clsDesc->attribute as $key => $attr) {
+			if ('mDataObjectExistingStatus' == $key || 'mFactory' == $key) {
+				continue;
+			}
+			
+			$this->$key = $arr[$key];
+		}
 	}
 }
 ?>

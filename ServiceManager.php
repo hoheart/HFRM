@@ -60,7 +60,8 @@ class ServiceManager {
 			$factory = new $clsName();
 			$s = $factory->$method($serviceConf);
 		} else {
-			$s = new $clsName($serviceConf);
+			$s = new $clsName();
+			$s->init($serviceConf);
 		}
 		
 		if (! $s instanceof IService) {

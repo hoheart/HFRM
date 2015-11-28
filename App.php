@@ -144,6 +144,8 @@ namespace Framework {
 			}
 			
 			$this->stop();
+			
+			ob_clean();
 		}
 
 		public function getRequest () {

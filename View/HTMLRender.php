@@ -51,7 +51,7 @@ class HTMLRender {
 		
 		// 输出
 		foreach ($this->mSectionMap as $section) {
-			echo $section;
+			$this->out($section);
 		}
 		
 		$this->mSectionMap = array();
@@ -60,6 +60,7 @@ class HTMLRender {
 
 	protected function renderTemplate ($data, $tmpl) {
 		if (! empty($tmpl)) {
+			ob_clean();
 			ob_start();
 			
 			// 把页面最前面的内容当成一个没有名字的section
@@ -71,14 +72,15 @@ class HTMLRender {
 			// ));
 			
 			extract($data);
+			
 			include $tmpl;
 			
 			$this->endPrevSection();
 		}
 	}
 
-	protected function out ($item, $key) {
-		$item = htmlspecialchars($item, null, 'UTF-8', true);
+	protected function out ($item) {
+		echo htmlspecialchars($item, null, 'UTF-8', true);
 	}
 
 	/**
