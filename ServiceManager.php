@@ -55,6 +55,7 @@ class ServiceManager {
 		}
 		
 		$s = null;
+                var_dump($conf['module']);
 		ModuleManager::Instance()->preloadModule($conf['module']);
 		if (! empty($method)) {
 			$factory = new $clsName();
