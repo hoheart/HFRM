@@ -60,7 +60,7 @@ class HTMLRender {
 		
 		// 输出
 		foreach ($this->mSectionMap as $section) {
-			$this->out($section);
+			echo $section;
 		}
 		echo ob_get_clean();
 		ob_flush();
