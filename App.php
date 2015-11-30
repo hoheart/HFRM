@@ -103,7 +103,12 @@ namespace Framework {
 			
 			$this->mModuleManager->stop();
 			
-			ob_clean();
+			if (Config::Instance()->get('app.debugOutput')) {
+				ob_flush();
+				flush();
+			} else {
+				ob_clean();
+			}
 		}
 
 		/**
