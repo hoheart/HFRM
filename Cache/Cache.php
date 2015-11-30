@@ -14,10 +14,9 @@ class Cache implements IService
      */
     private $redis;
 
-    public function __construct()
+    public function __construct( array $conf )
     {
-        $objConfig = Config::Instance();
-        $this->init(array("host" => $objConfig->get('cache.redis.host'), "port" => $objConfig->get('cache.redis.port')));
+       $this->init( $conf );
     }
 
     /**
