@@ -152,11 +152,11 @@ class Logger implements IService {
 	 * 'enable' => true
 	 * )
 	 */
-	public function __construct (array $conf) {
-		$this->mConf = $conf;
+	public function __construct () {
 	}
 
 	public function init (array $conf) {
+		$this->mConf = $conf;
 	}
 
 	public function start () {

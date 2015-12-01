@@ -26,7 +26,10 @@ class LoggerClient implements IService {
 	 */
 	protected $mConf = array();
 
-	public function __construct ($conf) {
+	public function __construct () {
+	}
+
+	public function init (array $conf) {
 		$this->mConf = $conf;
 		
 		$this->mConnection = new \AMQPConnection($conf);
@@ -47,9 +50,6 @@ class LoggerClient implements IService {
 		$q->setFlags(AMQP_DURABLE | AMQP_AUTODELETE);
 		$q->declareQueue();
 		$q->bind('EXCHANGE_LOG', '');
-	}
-
-	public function init (array $conf) {
 	}
 
 	public function start () {

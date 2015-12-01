@@ -54,6 +54,10 @@ class HTMLRender {
 			$this->out($section);
 		}
 		
+		//如果不及时向客户端输出，app会吧缓存清除
+		ob_flush();
+		flush();
+		
 		$this->mSectionMap = array();
 		$this->mSectionNameStack = array();
 	}
