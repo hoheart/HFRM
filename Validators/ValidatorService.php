@@ -9,16 +9,22 @@
 namespace Framework\Validators;
 
 use Framework\IService;
+use Framework\Validators\Exception\ValidatorErrorCode;
 use Framework\Validators\Exception\ValidatorException;
 
 class ValidatorService implements IService {
+
+	protected $errorCode = ValidatorErrorCode::ValidatorError;
+
+	protected $errorMessage = 'Validator Error';
 
 	protected $attributes;
 
 	private $rules;
 
 	public static $builtInValidators = [
-		'required' => 'Framework\Validators\RequiredValidator'
+		'required' => 'Framework\Validators\RequiredValidator',
+		'email' => 'Framework\Validators\EmailValidator',
 	];
 
 
@@ -66,7 +72,6 @@ class ValidatorService implements IService {
 				$this->attributes = $attr;
 
 				$validateObj = $this->_createObject($validateAliases, $validateParams);
-				$validateObj->attributes = $this->attributes;
 
 				if (isset($data[$this->attributes])) {
 					$validateObj->validateValue($data[$this->attributes]);
@@ -91,6 +96,9 @@ class ValidatorService implements IService {
 		if (isset(self::$builtInValidators[$aliases])) {
 			$className = self::$builtInValidators[$aliases];
 			$obj = new $className;
+			$obj->attributes = $this->attributes;
+			$obj->errorCode = $this->errorCode;
+			$obj->errorMessage = $this->errorMessage;
 
 			if (!empty($validateParams)) {
 				foreach ($validateParams as $attr => $value) {

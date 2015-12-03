@@ -17,7 +17,7 @@ class RequiredValidator extends ValidatorService {
 	 * 所验证的值必须包含此值
 	 * @var
 	 */
-	public $requiredValue;
+	public $ex = '/ada';
 
 	/**
 	 * 如果为true 则校验的值必须和requiredValue类型一致
@@ -34,10 +34,7 @@ class RequiredValidator extends ValidatorService {
 		} elseif (!$this->strict && $value == $this->requiredValue || $this->strict && $value === $this->requiredValue) {
 			return null;
 		}
-		if ($this->requiredValue === null) {
-			throw new ValidatorException($this->attributes . ' can not be empty');
-		} else {
-			throw new ValidatorException($this->attributes . ' must be ' . $this->requiredValue);
-		}
+
+		throw new ValidatorException($this->errorMessage, $this->errorCode);
 	}
 }
