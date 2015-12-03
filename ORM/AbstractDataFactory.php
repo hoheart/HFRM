@@ -26,6 +26,14 @@ abstract class AbstractDataFactory {
 	 */
 	abstract public function get ($className, $id);
 
+	/**
+	 * 根据Condition 查询一个对象
+	 * @param $className
+	 * @param Condition $cond
+	 * @return mixed
+	 */
+	abstract public function getOne($className, Condition $cond);
+
 	abstract public function where ($className, Condition $cond = null);
 
 	public function setDatabaseClient (DatabaseClient $client) {
