@@ -40,6 +40,51 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 	}
 
+	/**
+	 * 根据Condition 查询一个对象
+	 * @param $className
+	 * @param Condition $cond
+	 * @return mixed
+	 */
+	public function getOne($className, Condition $cond) {
+
+		$clsDesc = DescFactory::Instance()->getDesc($className);
+		$sqlWhere = self::CreateSqlWhere($clsDesc, $cond, $this->mDatabaseClient);
+		$sql = $this->createSqlSelect($clsDesc);
+
+		if (!empty($sqlWhere)) {
+			$sql .= 'WHERE ' . $sqlWhere;
+		}
+
+		$obj = null;
+
+		$ret = $this->mDatabaseClient->selectRow($sql, [], true);
+
+		if (!empty($ret)) {
+			$createdTime = $ret['createdTime'];
+			$obj = new $className($createdTime);
+			$obj->setFactory($this);
+
+			foreach ($clsDesc->attribute as $attrName => $attr) {
+				if (empty($attr->saveName)) {
+					continue;
+				}
+
+				if ($attr->autoIncrement) {
+					DatabasePersistence::SetPropertyVal($obj, $attrName, $ret[$attr->saveName]);
+				} else {
+					$obj->$attrName = $ret[$attr->saveName];
+				}
+			}
+
+			DatabasePersistence::SetPropertyVal($obj, 'mDataObjectExistingStatus',
+					DataClass::DATA_OBJECT_EXISTING_STATUS_SAVED);
+
+		}
+
+		return $obj;
+	}
+
 	public function getRelatedAttribute (ClassAttribute $attr, DataClass $dataObj, ClassDesc $clsDesc) {
 		$myProp = $attr->selfAttribute2Relationship;
 		if (empty($myProp)) {

@@ -86,6 +86,14 @@ class ORMService implements IService {
 		return $this->mFactory->get($clsName, $id);
 	}
 
+	public function getOne($clsName, Condition $cond) {
+		list ($caller, $callerModuleName) = App::GetCallerModule();
+		$dbClient = App::Instance()->getService('db', $caller);
+		$this->mFactory->setDatabaseClient($dbClient);
+
+		return $this->mFactory->getOne($clsName, $cond);
+	}
+
 	public function count ($clsName, Condition $cond = null) {
 		list ($caller, $callerModuleName) = App::GetCallerModule();
 		$dbClient = App::Instance()->getService('db', $caller);
