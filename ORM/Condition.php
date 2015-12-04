@@ -23,6 +23,8 @@ namespace Framework\ORM {
 		const OPERATION_EQUAL = '=';
 		const OPERATION_INEQUAL = '!=';
 		const OPERATION_INEQUAL1 = '<>';
+		const OPERATION_GREATER_EQUAL = '>=';
+		const OPERATION_LESS_EQUAL = '<=';
 		const OPERATION_GREATER = '>';
 		const OPERATION_LESS = '<';
 		const OPERATION_LIKE = 'LIKE';
@@ -65,6 +67,8 @@ namespace Framework\ORM {
 			self::OPERATION_INEQUAL1,
 			self::OPERATION_EQUAL,
 			self::OPERATION_GREATER,
+			self::OPERATION_GREATER_EQUAL,
+			self::OPERATION_LESS_EQUAL,
 			self::OPERATION_LESS,
 			self::OPERATION_LIKE,
 			self::OPERATION_IN
