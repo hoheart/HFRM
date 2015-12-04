@@ -271,18 +271,22 @@ class DataClass {
 		return json_encode($arr);
 	}
 
+	public function toArray () {
+		return get_object_vars($this);
+	}
+
 	public function assignByArray ($arr) {
 		$clsName = get_class($this);
 		$clsDesc = DescFactory::Instance()->getDesc($clsName);
 		foreach ($clsDesc->attribute as $key => $attr) {
-			if( !array_key_exists( $key , $arr) ){
+			if (! array_key_exists($key, $arr)) {
 				continue;
 			}
 			if ('mDataObjectExistingStatus' == $key || 'mFactory' == $key) {
 				continue;
 			}
 			
-			$this->setAttribute($key, $arr[$key]) ;
+			$this->setAttribute($key, $arr[$key]);
 		}
 	}
 }
