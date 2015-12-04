@@ -282,7 +282,7 @@ class DataClass {
 				continue;
 			}
 			
-			$this->setAttribute($key, $arr[$key]);
+			$this->setAttribute($key, $arr[$key]) ;
 		}
 	}
 }
