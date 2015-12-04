@@ -25,6 +25,7 @@ class ValidatorService implements IService {
 	public static $builtInValidators = [
 		'required' => 'Framework\Validators\RequiredValidator',
 		'email' => 'Framework\Validators\EmailValidator',
+		'number' => 'Framework\Validators\NumberValidator',
 	];
 
 
