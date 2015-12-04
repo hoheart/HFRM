@@ -12,12 +12,12 @@ namespace Framework\Validators;
 use Framework\Validators\Exception\ValidatorException;
 
 class RequiredValidator extends ValidatorService {
-
+	
 	/**
 	 * 所验证的值必须包含此值
 	 * @var
 	 */
-	public $ex = '/ada';
+	public $requiredValue;
 
 	/**
 	 * 如果为true 则校验的值必须和requiredValue类型一致
