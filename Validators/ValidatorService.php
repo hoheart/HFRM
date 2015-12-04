@@ -27,6 +27,7 @@ class ValidatorService implements IService {
 		'email' => 'Framework\Validators\EmailValidator',
 		'number' => 'Framework\Validators\NumberValidator',
 		'in' => 'Framework\Validators\RangeValidator',
+		'phone' => 'Framework\Validators\PhoneNumberValidator',
 	];
 
 
