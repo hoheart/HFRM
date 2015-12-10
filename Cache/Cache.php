@@ -5,7 +5,7 @@ namespace Framework\Cache;
 use Framework\IService;
 
 class Cache implements IService {
-	
+
 	/**
 	 *
 	 * @var \Redis
@@ -17,8 +17,8 @@ class Cache implements IService {
 
 	/**
 	 *
-	 * @param string $host        	
-	 * @param int $post        	
+	 * @param string $host
+	 * @param int $post
 	 */
 	public function init (array $conf) {
 		$this->redis = new \Redis();
@@ -49,6 +49,16 @@ class Cache implements IService {
 			$this->redis->expire('$key', $timeOut);
 		}
 		return $retRes;
+	}
+
+	/**
+	 * 如果不存在则设置
+	 * @param $key
+	 * @param $value
+	 * @return bool
+	 */
+	public function setnx ($key, $value) {
+		return $this->redis->setnx($key, $value);
 	}
 
 	/**
