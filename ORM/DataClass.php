@@ -257,9 +257,13 @@ class DataClass {
 		return $this;
 	}
 
-	public function setGuid () {
-		$this->guid = uuid_create();
-		
+	public function setGuid($guid = '') {
+		if ($guid != '') {
+			$this->guid = $guid;
+		} else {
+			$this->guid = uuid_create();
+		}
+
 		return $this;
 	}
 
