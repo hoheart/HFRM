@@ -134,7 +134,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		$clsDesc = DescFactory::Instance()->getDesc($className);
 		
 		$sqlWhere = self::CreateSqlWhere($clsDesc, $cond, $this->mDatabaseClient);
-		$sql = 'SELECT COUNT(1) FROM ' . $clsDesc->saveName;
+		$sql = 'SELECT COUNT(1) FROM `' . $clsDesc->saveName . '`';
 		if (! empty($sqlWhere)) {
 			$sql .= ' WHERE ' . $sqlWhere;
 		}
