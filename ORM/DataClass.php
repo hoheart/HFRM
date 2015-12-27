@@ -24,18 +24,7 @@ class DataClass {
 	const DATA_OBJECT_EXISTING_STATUS_NEW = 1; // 新创建的，还没有被修改过。
 	const DATA_OBJECT_EXISTING_STATUS_DIRTY = 2; // 脏数据，需要被更新到数据库。
 	const DATA_OBJECT_EXISTING_STATUS_SAVED = 3; // 已经被保存，还没有任何属性被修改。
-	
-	/**
-	 *
-	 * @var integer
-	 */
-	protected $terminalType;
-	
-	/**
-	 *
-	 * @var string
-	 */
-	protected $guid;
+	
 	
 	/**
 	 * 框架用的属性。不能被继承。
@@ -57,8 +46,6 @@ class DataClass {
 
 	public function __construct ($t = null) {
 		$this->setCreatedTime($t);
-		$this->setTerminalType();
-		$this->setGuid();
 	}
 
 	public function __get ($name) {
