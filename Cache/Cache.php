@@ -55,7 +55,7 @@ class Cache implements IService
         $retRes = $this->redis->set($key, $value);
         if ($timeOut > 0)
         {
-            $this->redis->expire('$key', $timeOut);
+            $this->redis->expire($key, $timeOut);
         }
         return $retRes;
     }
