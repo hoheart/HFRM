@@ -61,8 +61,9 @@ class ServiceManager {
 			$s = $factory->$method($serviceConf);
 		} else {
 			$s = new $clsName();
-			$s->init($serviceConf);
 		}
+		$s->init($serviceConf);
+		$s->start();
 		
 		if (! $s instanceof IService) {
 			throw new ConfigErrorException('the service is not a implementation of IService: service:' . $name);
