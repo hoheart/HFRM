@@ -28,7 +28,7 @@ class JsonRender {
 	 * @param View $view        	
 	 */
 	public function render (View $view) {
-		header('Content-Type: application/json');
+		header('Content-Type: application/json; charset=utf-8', true, 200);
 		
 		if (Config::Instance()->get('app.debugOutput')) {
 			ob_flush();
@@ -54,7 +54,7 @@ class JsonRender {
 		
 		echo json_encode($this->mTree);
 		
-		//如果不及时向客户端输出，app会吧缓存清除
+		// 如果不及时向客户端输出，app会吧缓存清除
 		ob_flush();
 		flush();
 	}
