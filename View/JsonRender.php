@@ -28,22 +28,15 @@ class JsonRender {
 	 * @param View $view        	
 	 */
 	public function render (View $view) {
-		header('Content-Type: application/json; charset=utf-8', true, 200);
-		
-		if (Config::Instance()->get('app.debugOutput')) {
-			ob_flush();
-			flush();
-		} else {
-			ob_clean();
-		}
-		
-		// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
 		$previousContent = ob_get_contents();
+		ob_end_clean();
 		if ($previousContent != '') {
-			ob_clean();
+			// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
 			echo $previousContent;
 			return;
 		}
+		
+		header('Content-Type: application/json; charset=utf-8', true, 200);
 		
 		extract($view->getDataMap());
 		
@@ -53,10 +46,6 @@ class JsonRender {
 		}
 		
 		echo json_encode($this->mTree);
-		
-		// 如果不及时向客户端输出，app会吧缓存清除
-		ob_flush();
-		flush();
 	}
 
 	public function node ($path, $data, $template = null) {
