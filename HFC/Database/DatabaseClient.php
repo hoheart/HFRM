@@ -77,11 +77,9 @@ abstract class DatabaseClient implements IService {
 	}
 
 	public function __destruct () {
-		// 没有正确执行stop，应该回滚，但数据库一般都会自己回滚，所以数据库自己回滚，效率更高。
-		// $this->rollBack();
-		// if (! $this->mAutocommit) {
-		// $this->exec('ROLLBACK;');
-		// }
+		if (! $this->mAutocommit) {
+			$this->rollBack();
+		}
 	}
 
 	public function init (array $conf) {
@@ -95,12 +93,15 @@ abstract class DatabaseClient implements IService {
 	}
 
 	public function start () {
+		if (! $this->mAutocommit) {
+			$this->beginTransaction();
+		}
 	}
 
 	public function stop () {
 		if (! $this->mStoped) {
 			if (! $this->mAutocommit) {
-				$this->exec('COMMIT;');
+				$this->commit();
 			}
 		}
 	}

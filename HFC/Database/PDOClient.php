@@ -197,7 +197,9 @@ abstract class PDOClient extends DatabaseClient {
 		}
 		
 		$this->mClient->setAttribute(3/*\PDO::ATTR_ERRMODE*/, 2/*\PDO::ERRMODE_EXCEPTION*/);
-		$this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/, $this->mAutocommit);
+		// 不用改变这个值，用事务更不容易出错。
+		// $this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/,
+		// $this->mAutocommit);
 		$this->mClient->setAttribute(20/*\PDO::ATTR_EMULATE_PREPARES*/, false);
 		
 		return $this->mClient;
