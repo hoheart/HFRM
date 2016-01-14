@@ -46,6 +46,8 @@ class JsonRender {
 		}
 		
 		echo json_encode($this->mTree);
+		flush();
+		ob_flush();
 	}
 
 	public function node ($path, $data, $template = null) {
