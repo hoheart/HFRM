@@ -78,7 +78,10 @@ abstract class DatabaseClient implements IService {
 
 	public function __destruct () {
 		if (! $this->mAutocommit) {
-			$this->rollBack();
+			// 如果没有正常stop，说明出错了，事务还没有提交，应该回滚。
+			if (! $this->mStoped) {
+				$this->rollBack();
+			}
 		}
 	}
 
