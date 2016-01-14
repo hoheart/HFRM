@@ -2,8 +2,6 @@
 
 namespace Framework\View;
 
-use Framework\Config;
-
 class JsonRender {
 	
 	/**

@@ -64,7 +64,7 @@ class PDOStatement extends DatabaseStatement {
 		return $this->mStatement->execute($params);
 	}
 
-	public function fetchAll ($fetchStyle = DatabaseStatment::FETCH_BOTH) {
+	public function fetchAll ($fetchStyle = self::FETCH_BOTH) {
 		return $this->mStatement->fetchAll($fetchStyle);
 	}
 
@@ -76,4 +76,3 @@ class PDOStatement extends DatabaseStatement {
 		return $this->mStatement->errorInfo();
 	}
 }
-?>

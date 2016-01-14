@@ -47,6 +47,5 @@ abstract class DatabaseStatement {
 
 	abstract public function execute (array $params = array());
 
-	abstract public function fetchAll ($fetchStyle = DatabaseStatment::FETCH_BOTH);
+	abstract public function fetchAll ($fetchStyle = self::FETCH_BOTH);
 }
-?>

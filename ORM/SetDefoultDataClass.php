@@ -3,7 +3,6 @@
 namespace Framework\ORM;
 
 use Framework\ORM\DataClass;
-use HFC\Exception\ParameterErrorException;
 
 /**
  * 数据填充默认数据类。
@@ -46,32 +45,4 @@ class SetDefoultDataClass extends DataClass {
 		
 		return $this;
 	}
-
-	protected function setCreatedTime ($t) {
-		if (! property_exists($this, 'createdTime')) {
-			return;
-		}
-		
-		if (null == $t) {
-			$this->createdTime = new \DateTime();
-		} else {
-			if (is_string($t)) {
-				if ('0000-00-00 00:00:00' == $t) {
-					$this->createdTime = new \DateTime();
-				} else {
-					try {
-						$this->createdTime = \DateTime::createFromFormat('Y-m-d H:i:s', $t);
-					} catch (\Exception $e) {
-						throw new ParameterErrorException('DateTime format error.');
-					}
-				}
-			} else if ($t instanceof \DateTime) {
-				$this->createdTime = $t;
-			} else {
-				throw new ParameterErrorException('DateTime format error.');
-			}
-		}
-	}
 }
-
-?>

@@ -4,7 +4,6 @@ namespace Framework\ORM;
 
 use Framework\ORM\Exception\NoPropertyException;
 use HFC\Exception\ParameterErrorException;
-use Framework\Session;
 
 /**
  * 数据类。对于私有的属性，调用__get和__set魔术方法获取和设置值，并构建对象属性的对象。
@@ -25,8 +24,6 @@ class DataClass {
 	const DATA_OBJECT_EXISTING_STATUS_DIRTY = 2; // 脏数据，需要被更新到数据库。
 	const DATA_OBJECT_EXISTING_STATUS_SAVED = 3; // 已经被保存，还没有任何属性被修改。
 	
-
-	
 	/**
 	 * 框架用的属性。不能被继承。
 	 * @orm saveName
@@ -46,7 +43,6 @@ class DataClass {
 	protected $mFactory = null;
 
 	public function __construct () {
-	
 	}
 
 	public function __get ($name) {
@@ -237,22 +233,6 @@ class DataClass {
 		}
 		
 		return $this->createdTime;
-	}
-
-	public function setTerminalType () {
-		$this->terminalType = Session::Instance()->get('FRM_terminalType');
-		
-		return $this;
-	}
-
-	public function setGuid($guid = '') {
-		if ($guid != '') {
-			$this->guid = $guid;
-		} else {
-			$this->guid = uuid_create();
-		}
-
-		return $this;
 	}
 
 	public function __toString () {
