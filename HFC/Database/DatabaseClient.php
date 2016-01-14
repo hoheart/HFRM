@@ -99,6 +99,8 @@ abstract class DatabaseClient implements IService {
 		if (! $this->mAutocommit) {
 			$this->beginTransaction();
 		}
+		
+		$this->mStoped = false;
 	}
 
 	public function stop () {
@@ -107,6 +109,8 @@ abstract class DatabaseClient implements IService {
 				$this->commit();
 			}
 		}
+		
+		$this->mStoped = true;
 	}
 
 	/**
