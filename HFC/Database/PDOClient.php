@@ -25,13 +25,6 @@ abstract class PDOClient extends DatabaseClient {
 	 * @var array
 	 */
 	protected $mConf = null;
-	
-	/**
-	 * 是否在事务中
-	 *
-	 * @var boolean
-	 */
-	protected $mIntransaction = false;
 
 	public function exec ($sql) {
 		try {
@@ -165,31 +158,25 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function beginTransaction () {
-		if (! $this->mIntransaction) {
-			if (false === $this->getClient()->beginTransaction()) {
-				$this->throwError('begin transaction.');
-			}
+		if (false === $this->getClient()->beginTransaction()) {
+			$this->throwError('begin transaction.');
 		}
 	}
 
 	public function rollBack () {
-		if ($this->mIntransaction) {
-			if (false === $this->getClient()->rollBack()) {
-				$this->throwError('roll back transaction.');
-			}
+		if (false === $this->getClient()->rollBack()) {
+			$this->throwError('roll back transaction.');
 		}
 	}
 
 	public function commit () {
-		if ($this->mIntransaction) {
-			if (false === $this->getClient()->commit()) {
-				$this->throwError('commit transaction.');
-			}
+		if (false === $this->getClient()->commit()) {
+			$this->throwError('commit transaction.');
 		}
 	}
 
 	public function inTransaction () {
-		return $this->mIntransaction;
+		return $this->getClient()->inTransaction();
 	}
 
 	public function lastInsertId () {
@@ -211,9 +198,7 @@ abstract class PDOClient extends DatabaseClient {
 		}
 		
 		$this->mClient->setAttribute(3/*\PDO::ATTR_ERRMODE*/, 2/*\PDO::ERRMODE_EXCEPTION*/);
-		// 不用改变这个值，用事务更不容易出错。
-		// $this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/,
-		// $this->mAutocommit);
+		$this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/,$this->mAutocommit);
 		$this->mClient->setAttribute(20/*\PDO::ATTR_EMULATE_PREPARES*/, false);
 		
 		return $this->mClient;

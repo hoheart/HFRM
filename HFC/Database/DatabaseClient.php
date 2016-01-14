@@ -77,10 +77,11 @@ abstract class DatabaseClient implements IService {
 	}
 
 	public function __destruct () {
-		if (! $this->mAutocommit) {
-			// 如果没有正常stop，说明出错了，事务还没有提交，应该回滚。
-			if (! $this->mStoped) {
-				$this->rollBack();
+		// 没有正确执行stop，应该回滚，但数据库一般都会自己回滚，所以数据库自己回滚，效率更高。
+		// 因为现在用连接池了，所以，在对象消失时，要回滚。否则连接建立时，会提交。
+		if (! $this->mStoped) {
+			if (! $this->mAutocommit) {
+				$this->exec('ROLLBACK;');
 			}
 		}
 	}
@@ -106,7 +107,7 @@ abstract class DatabaseClient implements IService {
 	public function stop () {
 		if (! $this->mStoped) {
 			if (! $this->mAutocommit) {
-				$this->commit();
+				$this->exec('COMMIT;');
 			}
 		}
 		
