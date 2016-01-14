@@ -25,15 +25,23 @@ abstract class PDOClient extends DatabaseClient {
 	 * @var array
 	 */
 	protected $mConf = null;
+	
+	/**
+	 * 是否在事务中
+	 *
+	 * @var boolean
+	 */
+	protected $mIntransaction = false;
 
 	public function exec ($sql) {
 		try {
 			$ret = $this->getClient()->exec($sql);
-			if (false === $ret) {
-				$this->throwError($sql);
-			}
 		} catch (\Exception $e) {
 			$this->throwError($sql, null, $e);
+		}
+		
+		if (false === $ret) {
+			$this->throwError($sql);
 		}
 		
 		return $ret;
@@ -157,25 +165,31 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function beginTransaction () {
-		if (false === $this->getClient()->beginTransaction()) {
-			$this->throwError('begin transaction.');
+		if (! $this->mIntransaction) {
+			if (false === $this->getClient()->beginTransaction()) {
+				$this->throwError('begin transaction.');
+			}
 		}
 	}
 
 	public function rollBack () {
-		if (false === $this->getClient()->rollBack()) {
-			$this->throwError('roll back transaction.');
+		if ($this->mIntransaction) {
+			if (false === $this->getClient()->rollBack()) {
+				$this->throwError('roll back transaction.');
+			}
 		}
 	}
 
 	public function commit () {
-		if (false === $this->getClient()->commit()) {
-			$this->throwError('commit transaction.');
+		if ($this->mIntransaction) {
+			if (false === $this->getClient()->commit()) {
+				$this->throwError('commit transaction.');
+			}
 		}
 	}
 
 	public function inTransaction () {
-		return $this->getClient()->inTransaction();
+		return $this->mIntransaction;
 	}
 
 	public function lastInsertId () {
@@ -207,16 +221,22 @@ abstract class PDOClient extends DatabaseClient {
 
 	protected function throwError ($sql, $stmt = null, \Exception $originalException = null) {
 		$originalMsg = '';
+		$sourceCode = 0;
 		if (null != $originalException) {
 			$originalMsg = '<br>The original message is: ' . $originalException->getMessage();
+			$sourceCode = $originalException->getCode();
+			if (0 == $sourceCode) {
+				$sourceCode = $this->getClient()->errorCode();
+			}
 		} else {
 			$obj = null == $stmt ? $this->getClient() : $stmt;
 			$info = $obj->errorInfo();
+			$sourceCode = $info[0];
 		}
 		$e = new DatabaseQueryException(
 				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] . '. SQL: ' . $sql .
 						 $originalMsg);
-		$e->setSourceCode($info[0]);
+		$e->setSourceCode($sourceCode);
 		throw $e;
 	}
 
