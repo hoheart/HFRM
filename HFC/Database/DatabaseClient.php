@@ -229,4 +229,3 @@ abstract class DatabaseClient implements IService {
 	 */
 	abstract public function change2SqlValue ($str, $type = 'string');
 }
-?>

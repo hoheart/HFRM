@@ -89,4 +89,3 @@ abstract class Path {
 
 	abstract protected function release ();
 }
-?>

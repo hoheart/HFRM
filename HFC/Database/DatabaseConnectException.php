@@ -11,4 +11,3 @@ class DatabaseConnectException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

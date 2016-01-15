@@ -157,4 +157,3 @@ class Directory extends Path implements \Iterator {
 		self::SClear($this->mPath);
 	}
 }
-?>

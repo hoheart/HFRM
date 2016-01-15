@@ -63,4 +63,3 @@ class File extends Path {
 	protected function release () {
 	}
 }
-?>

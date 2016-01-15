@@ -9,4 +9,3 @@ class MethodCallErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

@@ -72,4 +72,3 @@ class Sequence {
 		return (int) $next;
 	}
 }
-?>

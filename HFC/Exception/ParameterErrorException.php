@@ -9,4 +9,3 @@ class ParameterErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

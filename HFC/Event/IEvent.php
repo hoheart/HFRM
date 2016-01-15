@@ -10,4 +10,3 @@ interface IEvent {
 
 	public function getDataObject ();
 }
-?>

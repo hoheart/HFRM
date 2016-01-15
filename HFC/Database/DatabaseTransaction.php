@@ -43,4 +43,3 @@ class DatabaseTransaction {
 		return $this->mDatabaseClient->inTransaction();
 	}
 }
-?>

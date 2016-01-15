@@ -229,4 +229,3 @@ abstract class PDOClient extends DatabaseClient {
 		throw new NotImplementedException('this method must be Override.');
 	}
 }
-?>

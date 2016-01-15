@@ -12,4 +12,3 @@ class SystemErrcode {
 	const MethodCallError = 5006; // 函数调用错误，不应该调用该函数。
 	const SQLInjectionRisk = 5007;
 }
-?>

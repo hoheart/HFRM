@@ -9,4 +9,3 @@ class SystemAPIErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

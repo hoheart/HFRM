@@ -25,4 +25,3 @@ class DatabaseClientFactory {
 		return $client;
 	}
 }
-?>

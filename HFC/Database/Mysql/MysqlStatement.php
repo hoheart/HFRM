@@ -6,4 +6,3 @@ use HFC\Database\PDOStatement;
 
 class MysqlStatement extends PDOStatement {
 }
-?>

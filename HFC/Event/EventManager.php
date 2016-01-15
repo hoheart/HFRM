@@ -22,11 +22,11 @@ class EventManager implements IService {
 	 */
 	protected $mConfig = null;
 
-	public function __construct () {
+	public function __construct (array $conf) {
+		$this->mConfig = $conf;
 	}
 
 	public function init (array $conf) {
-		$this->mConfig = $conf;
 	}
 
 	public function start () {
@@ -39,32 +39,37 @@ class EventManager implements IService {
 	 * 触发一个事件
 	 *
 	 * @param object $event
-	 *        	可以是字符串，也可以是IEvent对象。字符串表示时间名称，即事件的唯一标志。
+	 *        	可以是字符串，也可以是IEvent对象。字符串表示事件名称，是事件的唯一标志。
 	 * @param object $sender        	
 	 * @param object $dataObject        	
 	 * @return boolean 如果返回true，表示有人处理了这个事件，反之则没人处理。
 	 */
 	public function trigger ($event, $sender = null, $dataObject = null) {
 		if (is_string($event)) {
-			if (null == $sender) {
-				throw new ParameterErrorException('common event need sender.');
-			}
-			$event = new CommonEvent($sender, $event, $dataObject);
+			return $this->triggerCommonEvent($event, $sender, $dataObject);
+		} else {
+			return $this->triggerListener(get_class($event), $event);
 		}
-		
-		return $this->triggerListener(get_class($event), $event);
 	}
 
 	public function triggerCommonEvent ($name, $sender, $dataObject = null) {
-		$e = new CommonEvent($sender, $name, $dataObject);
-		$ieventClsArr = $this->mConfig['hfc\event\IEvent'];
-		$clsArr = $this->mConfig['hfc\event\CommonEvent'][$name];
+		if (null == $sender) {
+			throw new ParameterErrorException('common event need sender.');
+		}
 		
-		return $this->triggerListener($e, $ieventClsArr, $clsArr);
+		$e = new CommonEvent($sender, $name, $dataObject);
+		$listenerArr = $this->mConfig['HFC\Event\CommonEvent'][$name];
+		
+		return $this->triggerListener('HFC\Event\CommonEvent', $e, $listenerArr);
 	}
 
-	protected function triggerListener ($clsName, IEvent $e) {
-		$listenerArr = $this->mConfig[$clsName];
+	protected function triggerListener ($clsName, IEvent $e, $listenerArr = array()) {
+		if (empty($listenerArr)) {
+			$listenerArr = $this->mConfig[$clsName];
+		}
+		if (empty($listenerArr)) {
+			return false;
+		}
 		
 		// 触发所有的事件的监听器，事件不终止，继续往下传递。
 		foreach ($listenerArr as $listenerCls) {
@@ -87,3 +92,4 @@ class EventManager implements IService {
 		return false;
 	}
 }
+?>

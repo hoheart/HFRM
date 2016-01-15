@@ -9,4 +9,3 @@ class SQLInjectionRiskException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

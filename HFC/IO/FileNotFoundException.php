@@ -11,4 +11,3 @@ class FileNotFoundException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

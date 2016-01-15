@@ -25,4 +25,3 @@ class DatabaseQueryException extends \Exception {
 		return $this->mSourceCode;
 	}
 }
-?>

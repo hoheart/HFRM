@@ -437,4 +437,3 @@ class Logger implements IService {
 		}
 	}
 }
-?>
