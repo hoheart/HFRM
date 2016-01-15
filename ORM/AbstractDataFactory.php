@@ -44,4 +44,3 @@ abstract class AbstractDataFactory {
 		return $this->mDatabaseClient;
 	}
 }
-?>

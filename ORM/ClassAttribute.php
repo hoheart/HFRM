@@ -126,4 +126,3 @@ class ClassAttribute {
 		return 'class' == $this->var;
 	}
 }
-?>

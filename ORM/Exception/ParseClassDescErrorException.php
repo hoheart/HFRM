@@ -9,4 +9,3 @@ class ParseClassDescErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

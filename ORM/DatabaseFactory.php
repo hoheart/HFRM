@@ -252,4 +252,3 @@ class DatabaseFactory extends AbstractDataFactory {
 		return $sql;
 	}
 }
-?>

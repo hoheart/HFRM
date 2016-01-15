@@ -46,4 +46,3 @@ class ClassDesc {
 	 */
 	public $primaryKey;
 }
-?>

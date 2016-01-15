@@ -9,4 +9,3 @@ class NoPropertyException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

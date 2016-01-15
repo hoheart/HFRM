@@ -87,4 +87,3 @@ abstract class AbstractPersistence {
 	 */
 	abstract public function delete ($className, Condition $condition = null);
 }
-?>
