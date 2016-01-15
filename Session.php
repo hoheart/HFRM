@@ -44,4 +44,3 @@ class Session {
 		return array_key_exists($key, $_SESSION);
 	}
 }
-?>

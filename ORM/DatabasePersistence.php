@@ -227,4 +227,3 @@ class DatabasePersistence extends AbstractPersistence {
 		return $refProperty->getValue($dataObj);
 	}
 }
-?>

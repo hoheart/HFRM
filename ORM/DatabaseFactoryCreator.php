@@ -12,4 +12,3 @@ class DatabaseFactoryCreator {
 		return $f;
 	}
 }
-?>

@@ -132,4 +132,3 @@ class ErrorHandler {
 		$render->render($view);
 	}
 }
-?>

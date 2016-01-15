@@ -12,4 +12,3 @@ class DatabasePersistenceCreator {
 		return $p;
 	}
 }
-?>

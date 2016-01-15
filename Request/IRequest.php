@@ -19,4 +19,3 @@ interface IRequest {
 
 	public function getAllParams ();
 }
-?>

@@ -8,4 +8,3 @@ interface IExecutor {
 
 	public function run ($do = null);
 }
-?>

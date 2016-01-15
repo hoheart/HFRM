@@ -160,4 +160,3 @@ class DescFactory {
 		return $keyVal;
 	}
 }
-?>

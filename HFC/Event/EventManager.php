@@ -92,4 +92,3 @@ class EventManager implements IService {
 		return false;
 	}
 }
-?>

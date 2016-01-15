@@ -50,5 +50,3 @@ abstract class Controller {
 	static public function getConfig ($actionName) {
 	}
 }
-
-?>

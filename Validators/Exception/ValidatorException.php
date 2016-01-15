@@ -9,5 +9,3 @@ class ValidatorException extends \Exception {
 		$this->message = $message;
 	}
 }
-
-?>

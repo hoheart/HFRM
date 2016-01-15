@@ -122,5 +122,3 @@ class View {
 		return $this->mViewType;
 	}
 }
-
-?>
