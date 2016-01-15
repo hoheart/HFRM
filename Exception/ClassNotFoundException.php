@@ -9,4 +9,3 @@ class ClassNotFoundException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

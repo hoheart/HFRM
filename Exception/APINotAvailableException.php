@@ -9,4 +9,3 @@ class APINotAvailableException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

@@ -9,4 +9,3 @@ class RPCServiceErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

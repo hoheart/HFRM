@@ -9,4 +9,3 @@ class ModuleNotAvailableException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

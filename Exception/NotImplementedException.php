@@ -11,4 +11,3 @@ class NotImplementedException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

@@ -90,4 +90,3 @@ class MysqlClient extends PDOClient {
 		return $v;
 	}
 }
-?>

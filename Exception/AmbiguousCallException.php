@@ -9,4 +9,3 @@ class AmbiguousCallException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

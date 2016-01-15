@@ -56,4 +56,3 @@ class CommonEvent implements IEvent {
 		return $this->mDataObject;
 	}
 }
-?>

@@ -9,4 +9,3 @@ class ConfigErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

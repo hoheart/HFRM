@@ -11,4 +11,3 @@ class RequestErrorException extends \Exception {
 		$this->message = $msg;
 	}
 }
-?>

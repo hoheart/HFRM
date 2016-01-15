@@ -8,4 +8,3 @@ class SystemErrcode {
 	const APINotAvailable = 5103;
 	const RPCServiceError = 5104;
 }
-?>
