@@ -62,8 +62,16 @@ class HTMLRender {
 		foreach ($this->mSectionMap as $section) {
 			echo $section;
 		}
-		
-		echo ob_get_clean();
+
+		$obClean = ob_get_clean();
+
+		// 如果是debug模式给静态文件追加版本号，防止浏览器缓存
+		if(Config::Instance()->get('app.debug')) {
+			echo preg_replace(['/href=".*\.css/', '/src=".*\.js/'], '$0?version=' . time(), $obClean);
+		}else{
+			echo $obClean;
+		}
+
 		//如果不及时向客户端输出，app会吧缓存清除
 		ob_flush();
 		flush();
