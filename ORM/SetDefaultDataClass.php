@@ -7,7 +7,7 @@ use Framework\ORM\DataClass;
 /**
  * 数据填充默认数据类。
  */
-class SetDefoultDataClass extends DataClass {
+class SetDefaultDataClass extends DataClass {
 	
 	/**
 	 *
