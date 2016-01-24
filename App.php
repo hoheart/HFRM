@@ -9,6 +9,7 @@ namespace Framework {
 	use Framework\Module\ModuleManager;
 	use HFC\Exception\ParameterErrorException;
 	use Framework\Config;
+	use Framework\Request\RequestFilter;
 
 	/**
 	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
@@ -85,6 +86,9 @@ namespace Framework {
 			
 			$errorHandler = new ErrorHandler();
 			$errorHandler->register2System();
+			
+			// 还没想好怎么处理，暂时放这儿。
+			RequestFilter::RemoveSQLInjection();
 			
 			date_default_timezone_set(Config::Instance()->get('app.localTimezone'));
 			
