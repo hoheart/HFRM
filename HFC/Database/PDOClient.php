@@ -196,7 +196,9 @@ abstract class PDOClient extends DatabaseClient {
 		} catch (\Exception $e) {
 			throw new DatabaseConnectException('On Connection Error.' . $e->getMessage());
 		}
-		
+		 if($_SERVER['SERVER_NAME'] == "admin.tckk.com"){
+                    var_dump($this->mClient);
+                }
 		$this->mClient->setAttribute(3/*\PDO::ATTR_ERRMODE*/, 2/*\PDO::ERRMODE_EXCEPTION*/);
 		$this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/,$this->mAutocommit);
 		$this->mClient->setAttribute(20/*\PDO::ATTR_EMULATE_PREPARES*/, false);
