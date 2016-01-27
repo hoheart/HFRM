@@ -162,7 +162,7 @@ namespace Framework {
 		}
 
 		protected function operationLog ($moduleAlias, $ctrlClassName, $actionName, $controller, $e = null) {
-			$enableOperationLog = Config::Instance()->getModuleConfig($moduleAlias, 'log.enableOperationLog');
+			$enableOperationLog = Config::Instance()->getModuleConfig($moduleAlias, 'app.enableOperationLog');
 			if ($enableOperationLog) {
 				$isOperation = true;
 				if (method_exists($controller, 'isNotOperation')) {
