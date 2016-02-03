@@ -151,7 +151,7 @@ abstract class PDOClient extends DatabaseClient {
 		if (false === $unionPos) {
 			$sql .= $commonLimitSql;
 		} else {
-			$sql = "SELECT * FROM ($sql) $commonLimitSql";
+			$sql = "SELECT * FROM ($sql) t $commonLimitSql";
 		}
 		
 		return $sql;
