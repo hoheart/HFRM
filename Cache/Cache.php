@@ -4,6 +4,7 @@ namespace Framework\Cache;
 
 use Framework\IService;
 
+use Framework\Facade\Config;
 class Cache implements IService
 {
 
@@ -26,7 +27,9 @@ class Cache implements IService
     public function init(array $conf)
     {
         $this->redis = new \Redis();
-        $this->redis->connect($conf['host'], $conf['port']);
+       $redis =  Config::get('cache.redis');
+
+        $this->redis->connect($redis['host'], $redis['port']);
         return $this->redis;
     }
 
