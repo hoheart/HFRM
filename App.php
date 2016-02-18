@@ -232,7 +232,7 @@ namespace Framework {
 		 * @return multitype:
 		 */
 		protected function getRoute (IRequest $request) {
-			$routerCls = $this->mAppConf['router'];
+			$routerCls = Config::Instance()->get('app.router');
 			if (empty($routerCls)) {
 				$routerCls = '\Framework\Router\PathParseRouter';
 			}
