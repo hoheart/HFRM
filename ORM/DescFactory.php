@@ -105,12 +105,12 @@ class DescFactory {
 			$attr->key = 'true' == $keyVal['key'];
 			$attr->autoIncrement = 'true' == $keyVal['autoIncrement'];
 			$attr->amountType = $keyVal['amountType'];
-			$attr->belongClass = $keyVal['belongClass'];
+			$attr->class = $keyVal['class'];
 			$attr->relationshipName = $keyVal['relationshipName'];
-			$attr->selfAttributeInRelationship = $keyVal['selfAttributeInRelationship'];
-			$attr->selfAttribute2Relationship = $keyVal['selfAttribute2Relationship'];
-			$attr->anotherAttributeInRelationship = $keyVal['anotherAttributeInRelationship'];
-			$attr->anotherAttribute2Relationship = $keyVal['anotherAttribute2Relationship'];
+			$attr->attributeInRelationship = $keyVal['attributeInRelationship'];
+			$attr->attribute = $keyVal['attribute'];
+			$attr->relationAttributeInRelationship = $keyVal['relationAttributeInRelationship'];
+			$attr->relationAttribute = $keyVal['relationAttribute'];
 			
 			$clsDesc->attribute[$rp->getName()] = $attr;
 			if (! empty($attr->saveName)) {

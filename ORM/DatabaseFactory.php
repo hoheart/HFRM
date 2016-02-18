@@ -86,7 +86,7 @@ class DatabaseFactory extends AbstractDataFactory {
 	}
 
 	public function getRelatedAttribute (ClassAttribute $attr, DataClass $dataObj, ClassDesc $clsDesc) {
-		$myProp = $attr->selfAttribute2Relationship;
+		$myProp = $attr->attribute;
 		if (empty($myProp)) {
 			return null;
 		}
@@ -99,24 +99,24 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		$val = null;
 		if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
-			$val = $this->where($attr->belongClass, new Condition($attr->anotherAttribute2Relationship, '=', $myVal), 0, $amount);
+			$val = $this->where($attr->class, new Condition($attr->relationAttribute, '=', $myVal), 0, $amount);
 		} else { // 有关系表记录
 			$sqlMyVal = $this->mDatabaseClient->change2SqlValue($myVal, $clsDesc->attribute[$myProp]->var);
-			$sql = "SELECT {$attr->anotherAttributeInRelationship} FROM {$attr->relationshipName} WHERE {$attr->selfAttributeInRelationship}=$sqlMyVal";
+			$sql = "SELECT {$attr->relationAttributeInRelationship} FROM {$attr->relationshipName} WHERE {$attr->attributeInRelationship}=$sqlMyVal";
 			$ret = $this->mDatabaseClient->select($sql);
 			
 			$idArr = array();
 			foreach ($ret as $row) {
-				$idArr[] = $row[$attr->anotherAttributeInRelationship];
+				$idArr[] = $row[$attr->relationAttributeInRelationship];
 			}
 			
 			if (empty($idArr)) {
 				return null;
 			}
 			
-			$cond = new Condition($attr->anotherAttribute2Relationship, 'in', $idArr);
+			$cond = new Condition($attr->relationAttribute, 'in', $idArr);
 			
-			$val = $this->where($attr->belongClass, $cond);
+			$val = $this->where($attr->class, $cond);
 		}
 		
 		if (1 == $amount) {

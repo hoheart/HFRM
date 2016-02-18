@@ -72,9 +72,9 @@ class DatabasePersistence extends AbstractPersistence {
 	 */
 	protected function saveSelfAttribute (ClassAttribute $attr, DataClass $anotherObj, DataClass $dataObj, &$keyArr, 
 			&$valArr) {
-		$attrName = $attr->selfAttribute2Relationship;
+		$attrName = $attr->attribute;
 		if (! empty($attrName)) {
-			$anotherAttrName = $attr->anotherAttribute2Relationship;
+			$anotherAttrName = $attr->relationAttribute;
 			$attrVal = $anotherObj->$anotherAttrName;
 			$dataObj->$attrName = $attrVal;
 			
@@ -93,10 +93,10 @@ class DatabasePersistence extends AbstractPersistence {
 			list ($attr, $anotherObj) = $row;
 			
 			$table = $attr->relationshipName;
-			$attrName = $attr->selfAttribute2Relationship;
-			$anotherAttrName = $attr->anotherAttribute2Relationship;
-			$tableAttrName = $attr->selfAttributeInRelationship;
-			$anotherTableAttrName = $attr->anotherAttributeInRelationship;
+			$attrName = $attr->attribute;
+			$anotherAttrName = $attr->relationAttribute;
+			$tableAttrName = $attr->attributeInRelationship;
+			$anotherTableAttrName = $attr->relationAttributeInRelationship;
 			$anotherVal = $anotherObj->$anotherAttrName;
 			if (null == $anotherVal) {
 				continue;

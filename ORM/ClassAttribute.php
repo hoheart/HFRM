@@ -66,7 +66,7 @@ class ClassAttribute {
 	public $autoIncrement;
 	
 	/**
-	 * 数量类型
+	 * 数量类型。如果不是单个值，该属性就是数组。
 	 * 空或single：单个值
 	 * little：100以内的集合
 	 * large：数量没有限制
@@ -80,7 +80,7 @@ class ClassAttribute {
 	 *
 	 * @var string
 	 */
-	public $belongClass;
+	public $class;
 	
 	/**
 	 * 保存belong_class对应关系的表名（如果是数据库就是表名，如果是文件则可能是文件名，依具体业务而定）。
@@ -91,38 +91,39 @@ class ClassAttribute {
 	public $relationshipName;
 	
 	/**
+	 * 本类中的属性，对应于关系中的属性。参见attributeInRelationship属性的说明。
+	 *
+	 * @var string
+	 */
+	public $attribute;
+	
+	/**
 	 * 关系类中自己对应的字段。
 	 * 比如User{id,name,age},Group{id,name},关系类User2Group{userId,groupId}，要在用户类中表示所属组，
-	 * 那么User类就应该是User{id,name,age,group},group对应的selfAttributeInRelationship是userId，
-	 * selfAttribute2Relationship是id，anotherAttributeInRelationship是groupId，
-	 * anotherAttribute2Relationship是Group对应的id。
+	 * 那么User类就应该是User{id,name,age,group},group对应的attributeInRelationship是userId，
+	 * attribute是id，relationAttributeInRelationship是groupId，
+	 * relationAttribute是Group对应的id。
 	 *
 	 * @var string
 	 */
-	public $selfAttributeInRelationship;
+	public $attributeInRelationship;
 	
 	/**
-	 * 本类中的属性，对应于关系中的属性。参见selfAttributeInRelationship属性的说明。
+	 * 关系类中对应于关系的属性。参见attributeInRelationship属性的说明。
 	 *
 	 * @var string
 	 */
-	public $selfAttribute2Relationship;
+	public $relationAttribute;
 	
 	/**
-	 * 关系中的另一个属性，参见selfAttributeInRelationship属性的说明。
+	 * 关系中的另一个属性，参见attributeInRelationship属性的说明。
 	 *
 	 * @var string
 	 */
-	public $anotherAttributeInRelationship;
-	
-	/**
-	 * 关系类中对应于关系的属性。参见selfAttributeInRelationship属性的说明。
-	 *
-	 * @var string
-	 */
-	public $anotherAttribute2Relationship;
+	public $relationAttributeInRelationship;
 
 	public function isClass () {
 		return 'class' == $this->var;
 	}
 }
+?>
