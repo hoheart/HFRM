@@ -41,4 +41,9 @@ class CliRequest implements IRequest {
 	public function getAllParams () {
 		return $this->mKeyVal;
 	}
+
+	public function getMethod () {
+		// 命令行的请求类型都是get
+		return self::REQUEST_METHOD_GET;
+	}
 }

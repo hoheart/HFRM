@@ -100,4 +100,8 @@ class HttpRequest implements IRequest {
 	public function getAllParams () {
 		return $this->mBody;
 	}
+
+	public function getMethod () {
+		return $_SERVER['REQUEST_METHOD'];
+	}
 }

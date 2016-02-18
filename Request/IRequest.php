@@ -3,6 +3,14 @@
 namespace Framework\Request;
 
 interface IRequest {
+	
+	/**
+	 * method
+	 *
+	 * @var string
+	 */
+	const REQUEST_METHOD_GET = 'GET';
+	const REQUEST_METHOD_POST = 'POST';
 
 	public function isHttp ();
 
@@ -18,4 +26,6 @@ interface IRequest {
 	public function get ($key);
 
 	public function getAllParams ();
+
+	public function getMethod ();
 }
