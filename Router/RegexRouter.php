@@ -35,6 +35,8 @@ class RegexRouter implements IRegexRouter {
      */
     public $verb;
 
+    public $suffix = '/';
+
     public $route;
     public $pattern;
     public $host;
@@ -150,6 +152,21 @@ class RegexRouter implements IRegexRouter {
         }
 
         $pathInfo = $request->getPathInfo();
+        $suffix = (string)($this->suffix === null ? $manager->suffix : $this->suffix);
+
+        if ($suffix !== '' && $pathInfo !== '') {
+            $n = strlen($suffix);
+            if (substr_compare($pathInfo, $suffix, -$n, $n) === 0) {
+                $pathInfo = substr($pathInfo, 0, -$n);
+
+                if ($pathInfo === '') {
+                    // suffix alone is not allowed
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
 
         if ($this->host !== null) {
             $pathInfo = strtolower($request->getHostInfo()) . ($pathInfo === '' ? '' : '/' . $pathInfo);

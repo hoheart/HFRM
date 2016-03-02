@@ -13,6 +13,7 @@ use Framework\Config;
 
 class RegexUrlManager {
 
+    public $suffix;
     private $rules = [];
 
     private static $regexUrlManager = null;
@@ -27,6 +28,7 @@ class RegexUrlManager {
     }
 
     private function buildRules($rules) {
+
         $compiledRules = [];
         $verbs = 'GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS';
 
@@ -84,6 +86,7 @@ class RegexUrlManager {
                 return $result;
             }
         }
+        return null;
     }
 
 }
