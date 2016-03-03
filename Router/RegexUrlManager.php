@@ -49,7 +49,12 @@ class RegexUrlManager {
     }
 
     public function getRoute($request) {
-        $route = $this->parseRequest(new Request());
+        try {
+            $route = $this->parseRequest(new Request());
+        }catch (\Exception $e){
+            $route = null;
+        }
+
 
         if ($route !== null) {
             // 处理0
