@@ -95,7 +95,8 @@ class ServiceAgent implements IModuleService {
 					}
 				}
 				if (! $exists) {
-					throw new NotImplementedException('no interface has method: ' . $name . ',class: ' . $clsName);
+					throw new NotImplementedException(
+							'no interface has method: ' . $name . ',interfaces: ' . implode(',', $arr));
 				}
 				
 				$this->mLocalInstance->init(
