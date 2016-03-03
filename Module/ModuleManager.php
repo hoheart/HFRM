@@ -166,7 +166,7 @@ class ModuleManager implements IService {
 	}
 
 	public function get ($alias) {
-		// 检查是否依赖这个莫快了
+		// 检查是否依赖这个模块了
 		list ($callerAlias, $callerName) = App::GetCallerModule();
 		if ('framework' != $callerAlias) {
 			$dependsList = Config::Instance()->getModuleConfig($callerAlias, 'app.depends');
