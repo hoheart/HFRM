@@ -10,6 +10,7 @@ namespace Framework {
 	use HFC\Exception\ParameterErrorException;
 	use Framework\Config;
 	use Framework\Request\RequestFilter;
+	use Framework\Router\PathParseRouter;
 
 	/**
 	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
@@ -232,12 +233,17 @@ namespace Framework {
 		 * @return multitype:
 		 */
 		protected function getRoute (IRequest $request) {
-			$routerCls = Config::Instance()->get('app.router');
-			if (empty($routerCls)) {
-				$routerCls = '\Framework\Router\PathParseRouter';
+			$router = null;
+			
+			$routerService = Config::Instance()->get('app.router');
+			if (empty($routerService)) {
+				$router = PathParseRouter::Instance();
+			} else {
+				$router = $this->getService($routerService);
 			}
-			$router = $routerCls::Instance();
-			return $router->getRoute($request, $this->mClassLoader);
+			
+			$route = $router->getRoute($request);
+			return $route;
 		}
 
 		/**
