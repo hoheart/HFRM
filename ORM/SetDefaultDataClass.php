@@ -6,6 +6,8 @@ use Framework\ORM\DataClass;
 
 /**
  * 数据填充默认数据类。
+ * 
+ * @deprecated 这是特定项目的遗留类
  */
 class SetDefaultDataClass extends DataClass {
 	
@@ -22,8 +24,8 @@ class SetDefaultDataClass extends DataClass {
 	protected $guid;
 
 	public function __construct ($t = null) {
-		// 设置创建时间
-		$this->setCreatedTime($t);
+		parent::__construct();
+		
 		// 设置客户端类型
 		$this->setTerminalType();
 		// 设置guid

@@ -42,7 +42,8 @@ class DataClass {
 	 */
 	protected $mFactory = null;
 
-	public function __construct () {
+	public function __construct ($t = null) {
+		$this->setCreatedTime($t);
 	}
 
 	public function __get ($name) {
