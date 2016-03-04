@@ -130,7 +130,7 @@ namespace Framework {
 			$route = $this->getRoute($request);
 			list ($moduleAlias, $ctrlClassName, $actionName) = $route;
 			ModuleManager::Instance()->preloadModule($moduleAlias);
-			$nowCity = $_REQUEST['city']?$_REQUEST['city']:$_COOKIE['userCityEnName'];
+			$nowCity = $_REQUEST['city'] ? $_REQUEST['city'] : $_COOKIE['userCityEnName'];
 			define('CITY_EN_NAME', $nowCity);
 			// 3.根据配置，创建controller和action并执行
 			$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
@@ -155,7 +155,7 @@ namespace Framework {
 				$executor = $class::Instance();
 				$dataObj = $executor->run($dataObj);
 			}
-				
+			
 			$this->stop();
 		}
 
@@ -234,17 +234,12 @@ namespace Framework {
 		 * @return multitype:
 		 */
 		protected function getRoute (IRequest $request) {
-			$router = null;
-			
-			$routerService = Config::Instance()->get('app.router');
-			if (empty($routerService)) {
-				$router = PathParseRouter::Instance();
-			} else {
-				$router = $this->getService($routerService);
+			$routerCls = Config::Instance()->get('app.router');
+			if (empty($routerCls)) {
+				$routerCls = '\Framework\Router\PathParseRouter';
 			}
-			
-			$route = $router->getRoute($request);
-			return $route;
+			$router = $routerCls::Instance();
+			return $router->getRoute($request, $this->mClassLoader);
 		}
 
 		/**
@@ -373,6 +368,13 @@ namespace Framework\App {
 		 */
 		public static $FRAMEWORK_DIR;
 		public static $HFC_DIR;
+		public static $COMMON_MODULE_DIR;
+		
+		/**
+		 * 当出现多个模块同名时，用这个。
+		 *
+		 * @var string
+		 */
 		protected $mUsedModule = '';
 
 		public function __construct () {
@@ -407,6 +409,8 @@ namespace Framework\App {
 				$moduleDir = self::$FRAMEWORK_DIR;
 			} else if ('HFC' == $moduleName) {
 				$moduleDir = self::$HFC_DIR;
+			} else if ('Common' == $moduleName) {
+				$moduleDir = self::$COMMON_MODULE_DIR;
 			} else {
 				// 只允许访问调用者自己的模块
 				list ($callerAlias, $callerName) = App::GetCallerModule();
@@ -451,4 +455,5 @@ namespace Framework\App {
 	
 	ClassLoader::$FRAMEWORK_DIR = 'Framework' . DIRECTORY_SEPARATOR;
 	ClassLoader::$HFC_DIR = ClassLoader::$FRAMEWORK_DIR . 'HFC' . DIRECTORY_SEPARATOR;
+	ClassLoader::$COMMON_MODULE_DIR = 'Common' . DIRECTORY_SEPARATOR;
 }
