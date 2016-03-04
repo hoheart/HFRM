@@ -10,21 +10,24 @@ namespace Framework\Router;
 
 
 use Framework\Config;
+use Framework\IService;
 
-class RegexUrlManager {
+class RegexUrlManager implements IService{
 
     public $suffix;
     private $rules = [];
 
-    private static $regexUrlManager = null;
 
-    public static function Instance() {
-        if (self::$regexUrlManager === null) {
-            self::$regexUrlManager = new self;
-            $rules = Config::Instance()->get('rules');
-            self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
-        }
-        return self::$regexUrlManager;
+    public function init(array $conf) {
+        $rules = Config::Instance()->get('rules');
+        $this->rules = $this->buildRules($rules);
+    }
+
+    public function start() {
+
+    }
+
+    public function stop() {
     }
 
     private function buildRules($rules) {
@@ -51,6 +54,7 @@ class RegexUrlManager {
     public function getRoute($request) {
         try {
             $route = $this->parseRequest(new Request());
+
         }catch (\Exception $e){
             $route = null;
         }
@@ -87,6 +91,7 @@ class RegexUrlManager {
          * @var $rule RegexRouter
          */
         foreach ($this->rules as $rule) {
+
             if (($result = $rule->parseRequest($this, $request)) !== false) {
                 return $result;
             }
