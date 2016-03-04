@@ -6,6 +6,7 @@ use Framework\ORM\Exception\ParseClassDescErrorException;
 
 /**
  * 产生各种数据类的描述（即产生数据类的ClassDesc类）的工厂类。
+ * 不包含对private属性的操作。
  *
  * @author Hoheart
  *        
@@ -81,8 +82,7 @@ class DescFactory {
 		}
 		
 		// 取得每个属性的描述
-		$attrNameArr = $rc->getProperties(
-				\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);
+		$attrNameArr = $rc->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
 		foreach ($attrNameArr as $rp) {
 			$doc = $rp->getDocComment();
 			$keyVal = $this->parseDocComment($doc);
