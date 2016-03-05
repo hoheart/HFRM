@@ -29,6 +29,18 @@ abstract class Controller {
 		$this->mView = new View($this->mModuleAlias, $name, $viewType);
 	}
 
+	/**
+	 * 该方法直接输出viewName指定的模版（默认为common::Common.jsonDefault）,数据为$data。
+	 *
+	 * @param array $data        	
+	 * @param string $viewName        	
+	 */
+	public function setJsonView ($data, $viewName = 'common::Common.jsonDefault') {
+		$this->mView = new View($this->mModuleAlias, $viewName, View::VIEW_TYPE_JSON);
+		
+		$this->assign('data', $data);
+	}
+
 	public function getView () {
 		return $this->mView;
 	}
