@@ -12,22 +12,21 @@ namespace Framework\Router;
 use Framework\Config;
 use Framework\IService;
 
-class RegexUrlManager implements IService{
+class RegexUrlManager {
 
     public $suffix;
     private $rules = [];
 
+    public static $regexUrlManager = null;
 
-    public function init(array $conf) {
-        $rules = Config::Instance()->get('rules');
-        $this->rules = $this->buildRules($rules);
-    }
+    public static function Instance() {
+        if(self::$regexUrlManager == null) {
+            self::$regexUrlManager = new self;
+            $rules = Config::Instance()->get('rules');
+            self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
+        }
+        return self::$regexUrlManager;
 
-    public function start() {
-
-    }
-
-    public function stop() {
     }
 
     private function buildRules($rules) {
