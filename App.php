@@ -130,8 +130,7 @@ namespace Framework {
 			$route = $this->getRoute($request);
 			list ($moduleAlias, $ctrlClassName, $actionName) = $route;
 			ModuleManager::Instance()->preloadModule($moduleAlias);
-			$nowCity = $_REQUEST['city'] ? $_REQUEST['city'] : $_COOKIE['userCityEnName'];
-			define('CITY_EN_NAME', $nowCity);
+			
 			// 3.根据配置，创建controller和action并执行
 			$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
 			$dataObj = $route;
