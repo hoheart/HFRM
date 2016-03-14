@@ -8,6 +8,8 @@
 
 namespace Framework\Router;
 
+use Framework\Config;
+
 
 class RegexRouter implements IRegexRouter {
 
@@ -35,7 +37,7 @@ class RegexRouter implements IRegexRouter {
      */
     public $verb;
 
-    public $suffix = '/';
+    public $suffix = '';
 
     public $route;
     public $pattern;
@@ -54,6 +56,7 @@ class RegexRouter implements IRegexRouter {
         if ($route === null) {
             throw new \Exception('UrlRule::route must be set.');
         }
+        $this->suffix = Config::Instance()->get('rules.suffix');
         $this->route = $route;
         if ($verb !== null) {
             if (is_array($this->verb)) {
@@ -219,6 +222,67 @@ class RegexRouter implements IRegexRouter {
      * @return string|boolean
      */
     public function createUrl($manager, $route, $params) {
-        // TODO: Implement createUrl() method.
+        if ($this->mode === self::PARSING_ONLY) {
+            return false;
+        }
+        $tr = [];
+
+        // match the route part first
+        if ($route !== $this->route) {
+            if ($this->_routeRule !== null && preg_match($this->_routeRule, $route, $matches)) {
+                $matches = $this->substitutePlaceholderNames($matches);
+                foreach ($this->_routeParams as $name => $token) {
+                    if (isset($this->defaults[$name]) && strcmp($this->defaults[$name], $matches[$name]) === 0) {
+                        $tr[$token] = '';
+                    } else {
+                        $tr[$token] = $matches[$name];
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        // match default params
+        // if a default param is not in the route pattern, its value must also be matched
+        foreach ($this->defaults as $name => $value) {
+            if (isset($this->_routeParams[$name])) {
+                continue;
+            }
+            if (!isset($params[$name])) {
+                return false;
+            } elseif (strcmp($params[$name], $value) === 0) { // strcmp will do string conversion automatically
+                unset($params[$name]);
+                if (isset($this->_paramRules[$name])) {
+                    $tr["<$name>"] = '';
+                }
+            } elseif (!isset($this->_paramRules[$name])) {
+                return false;
+            }
+        }
+        // match params in the pattern
+        foreach ($this->_paramRules as $name => $rule) {
+            if (isset($params[$name]) && !is_array($params[$name]) && ($rule === '' || preg_match($rule, $params[$name]))) {
+                $tr["<$name>"] = true ? urlencode($params[$name]) : $params[$name];
+                unset($params[$name]);
+            } elseif (!isset($this->defaults[$name]) || isset($params[$name])) {
+                return false;
+            }
+        }
+        $url = trim(strtr($this->_template, $tr), '/');
+        if ($this->host !== null) {
+            $pos = strpos($url, '/', 8);
+            if ($pos !== false) {
+                $url = substr($url, 0, $pos) . preg_replace('#/+#', '/', substr($url, $pos));
+            }
+        } elseif (strpos($url, '//') !== false) {
+            $url = preg_replace('#/+#', '/', $url);
+        }
+        if ($url !== '') {
+            $url .= ($this->suffix === null ? $manager->suffix : $this->suffix);
+        }
+        if (!empty($params) && ($query = http_build_query($params)) !== '') {
+            $url .= '?' . $query;
+        }
+        return $url;
     }
 }

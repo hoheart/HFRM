@@ -16,13 +16,14 @@ class RegexUrlManager {
 
     public $suffix;
     private $rules = [];
+    private $_ruleCache;
 
     public static $regexUrlManager = null;
 
     public static function Instance() {
-        if(self::$regexUrlManager == null) {
+        if (self::$regexUrlManager == null) {
             self::$regexUrlManager = new self;
-            $rules = Config::Instance()->get('rules');
+            $rules = Config::Instance()->get('rules.rules');
             self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
         }
         return self::$regexUrlManager;
@@ -54,7 +55,7 @@ class RegexUrlManager {
         try {
             $route = $this->parseRequest(new Request());
 
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             $route = null;
         }
 
@@ -82,6 +83,75 @@ class RegexUrlManager {
             // 走默认路由器
             return (PathParseRouter::Instance()->getRoute($request));
         }
+    }
+
+    public function createUrl($params) {
+        $params = (array)$params;
+        $anchor = isset($params['#']) ? '#' . $params['#'] : '';
+        unset($params['#']);
+        $route = trim($params[0], '/');
+        unset($params[0]);
+        $baseUrl = (new Request())->getBaseUrl();
+        $cacheKey = $route . '?';
+        foreach ($params as $key => $value) {
+            if ($value !== null) {
+                $cacheKey .= $key . '&';
+            }
+        }
+        /* @var $rule UrlRule */
+        $url = false;
+        if (isset(self::$regexUrlManager->_ruleCache[$cacheKey])) {
+            foreach (self::$regexUrlManager->_ruleCache[$cacheKey] as $rule) {
+                if (($url = $rule->createUrl($this, $route, $params)) !== false) {
+                    break;
+                }
+            }
+        } else {
+            self::$regexUrlManager->_ruleCache[$cacheKey] = [];
+        }
+
+        if ($url === false) {
+            $cacheable = true;
+            foreach (self::$regexUrlManager->rules as $rule) {
+                if (($url = $rule->createUrl(self::$regexUrlManager, $route, $params)) !== false) {
+                    if ($cacheable) {
+                        self::$regexUrlManager->_ruleCache[$cacheKey][] = $rule;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        if ($url !== false) {
+            if (strpos($url, '://') !== false) {
+                if ($baseUrl !== '' && ($pos = strpos($url, '/', 8)) !== false) {
+                    return substr($url, 0, $pos) . $baseUrl . substr($url, $pos) . $anchor;
+                } else {
+                    return $url . $baseUrl . $anchor;
+                }
+            } else {
+                return "$baseUrl/{$url}{$anchor}";
+            }
+        }
+        if ($this->suffix !== null) {
+            $route .= $this->suffix;
+        }
+        if (!empty($params) && ($query = http_build_query($params)) !== '') {
+            $route .= '?' . $query;
+        }
+        return "$baseUrl/{$route}{$anchor}";
+    }
+
+    public function createAbsoluteUrl($params, $scheme = null) {
+        $params = (array)$params;
+        $url = $this->createUrl($params);
+        if (strpos($url, '://') === false) {
+            $url = (new Request())->getHostInfo() . $url;
+        }
+        if (is_string($scheme) && ($pos = strpos($url, '://')) !== false) {
+            $url = $scheme . substr($url, $pos);
+        }
+        return $url;
     }
 
     public function parseRequest($request) {
