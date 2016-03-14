@@ -2,6 +2,8 @@
 
 namespace Framework\View;
 
+use Framework\App;
+
 class JsonRender {
 	
 	/**
@@ -30,11 +32,13 @@ class JsonRender {
 		ob_end_clean();
 		if ($previousContent != '') {
 			// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
-			echo $previousContent;
+			App::Instance()->getOutputStream()->write($previousContent);
 			return;
 		}
 		
-		header('Content-Type: application/json; charset=utf-8', true, 200);
+		$outputStream = App::Instance()->getOutputStream();
+		$outputStream->status(200);
+		$outputStream->header('Content-Type', 'application/json; charset=utf-8');
 		
 		extract($view->getDataMap());
 		
@@ -43,9 +47,8 @@ class JsonRender {
 			$this->mTree = $ret;
 		}
 		
-		echo json_encode($this->mTree);
-		flush();
-		ob_flush();
+		App::Instance()->getOutputStream()->write(json_encode($this->mTree));
+		App::Instance()->getOutputStream()->flush();
 	}
 
 	public function node ($path, $data, $template = null) {

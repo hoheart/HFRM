@@ -11,6 +11,8 @@ namespace Framework {
 	use Framework\Config;
 	use Framework\Request\RequestFilter;
 	use Framework\Router\PathParseRouter;
+	use Framework\View\ViewRender;
+	use Framework\Facade\Module;
 
 	/**
 	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
@@ -37,21 +39,6 @@ namespace Framework {
 		public static $ROOT_DIR;
 		
 		/**
-		 * 模块管理
-		 *
-		 * @var ModuleManager
-		 */
-		protected $mModuleManager = null;
-		
-		/**
-		 * 本来ServiceManager也是一个IServer实例，但还没ServiceManager实例时，只能是放这儿了，
-		 * 其他的可以通过ServiceManager来保存。
-		 *
-		 * @var \Framework\ServiceManager
-		 */
-		protected $mServiceManager = null;
-		
-		/**
 		 * 存放ClassLoader。
 		 *
 		 * @var ClassLoader
@@ -59,23 +46,48 @@ namespace Framework {
 		protected $mClassLoader = null;
 		
 		/**
-		 * 启动的Controller，即url中指定要访问的Controller。
 		 *
-		 * @var \Framework\Controller
+		 * @var ModuleManager
 		 */
-		protected $mBootController = null;
+		protected $mModuleManager = null;
 		
 		/**
 		 *
 		 * @var IRequest
 		 */
 		protected $mRequest = null;
+		
+		/**
+		 * 路由器
+		 *
+		 * @var IRouter
+		 */
+		protected $mRouter = null;
+		
+		/**
+		 * 启动的Controller，即url中指定要访问的Controller。
+		 *
+		 * @var \Framework\Controller
+		 */
+		protected $mCurrentController = null;
+		
+		/**
+		 * 试图渲染器
+		 *
+		 * @var ViewRender
+		 */
+		protected $mViewRender = null;
+		
+		/**
+		 *
+		 * @var IOutputStream
+		 */
+		protected $mOutputStream = null;
 
 		/**
 		 * 构造函数，创建ClassLoader，并调用其register2System。
 		 */
 		protected function __construct () {
-			$this->init();
 		}
 
 		public function init () {
@@ -91,11 +103,21 @@ namespace Framework {
 			// 还没想好怎么处理，暂时放这儿。
 			RequestFilter::RemoveSQLInjection();
 			
+			// 还没想好怎么处理，暂时放这儿。
 			date_default_timezone_set(Config::Instance()->get('app.localTimezone'));
 			
+			// 防止直接echo等的输出，避免xss攻击。
 			ob_start();
 			
 			$this->mModuleManager = ModuleManager::Instance();
+			
+			$routerCls = Config::Instance()->get('app.router');
+			if (empty($routerCls)) {
+				$routerCls = '\Framework\Router\PathParseRouter';
+			}
+			$this->mRouter = $routerCls::Instance();
+			
+			$this->mViewRender = new ViewRender();
 		}
 
 		public function start () {
@@ -120,16 +142,14 @@ namespace Framework {
 		 * 启动应用程序。
 		 */
 		public function run () {
-			$this->start();
-			
 			// 1.产生请求对象
 			$request = $this->generateRequest();
 			$this->mRequest = $request;
 			
 			// 2.根据请求，取得路由
-			$route = $this->getRoute($request);
+			$route = $this->mRouter->getRoute($request);
 			list ($moduleAlias, $ctrlClassName, $actionName) = $route;
-			ModuleManager::Instance()->preloadModule($moduleAlias);
+			$this->mModuleManager->preloadModule($moduleAlias);
 			
 			// 3.根据配置，创建controller和action并执行
 			$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
@@ -139,23 +159,27 @@ namespace Framework {
 				$dataObj = $executor->run($dataObj);
 			}
 			
-			$this->mBootController = new $ctrlClassName($moduleAlias);
+			$this->mCurrentController = new $ctrlClassName($moduleAlias);
 			$actionMethodName = $actionName;
 			
 			$e = null;
 			try {
-				$dataObj = $this->mBootController->$actionMethodName($request);
+				$dataObj = $this->mCurrentController->$actionMethodName($request);
+				
+				$dataObj = $this->mViewRender->run($dataObj);
+				
+				if (null != $this->mOutputStream) {
+					$this->mOutputStream->flush();
+				}
 			} catch (\Exception $e) {
 			}
-			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mBootController, $e);
+			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mCurrentController, $e);
 			
 			$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
 			foreach ($laterExecutor as $class) {
 				$executor = $class::Instance();
 				$dataObj = $executor->run($dataObj);
 			}
-			
-			$this->stop();
 		}
 
 		public function getRequest () {
@@ -211,34 +235,19 @@ namespace Framework {
 		 * @return \Framework\Controller
 		 */
 		public function getCurrentController () {
-			return $this->mBootController;
+			return $this->mCurrentController;
 		}
 
 		public function getController () {
-			return $this->mBootController;
+			return $this->mCurrentController;
 		}
 
 		protected function generateRequest () {
-			if ('cli' == PHP_SAPI) {
+			if (! array_key_exists('REQUEST_URI', $_SERVER)) {
 				return new CliRequest();
 			} else {
 				return new HttpRequest(true);
 			}
-		}
-
-		/**
-		 * 根据请求的url，取得重定向相关信息。
-		 *
-		 * @param IRequest $request        	
-		 * @return multitype:
-		 */
-		protected function getRoute (IRequest $request) {
-			$routerCls = Config::Instance()->get('app.router');
-			if (empty($routerCls)) {
-				$routerCls = '\Framework\Router\PathParseRouter';
-			}
-			$router = $routerCls::Instance();
-			return $router->getRoute($request, $this->mClassLoader);
 		}
 
 		/**
@@ -251,11 +260,12 @@ namespace Framework {
 		 * @return \Framework\IService
 		 */
 		public function getService ($name, $caller = null) {
-			if (null == $this->mServiceManager) {
-				$this->mServiceManager = new ServiceManager();
+			static $sm = null;
+			if (null == $sm) {
+				$sm = new ServiceManager();
 			}
 			
-			return $this->mServiceManager->getService($name, $caller);
+			return $sm->getService($name, $caller);
 		}
 
 		/**
@@ -340,6 +350,18 @@ namespace Framework {
 
 		public function useModule ($alias) {
 			$this->mClassLoader->useModule($alias);
+		}
+
+		public function setOutputStream (IOutputStream $s) {
+			$this->mOutputStream = $s;
+		}
+
+		public function getOutputStream () {
+			if (null == $this->mOutputStream) {
+				$this->mOutputStream = new StandardOutputStream();
+			}
+			
+			return $this->mOutputStream;
 		}
 	}
 	

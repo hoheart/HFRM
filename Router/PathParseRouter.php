@@ -45,11 +45,11 @@ class PathParseRouter implements IRouter {
 		return $me;
 	}
 
+	public function getCurrentRoute (IRequest $req) {
+		return $this->mRedirection;
+	}
+
 	public function getRoute (IRequest $req) {
-		if (! empty($this->mRedirection)) {
-			return $this->mRedirection;
-		}
-		
 		$moduleAlias = '';
 		$ctrlName = '';
 		$actionName = '';

@@ -192,7 +192,7 @@ abstract class PDOClient extends DatabaseClient {
 		
 		$dsn = $this->getDSN();
 		try {
-			$this->mClient = new \pdo_connect_pool($dsn, $this->mConf['user'], $this->mConf['password']);
+			$this->mClient = new \PDO($dsn, $this->mConf['user'], $this->mConf['password']);
 		} catch (\Exception $e) {
 			throw new DatabaseConnectException('On Connection Error.' . $e->getMessage());
 		}

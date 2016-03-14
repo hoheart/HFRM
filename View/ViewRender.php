@@ -7,6 +7,12 @@ use Framework\App;
 use Framework\Request\HttpRequest;
 use Framework\Config;
 
+/**
+ * 试图渲染器。该类是一个工厂类，根据用户的请求等，判断应该调用什么试图渲染器进行渲染。
+ *
+ * @author Hoheart
+ *        
+ */
 class ViewRender implements IExecutor {
 	
 	/**
@@ -25,9 +31,9 @@ class ViewRender implements IExecutor {
 	}
 
 	public function run ($v = null) {
-		//设置时间戳
-		$tmzone = Config::Instance()->get('app.localTimezone' );
-		//date_default_timezone_set($tmzone);
+		// 设置时间戳
+		$tmzone = Config::Instance()->get('app.localTimezone');
+		// date_default_timezone_set($tmzone);
 		
 		// $v 一般等于null，Controller一般不会返回任何数据
 		$ctrl = App::Instance()->getCurrentController();

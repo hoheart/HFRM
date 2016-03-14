@@ -3,6 +3,7 @@
 namespace Framework\View;
 
 use Framework\Config;
+use Framework\App;
 
 /**
  * 注意，一个HTMLRender一次只能render一个view，
@@ -48,8 +49,7 @@ class HTMLRender {
 	 */
 	public function render ($view) {
 		if (Config::Instance()->get('app.debugOutput')) {
-			ob_flush();
-			flush();
+			App::Instance()->getOutputStream()->flush();
 		} else {
 			ob_clean();
 		}
@@ -60,21 +60,23 @@ class HTMLRender {
 		
 		// 输出
 		foreach ($this->mSectionMap as $section) {
-			echo $section;
+			App::Instance()->getOutputStream()->write($section);
 		}
-
+		
 		$obClean = ob_get_clean();
-
+		
 		// 如果是debug模式给静态文件追加版本号，防止浏览器缓存
-		if(Config::Instance()->get('app.debug')) {
-			echo preg_replace(['/href=".*\.css/', '/src=".*\.js/'], '$0?version=' . time(), $obClean);
-		}else{
-			echo $obClean;
+		if (Config::Instance()->get('app.debug')) {
+			$obClean = preg_replace([
+				'/href=".*\.css/',
+				'/src=".*\.js/'
+			], '$0?version=' . time(), $obClean);
 		}
-
-		//如果不及时向客户端输出，app会吧缓存清除
-		ob_flush();
-		flush();
+		
+		App::Instance()->getOutputStream()->write($obClean);
+		
+		// 如果不及时向客户端输出，app会吧缓存清除
+		App::Instance()->getOutputStream()->flush();
 		
 		$this->mSectionMap = array();
 		$this->mSectionNameStack = array();
@@ -102,7 +104,8 @@ class HTMLRender {
 	}
 
 	protected function out ($item) {
-		echo htmlspecialchars($item, null, 'UTF-8', true);
+		$str = htmlspecialchars($item, null, 'UTF-8', true);
+		App::Instance()->getOutputStream()->write($str);
 	}
 
 	/**

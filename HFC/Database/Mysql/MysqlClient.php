@@ -9,7 +9,6 @@ class MysqlClient extends PDOClient {
 	protected $mInited = false;
 
 	public function query ($sql, $cursorType = self::CURSOR_FWDONLY) {
-            echo $sql;
 		if (self::CURSOR_FWDONLY != $cursorType) {
 			throw new NotImplementedException('mysql database can not support scroll cursor.');
 		}

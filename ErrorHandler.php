@@ -14,8 +14,8 @@ class ErrorHandler {
 
 	public function register2System () {
 		// 关闭所有错误输出
-		ini_set('display_errors', 'Off');
-		error_reporting(0);
+		ini_set('display_errors', 'On');
+		error_reporting(-1);
 		
 		set_error_handler(array(
 			$this,
