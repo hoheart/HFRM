@@ -67,7 +67,6 @@ class RegexUrlManager {
             array_pop($pathArr);
             $path = '';
             foreach ($pathArr as $key => $value) {
-            	$value = ucfirst( $value );
                 if ($key == 0) {
                     $value .= '\\Controller';
                 }
@@ -82,7 +81,13 @@ class RegexUrlManager {
             return [lcfirst($pathArr[0]), rtrim($path, "\\") . 'Controller', $action];
         } else {
             // 走默认路由器
-            return (PathParseRouter::Instance()->getRoute($request));
+            $unmatch = Config::Instance()->get('rules.unmatch');
+            if(!empty($unmatch)) {
+                return $unmatch::Instance()->getRoute($request);
+            }else{
+                return (PathParseRouter::Instance()->getRoute($request));
+            }
+
         }
     }
 
