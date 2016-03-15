@@ -10,7 +10,6 @@ namespace Framework\Router;
 
 
 use Framework\Config;
-use Framework\IService;
 
 class RegexUrlManager {
 
