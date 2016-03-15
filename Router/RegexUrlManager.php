@@ -67,6 +67,7 @@ class RegexUrlManager {
             array_pop($pathArr);
             $path = '';
             foreach ($pathArr as $key => $value) {
+            	$value = ucfirst( $value );
                 if ($key == 0) {
                     $value .= '\\Controller';
                 }
