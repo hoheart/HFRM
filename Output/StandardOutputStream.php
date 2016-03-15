@@ -1,6 +1,6 @@
 <?php
 
-namespace Framework;
+namespace Framework\Output;
 
 class StandardOutputStream implements IOutputStream {
 
@@ -8,8 +8,8 @@ class StandardOutputStream implements IOutputStream {
 		http_response_code($code);
 	}
 
-	public function header ($key, $val) {
-		header($key . ': ' . $val);
+	public function header ($val, $replace = true, $code = 200) {
+		header($val);
 	}
 
 	public function write ($str, $offset = 0, $count = -1) {

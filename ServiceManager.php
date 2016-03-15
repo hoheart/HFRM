@@ -47,7 +47,7 @@ class ServiceManager {
 		}
 		
 		$clsName = $conf['class'];
-		$method = $conf['method'];
+		$method = empty($conf['method']) ? null : $conf['method'];
 		$serviceConf = $conf['config'];
 		if (null === $serviceConf) {
 			$serviceConf = array();

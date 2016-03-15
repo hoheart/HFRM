@@ -2,10 +2,12 @@
 
 namespace HFC\Util;
 
+use Framework\Facade\Out;
+
 class Util {
 
 	static public function dump ($param = 'no param', $mode = 1, $is_exit = true) {
-		header('Content-type:text/html;charset=utf-8');
+		Out::header('Content-type:text/html;charset=utf-8');
 		list ($open, $close) = array(
 			'<pre>' . PHP_EOL,
 			'</pre>'
@@ -15,8 +17,11 @@ class Util {
 			'print_r',
 			'var_export'
 		);
-		echo $open;
+		Out::out($open);
 		$method[$mode]($param);
-		$is_exit ? exit($close) : print($close);
+		Out::out($close);
+		if ($is_exit) {
+			exit();
+		}
 	}
 }

@@ -9,13 +9,14 @@ use Framework\View\View;
 use Framework\Facade\Service;
 use HFC\Log\Logger;
 use Framework\Facade\Redirect;
+use Framework\Facade\Out;
 
 class ErrorHandler {
 
 	public function register2System () {
 		// 关闭所有错误输出
 		ini_set('display_errors', 'On');
-		error_reporting(-1);
+		error_reporting(- 1);
 		
 		set_error_handler(array(
 			$this,
@@ -88,6 +89,8 @@ class ErrorHandler {
 			}
 		} else {
 			if (Config::Instance()->get('app.debug')) {
+				ob_clean();
+				ob_start();
 				echo "Error:$errno:$errstr.";
 				echo '<br>';
 				echo "In file:$errfile:$errline.";
@@ -100,6 +103,7 @@ class ErrorHandler {
 					debug_print_backtrace();
 				}
 				echo '</pre>';
+				Out::out(ob_get_clean());
 			} else {
 				try {
 					// echo $errno;
@@ -112,8 +116,6 @@ class ErrorHandler {
 				Redirect::to('/error');
 			}
 		}
-		
-		exit();
 	}
 
 	protected function rendJson ($errno, $errstr, $e = null) {

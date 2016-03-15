@@ -2,7 +2,6 @@
 
 namespace Framework\View;
 
-use Framework\IExecutor;
 use Framework\App;
 use Framework\Request\HttpRequest;
 use Framework\Config;
@@ -13,7 +12,7 @@ use Framework\Config;
  * @author Hoheart
  *        
  */
-class ViewRender implements IExecutor {
+class ViewRender {
 	
 	/**
 	 *
@@ -30,7 +29,7 @@ class ViewRender implements IExecutor {
 		return $me;
 	}
 
-	public function run ($v = null) {
+	public function render ($v = null) {
 		// 设置时间戳
 		$tmzone = Config::Instance()->get('app.localTimezone');
 		// date_default_timezone_set($tmzone);

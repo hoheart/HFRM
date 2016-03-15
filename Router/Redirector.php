@@ -4,6 +4,7 @@ namespace Framework\Router;
 
 use Framework\App;
 use Framework\Request\HttpRequest;
+use Framework\Facade\Out;
 
 class Redirector {
 
@@ -68,7 +69,7 @@ class Redirector {
 			exit(0);
 		}
 		
-		header('Location: ' . $path, null, 302);
+		Out::header('Location: ' . $path, null, 302);
 		
 		exit(0);
 	}

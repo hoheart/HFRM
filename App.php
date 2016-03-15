@@ -13,6 +13,8 @@ namespace Framework {
 	use Framework\Router\PathParseRouter;
 	use Framework\View\ViewRender;
 	use Framework\Facade\Module;
+	use Framework\Output\StandardOutputStream;
+	use Framework\Output\IOutputStream;
 
 	/**
 	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
@@ -118,6 +120,12 @@ namespace Framework {
 			$this->mRouter = $routerCls::Instance();
 			
 			$this->mViewRender = new ViewRender();
+			
+			// 防止有人调用exit，导致swoole的response没有end.
+			register_shutdown_function(array(
+				$this,
+				'onExit'
+			));
 		}
 
 		public function start () {
@@ -141,10 +149,12 @@ namespace Framework {
 		/**
 		 * 启动应用程序。
 		 */
-		public function run () {
+		public function run (IRequest $request = null) {
 			// 1.产生请求对象
-			$request = $this->generateRequest();
-			$this->mRequest = $request;
+			if (null == $request) {
+				$request = $this->generateRequest();
+				$this->mRequest = $request;
+			}
 			
 			// 2.根据请求，取得路由
 			$route = $this->mRouter->getRoute($request);
@@ -166,20 +176,21 @@ namespace Framework {
 			try {
 				$dataObj = $this->mCurrentController->$actionMethodName($request);
 				
-				$dataObj = $this->mViewRender->run($dataObj);
-				
-				if (null != $this->mOutputStream) {
-					$this->mOutputStream->flush();
+				$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
+				foreach ($laterExecutor as $class) {
+					$executor = $class::Instance();
+					$dataObj = $executor->run($dataObj);
 				}
+				
+				$response = $this->mViewRender->render($dataObj);
 			} catch (\Exception $e) {
 			}
+			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mCurrentController, $e);
 			
-			$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
-			foreach ($laterExecutor as $class) {
-				$executor = $class::Instance();
-				$dataObj = $executor->run($dataObj);
-			}
+			$this->getOutputStream()
+				->flush()
+				->close();
 		}
 
 		public function getRequest () {
@@ -362,6 +373,10 @@ namespace Framework {
 			}
 			
 			return $this->mOutputStream;
+		}
+
+		public function onExit () {
+			$this->getOutputStream()->close();
 		}
 	}
 	
