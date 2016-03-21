@@ -212,4 +212,8 @@ class ModuleManager implements IService {
 		
 		return $m;
 	}
+
+	public function getAllModuleAlias () {
+		return array_keys($this->mAliasIndexedConfig);
+	}
 }

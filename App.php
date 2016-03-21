@@ -120,12 +120,17 @@ namespace Framework {
 			$this->mRouter = $routerCls::Instance();
 			
 			$this->mViewRender = new ViewRender();
-			
-			// 防止有人调用exit，导致swoole的response没有end.
-			register_shutdown_function(array(
-				$this,
-				'onExit'
-			));
+		}
+
+		/**
+		 * 给连接池专用的初始连接池的函数，一般由swoole调用，且是swoole的主进程调用
+		 * apache module 或fpm模式下不用调用该函数
+		 */
+		public function initPoolService () {
+			$moduleAliasArr = $this->mModuleManager->getAllModuleAlias();
+			foreach ($moduleAliasArr as $moduleAlias) {
+				$this->getService('db', $moduleAlias);
+			}
 		}
 
 		public function start () {
@@ -261,6 +266,15 @@ namespace Framework {
 			}
 		}
 
+		public function getServiceManager () {
+			static $sm = null;
+			if (null == $sm) {
+				$sm = new ServiceManager();
+			}
+			
+			return $sm;
+		}
+
 		/**
 		 * 对ServiceManager的getService进行包装。
 		 * 先检查mServiceManager是否已经设置，如果没有，new一个。再调用其getServer方法。
@@ -271,10 +285,7 @@ namespace Framework {
 		 * @return \Framework\IService
 		 */
 		public function getService ($name, $caller = null) {
-			static $sm = null;
-			if (null == $sm) {
-				$sm = new ServiceManager();
-			}
+			$sm = $this->getServiceManager();
 			
 			return $sm->getService($name, $caller);
 		}
@@ -373,10 +384,6 @@ namespace Framework {
 			}
 			
 			return $this->mOutputStream;
-		}
-
-		public function onExit () {
-			$this->getOutputStream()->close();
 		}
 	}
 	

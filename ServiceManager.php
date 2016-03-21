@@ -5,6 +5,7 @@ namespace Framework;
 use Framework\Module\ModuleManager;
 use Framework\IService;
 use Framework\Exception\ConfigErrorException;
+use Framework\Swoole\ObjectPool;
 
 class ServiceManager {
 	
@@ -31,6 +32,38 @@ class ServiceManager {
 		}
 	}
 
+	public function initPoolService ($name) {
+		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
+		foreach ($moduleAliasArr as $alias) {
+			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
+			if (empty($conf)) {
+				continue;
+			}
+			
+			$clsName = $conf['class'];
+			$method = empty($conf['method']) ? null : $conf['method'];
+			$serviceConf = $conf['config'];
+			if (null === $serviceConf) {
+				$serviceConf = array();
+			}
+			$moduleAlias = $conf['module'];
+			if (empty($moduleAlias)) {
+				return null;
+			}
+			
+			$s = null;
+			ModuleManager::Instance()->preloadModule($conf['module']);
+			if (! empty($method)) {
+				$factory = new $clsName();
+				$s = $factory->$method($serviceConf);
+			} else {
+				$s = new $clsName();
+			}
+			$s->init($serviceConf);
+			$s->start();
+		}
+	}
+
 	public function getService ($name, $caller = null) {
 		if (null == $caller) {
 			list ($caller, $callerModuleName) = App::GetCallerModule();
@@ -38,7 +71,12 @@ class ServiceManager {
 		
 		$keyName = $caller . '.' . $name;
 		if (array_key_exists($keyName, $this->mServiceMap)) {
-			return $this->mServiceMap[$keyName];
+			$s = $this->mServiceMap[$keyName];
+			if ($s instanceof ObjectPool) {
+				$s = $s->get();
+			}
+			
+			return $s;
 		}
 		
 		$conf = Config::Instance()->getModuleConfig($caller, 'service.' . $name);
