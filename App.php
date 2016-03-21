@@ -188,6 +188,8 @@ namespace Framework {
 				}
 				
 				$response = $this->mViewRender->render($dataObj);
+				
+				$this->respond($response);
 			} catch (\Exception $e) {
 			}
 			
@@ -196,6 +198,10 @@ namespace Framework {
 			$this->getOutputStream()
 				->flush()
 				->close();
+		}
+		
+		protected function respond(IResponse $resp){
+			
 		}
 
 		public function getRequest () {
