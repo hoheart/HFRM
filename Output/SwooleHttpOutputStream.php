@@ -2,7 +2,7 @@
 
 namespace Framework\Output;
 
-use Framework\Facade\Config;
+use Framework\Response\IResponse;
 
 class SwooleHttpOutputStream implements IOutputStream {
 	
@@ -13,18 +13,6 @@ class SwooleHttpOutputStream implements IOutputStream {
 	protected $mResponse = null;
 
 	public function __construct () {
-	}
-
-	public function status ($code) {
-		$this->mResponse->status($code);
-	}
-
-	public function header ($key, $val) {
-		$this->mResponse->header($key, $val);
-	}
-
-	public function cookie ($key, $value = '', $expire = 0, $path = '/', $domain = '', $secure = false, $httponly = false) {
-		$this->mResponse->cookie($key, $value, $expire, $path, $domain, $secure, $httponly);
 	}
 
 	public function setSwooleResponse ($resp) {
@@ -38,16 +26,33 @@ class SwooleHttpOutputStream implements IOutputStream {
 		}
 	}
 
+	public function output (IResponse $resp) {
+		$this->mResponse->status($resp->getStatus());
+		
+		foreach ($resp->getAllHeader() as $key => $val) {
+			if (is_array($val)) {
+				foreach ($val as $one) {
+					$this->mResponse->header($key, $one);
+				}
+			} else {
+				$this->mResponse->header($key, $val);
+			}
+		}
+		
+		foreach ($resp->getAllCooike() as $key => $cookie) {
+			$this->mResponse->cookie($key, $cookie['value'], $cookie['expire'], $cookie['path'], $cookie['domain'], 
+					$cookie['secure'], $cookie['httponly']);
+		}
+		
+		$this->mResponse->wirte($resp->getBody());
+	}
+
 	public function flush () {
 		return $this;
 	}
 
 	public function close () {
-		$sessionCookieName = Config::get('session.cookieName');
-		$sessionId = session_id();
-		if (! empty($sessionId) && $sessionId !== $_COOKIE[$sessionCookieName]) {
-			$this->cookie($sessionCookieName, $sessionId);
-		}
+		$this->flush();
 		$this->mResponse->end();
 		return $this;
 	}

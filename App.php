@@ -15,13 +15,14 @@ namespace Framework {
 	use Framework\Facade\Module;
 	use Framework\Output\StandardOutputStream;
 	use Framework\Output\IOutputStream;
+	use Framework\Response\IResponse;
+	use Framework\Response\HttpResponse;
 
 	/**
-	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
-	 * 当框架所在的应用程序被启动后，整个进程里应该就一个App实例--虽然由于PHP的特性并非这样，但丝毫不影响把App类设计成单实例。
-	 * 启动App的顺序：
-	 * $app = App::Instance();
-	 * $app->run($conf);
+	 * 框架的核心就三个组件：
+	 * ClassLoader：保证模块之间的隔离；
+	 * ModuleManager：提供模块管理功能和接口调用；
+	 * ServiceManager：提供像数据库等常用的服务，可以通过配置文件任意指定。
 	 *
 	 * @author Hoheart
 	 *        
@@ -55,6 +56,13 @@ namespace Framework {
 		
 		/**
 		 *
+		 * @var ServiceManager
+		 */
+		protected $mServiceManager = null;
+		
+		/**
+		 * 以上的成员变量都是框架所需的三个组件，下面的就是这次请求有关的组件，一般是可以通过配置或根据请求参数更改的。
+		 *
 		 * @var IRequest
 		 */
 		protected $mRequest = null;
@@ -85,6 +93,12 @@ namespace Framework {
 		 * @var IOutputStream
 		 */
 		protected $mOutputStream = null;
+		
+		/**
+		 *
+		 * @var IResponse
+		 */
+		protected $mResponse = null;
 
 		/**
 		 * 构造函数，创建ClassLoader，并调用其register2System。
@@ -122,17 +136,6 @@ namespace Framework {
 			$this->mViewRender = new ViewRender();
 		}
 
-		/**
-		 * 给连接池专用的初始连接池的函数，一般由swoole调用，且是swoole的主进程调用
-		 * apache module 或fpm模式下不用调用该函数
-		 */
-		public function initPoolService () {
-			$moduleAliasArr = $this->mModuleManager->getAllModuleAlias();
-			foreach ($moduleAliasArr as $moduleAlias) {
-				$this->getService('db', $moduleAlias);
-			}
-		}
-
 		public function start () {
 		}
 
@@ -152,7 +155,10 @@ namespace Framework {
 		}
 
 		/**
-		 * 启动应用程序。
+		 * 运行应用程序
+		 *
+		 * @param IRequest $request
+		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
 		 */
 		public function run (IRequest $request = null) {
 			// 1.产生请求对象
@@ -189,19 +195,30 @@ namespace Framework {
 				
 				$response = $this->mViewRender->render($dataObj);
 				
+				// 输出剩余内容
 				$this->respond($response);
 			} catch (\Exception $e) {
 			}
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mCurrentController, $e);
-			
-			$this->getOutputStream()
-				->flush()
-				->close();
 		}
-		
-		protected function respond(IResponse $resp){
+
+		protected function respond (IResponse $resp) {
+			$this->mOutputStream->output($resp);
 			
+			$this->mOutputStream->flush();
+			$this->mOutputStream->close();
+		}
+
+		public function getResponse () {
+			if (null == $this->mResponse) {
+				$this->mResponse = new HttpResponse();
+				
+				$stream = $this->getOutputStream();
+				$this->mResponse->setOutputStream($stream);
+			}
+			
+			return $this->mResponse;
 		}
 
 		public function getRequest () {
@@ -265,7 +282,7 @@ namespace Framework {
 		}
 
 		protected function generateRequest () {
-			if (! array_key_exists('REQUEST_URI', $_SERVER)) {
+			if ('cli' == PHP_SAPI) {
 				return new CliRequest();
 			} else {
 				return new HttpRequest(true);
@@ -273,12 +290,11 @@ namespace Framework {
 		}
 
 		public function getServiceManager () {
-			static $sm = null;
-			if (null == $sm) {
-				$sm = new ServiceManager();
+			if (null == $this->mServiceManager) {
+				$this->mServiceManager = new ServiceManager();
 			}
 			
-			return $sm;
+			return $this->mServiceManager;
 		}
 
 		/**

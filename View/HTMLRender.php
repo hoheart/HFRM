@@ -48,8 +48,11 @@ class HTMLRender {
 	 * @param View $view        	
 	 */
 	public function render ($view) {
+		$output = App::Instance()->getOutputStream();
+		$resp = App::Instance()->getResponse();
+		
 		if (Config::Instance()->get('app.debugOutput')) {
-			App::Instance()->getOutputStream()->flush();
+			$output->flush();
 		} else {
 			ob_clean();
 		}
@@ -60,7 +63,7 @@ class HTMLRender {
 		
 		// 输出
 		foreach ($this->mSectionMap as $section) {
-			App::Instance()->getOutputStream()->write($section);
+			$resp->addContent($section);
 		}
 		
 		$obClean = ob_get_clean();
@@ -73,10 +76,10 @@ class HTMLRender {
 			], '$0?version=' . time(), $obClean);
 		}
 		
-		App::Instance()->getOutputStream()->write($obClean);
+		$resp->addContent($obClean);
 		
 		// 如果不及时向客户端输出，app会吧缓存清除
-		App::Instance()->getOutputStream()->flush();
+		$output->flush();
 		
 		$this->mSectionMap = array();
 		$this->mSectionNameStack = array();
@@ -105,7 +108,7 @@ class HTMLRender {
 
 	protected function out ($item) {
 		$str = htmlspecialchars($item, null, 'UTF-8', true);
-		App::Instance()->getOutputStream()->write($str);
+		App::Instance()->getResponse()->write($str);
 	}
 
 	/**

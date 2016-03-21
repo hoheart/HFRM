@@ -28,17 +28,22 @@ class JsonRender {
 	 * @param View $view        	
 	 */
 	public function render (View $view) {
+		/**
+		 *
+		 * @var IHttpResponse
+		 */
+		$resp = App::Instance()->getResponse();
+		
 		$previousContent = ob_get_contents();
 		ob_end_clean();
 		if ($previousContent != '') {
 			// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
-			App::Instance()->getOutputStream()->write($previousContent);
+			$resp->addContent($previousContent);
 			return;
 		}
 		
-		$outputStream = App::Instance()->getOutputStream();
-		$outputStream->status(200);
-		$outputStream->header('Content-Type', 'application/json; charset=utf-8');
+		$resp->status(200);
+		$resp->header('Content-Type', 'application/json; charset=utf-8');
 		
 		extract($view->getDataMap());
 		
@@ -47,8 +52,8 @@ class JsonRender {
 			$this->mTree = $ret;
 		}
 		
-		App::Instance()->getOutputStream()->write(json_encode($this->mTree));
-		App::Instance()->getOutputStream()->flush();
+		$str = json_encode($this->mTree);
+		$resp->addContent($str);
 	}
 
 	public function node ($path, $data, $template = null) {
