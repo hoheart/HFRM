@@ -204,6 +204,10 @@ abstract class PDOClient extends DatabaseClient {
 		return $this->mClient;
 	}
 
+	protected function connect () {
+		return $this->getClient();
+	}
+
 	protected function throwError ($sql, $stmt = null, \Exception $originalException = null) {
 		$originalMsg = '';
 		$sourceCode = 0;

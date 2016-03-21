@@ -94,7 +94,13 @@ abstract class DatabaseClient implements IService {
 				$this->mAutocommit = true;
 			}
 		}
+		
+		if (! $this->mConf['lazy_connection']) {
+			$this->connect();
+		}
 	}
+
+	abstract protected function connect ();
 
 	public function start () {
 		$this->mStoped = false;
