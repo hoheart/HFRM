@@ -20,7 +20,14 @@ class SwooleHttpOutputStream implements IOutputStream {
 	}
 
 	public function write ($str, $offset = 0, $count = null) {
-		$content = null === $count ? substr($str, $offset) : substr($str, $offset);
+		$content = $str;
+		if (null == $count) {
+			if (0 != $offset) {
+				$content = substr($str, $offset);
+			}
+		} else {
+			$content = substr($str, $offset, $count);
+		}
 		if (strlen($content) > 0) {
 			$this->mResponse->write($content);
 		}
@@ -39,12 +46,15 @@ class SwooleHttpOutputStream implements IOutputStream {
 			}
 		}
 		
-		foreach ($resp->getAllCooike() as $key => $cookie) {
+		foreach ($resp->getAllCookie() as $key => $cookie) {
 			$this->mResponse->cookie($key, $cookie['value'], $cookie['expire'], $cookie['path'], $cookie['domain'], 
 					$cookie['secure'], $cookie['httponly']);
 		}
 		
-		$this->mResponse->wirte($resp->getBody());
+		$body = $resp->getBody();
+		if ('' !== $body) {
+			$this->mResponse->write($resp->getBody());
+		}
 	}
 
 	public function flush () {

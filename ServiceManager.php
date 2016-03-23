@@ -42,6 +42,10 @@ class ServiceManager {
 	public function stop () {
 		foreach ($this->mServiceMap as $service) {
 			$service->stop();
+			
+			if ($service instanceof ObjectPool) {
+				$service->release();
+			}
 		}
 	}
 

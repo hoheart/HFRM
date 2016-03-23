@@ -9,7 +9,6 @@ use Framework\View\View;
 use Framework\Facade\Service;
 use HFC\Log\Logger;
 use Framework\Facade\Redirect;
-use Framework\Facade\Out;
 
 class ErrorHandler {
 
@@ -90,20 +89,26 @@ class ErrorHandler {
 		} else {
 			if (Config::Instance()->get('app.debug')) {
 				ob_clean();
-				ob_start();
-				echo "Error:$errno:$errstr.";
-				echo '<br>';
-				echo "In file:$errfile:$errline.";
-				echo '<br>';
-				echo '<pre>';
-				echo '<br>';
 				
+				$out = App::Instance()->getOutputStream();
+				$out->write("Error:$errno:$errstr.");
+				$out->write('<br>');
+				$out->write("In file:$errfile:$errline.");
+				$out->write('<br>');
+				$out->write('<pre>');
+				$out->write('<br>');
+				
+				ob_start();
 				print_r($e);
 				if (! $e instanceof \Exception) {
+					// 当调用栈太大时，会导致内存达到配置的最大内存限制
 					debug_print_backtrace();
 				}
-				echo '</pre>';
-				Out::out(ob_get_clean());
+				$out->write(ob_get_contents());
+				ob_clean();
+				
+				$out->write('</pre>');
+				$out->close();
 			} else {
 				try {
 					// echo $errno;

@@ -4,7 +4,7 @@ namespace Framework\Router;
 
 use Framework\App;
 use Framework\Request\HttpRequest;
-use Framework\Facade\Out;
+use Framework\Response\HttpResponse;
 
 class Redirector {
 
@@ -59,18 +59,21 @@ class Redirector {
 	 * @param bool $secure        	
 	 * @return \Illuminate\Http\RedirectResponse
 	 */
-	public function to ($path) {
-		// 在exit之前，必须要stop
+	public function to ($path, $status = 301) {
 		$app = App::Instance();
-		$app->stop();
-		
 		$req = $app->getRequest();
-		if ($req->getResource() == $path) {
-			exit(0);
+		if ($req->getResource() != $path) {
+			
+			$resp = new HttpResponse();
+			$resp->status($status);
+			$resp->header('Location', $path);
+			
+			$app->respond($resp);
 		}
 		
-		Out::header('Location: ' . $path, null, 302);
+		// 在exit之前，必须要stop
+		$app->stop();
 		
-		exit(0);
+		App::end();
 	}
 }

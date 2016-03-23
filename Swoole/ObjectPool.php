@@ -52,8 +52,13 @@ class ObjectPool implements IService {
 		
 		// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
 		$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
-		$firstSwooleDb = $this->mLockerArray[$indx];
-		$firstSwooleDb->mLockerArray->lock();
+		$this->mLockerArray[$indx]->lock();
 		return $this->mObjectArray[$indx];
+	}
+
+	public function release () {
+		foreach ($this->mLockerArray as $key => $locker) {
+			$locker->unlock();
+		}
 	}
 }

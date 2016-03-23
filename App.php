@@ -17,6 +17,7 @@ namespace Framework {
 	use Framework\Output\IOutputStream;
 	use Framework\Response\IResponse;
 	use Framework\Response\HttpResponse;
+	use Framework\Exception\EndAppException;
 
 	/**
 	 * 框架的核心就三个组件：
@@ -47,6 +48,12 @@ namespace Framework {
 		 * @var ClassLoader
 		 */
 		protected $mClassLoader = null;
+		
+		/**
+		 *
+		 * @var ErrorHandler
+		 */
+		protected $mErrorHandler = null;
 		
 		/**
 		 *
@@ -110,11 +117,13 @@ namespace Framework {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
 			
+			// ini_set('memory_limit', 2500000);
+			
 			$this->mClassLoader = new ClassLoader();
 			$this->mClassLoader->register2System();
 			
-			$errorHandler = new ErrorHandler();
-			$errorHandler->register2System();
+			$this->mErrorHandler = new ErrorHandler();
+			$this->mErrorHandler->register2System();
 			
 			// 还没想好怎么处理，暂时放这儿。
 			RequestFilter::RemoveSQLInjection();
@@ -161,11 +170,13 @@ namespace Framework {
 		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
 		 */
 		public function run (IRequest $request = null) {
+			$this->start();
+			
 			// 1.产生请求对象
 			if (null == $request) {
 				$request = $this->generateRequest();
-				$this->mRequest = $request;
 			}
+			$this->mRequest = $request;
 			
 			// 2.根据请求，取得路由
 			$route = $this->mRouter->getRoute($request);
@@ -173,18 +184,19 @@ namespace Framework {
 			$this->mModuleManager->preloadModule($moduleAlias);
 			
 			// 3.根据配置，创建controller和action并执行
-			$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
-			$dataObj = $route;
-			foreach ($preExecutor as $class) {
-				$executor = $class::Instance();
-				$dataObj = $executor->run($dataObj);
-			}
-			
-			$this->mCurrentController = new $ctrlClassName($moduleAlias);
-			$actionMethodName = $actionName;
-			
-			$e = null;
 			try {
+				$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
+				$dataObj = $route;
+				foreach ($preExecutor as $class) {
+					$executor = $class::Instance();
+					$dataObj = $executor->run($dataObj);
+				}
+				
+				$this->mCurrentController = new $ctrlClassName($moduleAlias);
+				$actionMethodName = $actionName;
+				
+				$e = null;
+				
 				$dataObj = $this->mCurrentController->$actionMethodName($request);
 				
 				$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
@@ -195,15 +207,22 @@ namespace Framework {
 				
 				$response = $this->mViewRender->render($dataObj);
 				
-				// 输出剩余内容
+				// 输出剩余内容,放在stop前，让浏览器更快看到页面。
 				$this->respond($response);
+				
+				$this->stop();
 			} catch (\Exception $e) {
+				$this->mErrorHandler->handleException($e);
 			}
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mCurrentController, $e);
 		}
 
-		protected function respond (IResponse $resp) {
+		public function respond (IResponse $resp = null) {
+			if (null == $resp) {
+				$resp = $this->mResponse;
+			}
+			
 			$this->mOutputStream->output($resp);
 			
 			$this->mOutputStream->flush();
@@ -226,6 +245,9 @@ namespace Framework {
 		}
 
 		protected function operationLog ($moduleAlias, $ctrlClassName, $actionName, $controller, $e = null) {
+			if ($e instanceof EndAppException) {
+				$e = null;
+			}
 			$enableOperationLog = Config::Instance()->getModuleConfig($moduleAlias, 'app.enableOperationLog');
 			if ($enableOperationLog) {
 				$isOperation = true;
@@ -243,10 +265,6 @@ namespace Framework {
 					$log = $this->getService('log');
 					$log->operationLog($moduleAlias, $ctrlClassName, $actionName, $operationName, $opResult, '');
 				}
-			}
-			
-			if (null != $e) {
-				throw $e;
 			}
 		}
 
@@ -406,6 +424,15 @@ namespace Framework {
 			}
 			
 			return $this->mOutputStream;
+		}
+
+		/**
+		 * 直接结束程序运行。
+		 *
+		 * @throws EndAppException
+		 */
+		static public function end () {
+			throw new EndAppException();
 		}
 	}
 	

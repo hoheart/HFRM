@@ -49,10 +49,6 @@ class HttpRequest implements IRequest {
 		throw new NotImplementedException();
 	}
 
-	static public function IsAjaxRequest () {
-		throw new NotImplementedException();
-	}
-
 	public function isAjaxRequest () {
 		return ! empty($this->mRequest->header['http_x_requested_with']) &&
 				 strtolower($this->mRequest->header['http_x_requested_with']) == 'xmlhttprequest';
