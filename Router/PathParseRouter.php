@@ -7,6 +7,7 @@ use Framework\Exception\RequestErrorException;
 use Framework\Config;
 use Framework\Module\ModuleManager;
 use Framework\Exception\ConfigErrorException;
+use Framework\Exception\NotFoundHttpException;
 
 /**
  * 解析请求路径，对应到Controller和Action的的路由器
@@ -72,6 +73,9 @@ class PathParseRouter implements IRouter {
 			array_shift($arr);
 		}
 		
+		// 已备后面检查路径存不存在用
+		ModuleManager::Instance()->preloadModule($moduleAlias);
+		
 		// 找路径
 		list ($moduleName, $ctrlName, $ctrlFilePath) = $this->parsePathSection($moduleAlias, $arr);
 		
@@ -87,9 +91,15 @@ class PathParseRouter implements IRouter {
 			$ctrlName .= $section . 'Controller';
 			array_shift($arr);
 		}
+		if (! class_exists($ctrlName)) {
+			throw new NotFoundHttpException();
+		}
 		
 		// action
 		$actionName = $this->parseAction($arr);
+		if (! method_exists($ctrlName, $actionName)) {
+			throw new NotFoundHttpException();
+		}
 		
 		$this->mRedirection = array(
 			$moduleAlias,
