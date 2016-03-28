@@ -17,14 +17,26 @@ class ObjectPool implements IService {
 	 * @var \SplFixedArray $mLockerArray
 	 */
 	protected $mLockerArray = null;
+	
+	/**
+	 * 用于标记是否锁住了
+	 *
+	 * @var array $mLabelArray
+	 */
+	protected $mLabelArray = null;
 
 	public function __construct () {
+	}
+
+	public function __destruct () {
+		$this->release();
 	}
 
 	public function init (array $conf) {
 		$num = $conf['num'];
 		$this->mObjectArray = new \SplFixedArray($num);
 		$this->mLockerArray = new \SplFixedArray($num);
+		$this->mLabelArray = new \SplFixedArray($num);
 	}
 
 	public function start () {
@@ -47,18 +59,27 @@ class ObjectPool implements IService {
 				continue;
 			}
 			
-			return $this->mObjectArray[$key];
+			$obj = $this->mObjectArray[$key];
+			$this->mLabelArray[$key] = true;
+			
+			return $obj;
 		}
 		
 		// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
 		$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
 		$this->mLockerArray[$indx]->lock();
-		return $this->mObjectArray[$indx];
+		$obj = $this->mObjectArray[$indx];
+		$this->mLabelArray[$indx] = true;
+		
+		return $obj;
 	}
 
 	public function release () {
-		foreach ($this->mLockerArray as $key => $locker) {
-			$locker->unlock();
+		foreach ($this->mLabelArray as $key => $isLock) {
+			if ($isLock) {
+				$this->mLockerArray[$key]->unlock();
+				$this->mLabelArray[$key] = false;
+			}
 		}
 	}
 }

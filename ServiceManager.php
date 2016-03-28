@@ -76,6 +76,14 @@ class ServiceManager {
 		}
 	}
 
+	public function releasePoolService () {
+		foreach ($this->mServiceMap as $service) {
+			if ($service instanceof ObjectPool) {
+				$service->release();
+			}
+		}
+	}
+
 	public function getService ($name, $caller = null) {
 		if (null == $caller) {
 			list ($caller, $callerModuleName) = App::GetCallerModule();

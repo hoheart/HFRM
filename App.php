@@ -113,14 +113,16 @@ namespace Framework {
 		protected function __construct () {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
-			
-			// ini_set('memory_limit', 2500000);
-			
+		}
+
+		public function registerAutoloader () {
 			$this->mClassLoader = new ClassLoader();
 			$this->mClassLoader->register2System();
 		}
 
 		public function init () {
+			$this->registerAutoloader();
+			
 			$this->mErrorHandler = new ErrorHandler();
 			$this->mErrorHandler->register2System();
 			
@@ -211,6 +213,8 @@ namespace Framework {
 			}
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);
+			
+			return null === $e ? true : false;
 		}
 
 		public function respond (IResponse $resp = null) {
@@ -472,10 +476,15 @@ namespace Framework\App {
 		 * );注册给PHP解释器。
 		 */
 		public function register2System () {
-			spl_autoload_register(array(
-				$this,
-				'autoload'
-			));
+			static $bRegister = false;
+			if (! $bRegister) {
+				spl_autoload_register(array(
+					$this,
+					'autoload'
+				));
+				
+				$bRegister = true;
+			}
 		}
 
 		/**

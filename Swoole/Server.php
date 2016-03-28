@@ -102,7 +102,10 @@ class Server {
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
-		$this->mApp->run(new HttpRequest($req));
+		$ret = $this->mApp->run(new HttpRequest($req));
+		if (! $ret) { // 因为不释放app对象，所以出错了要主动释放锁
+			$this->mApp->getServiceManager()->releasePoolService();
+		}
 	}
 
 	public function stop () {

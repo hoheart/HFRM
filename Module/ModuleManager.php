@@ -117,7 +117,10 @@ class ModuleManager implements IService {
 			return $this->mModulePathIndexedConfig[$path];
 		}
 		
-		return '';
+		return array(
+			'',
+			''
+		);
 	}
 
 	public function getLoadedModuleAliasByName ($moduleName) {
