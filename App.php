@@ -111,9 +111,6 @@ namespace Framework {
 		 * 构造函数，创建ClassLoader，并调用其register2System。
 		 */
 		protected function __construct () {
-		}
-
-		public function init () {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
 			
@@ -121,7 +118,9 @@ namespace Framework {
 			
 			$this->mClassLoader = new ClassLoader();
 			$this->mClassLoader->register2System();
-			
+		}
+
+		public function init () {
 			$this->mErrorHandler = new ErrorHandler();
 			$this->mErrorHandler->register2System();
 			
@@ -181,7 +180,7 @@ namespace Framework {
 			// 2.根据请求，取得路由
 			try {
 				$route = $this->mRouter->getRoute($request);
-				list ($moduleAlias, $ctrlClassName, $actionName) = $route;
+				list ($moduleAlias, $ctrlClassName, $actionMethodName) = $route;
 				$this->mModuleManager->preloadModule($moduleAlias);
 				
 				// 3.根据配置，创建controller和action并执行
@@ -193,10 +192,6 @@ namespace Framework {
 				}
 				
 				$this->mCurrentController = new $ctrlClassName($moduleAlias);
-				$actionMethodName = $actionName;
-				
-				$e = null;
-				
 				$dataObj = $this->mCurrentController->$actionMethodName($request);
 				
 				$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
@@ -215,7 +210,7 @@ namespace Framework {
 				$this->mErrorHandler->handleException($e);
 			}
 			
-			$this->operationLog($moduleAlias, $ctrlClassName, $actionName, $this->mCurrentController, $e);
+			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);
 		}
 
 		public function respond (IResponse $resp = null) {
