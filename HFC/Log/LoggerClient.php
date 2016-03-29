@@ -67,7 +67,7 @@ class LoggerClient implements IService {
 		$data = array(
 			'type' => Logger::LOG_TYPE_OPERATION,
 			'operatorId' => $login->getLoginedUserId(),
-			'moduleName' => $moduleName,
+			'modulePath' => $moduleName,
 			'controllerName' => $controllerName,
 			'actionName' => $actionName,
 			'operationName' => $operationName,

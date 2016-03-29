@@ -2,72 +2,18 @@
 
 namespace HFC\Database\Mysql;
 
-use HFC\Database\DatabaseClient;
-use HFC\Database\DatabaseConnectException;
+use HFC\Database\PDOClient;
+use HFC\Exception\NotImplementedException;
 
-/**
- * 用mysqli实现的mysql客户端
- * mysqli支持自动重连接
- *
- * @author Hoheart
- *        
- */
-class MysqlClient extends DatabaseClient {
-	
-	/**
-	 * 是否初始化
-	 *
-	 * @var boolean
-	 */
+class MysqlClient extends PDOClient {
 	protected $mInited = false;
-	
-	/**
-	 *
-	 * @var \mysqli $mMysqli
-	 */
-	protected $mMysqli = null;
-
-	public function init (array $conf) {
-		$this->mMysqli = new \mysqli();
-		
-		$this->mMysqli->autocommit($this->mAutocommit);
-		
-		parent::init($conf);
-	}
-
-	protected function connect () {
-		$ret = $this->mMysqli->real_connect($this->mConf['server'], $this->mConf['user'], $this->mConf['password'], 
-				$this->mConf['name'], $this->mConf['port']);
-		if (false === $ret) {
-			throw new DatabaseConnectException('On Connection Error.' . $this->mMysqli->error);
-		}
-	}
-
-	public function exec ($sql) {
-		$ret = $this->mMysqli->query($sql);
-		if (true === $ret) {
-		}
-	}
-
-	public function select ($sql, $inputParams, $start = 0, $size = self::MAX_ROW_COUNT) {
-	}
 
 	public function query ($sql, $cursorType = self::CURSOR_FWDONLY) {
-	}
-
-	public function transLimitSelect ($sql, $start, $size) {
-	}
-
-	public function beginTransaction () {
-	}
-
-	public function rollBack () {
-	}
-
-	public function commit () {
-	}
-
-	public function inTransaction () {
+		if (self::CURSOR_FWDONLY != $cursorType) {
+			throw new NotImplementedException('mysql database can not support scroll cursor.');
+		}
+		
+		return parent::query($sql, $cursorType);
 	}
 
 	protected function getClient () {

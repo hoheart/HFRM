@@ -19,7 +19,7 @@ class ErrorHandler {
 		
 		set_error_handler(array(
 			$this,
-			'handle'
+			'processError'
 		), E_ALL | E_STRICT);
 		set_exception_handler(array(
 			$this,

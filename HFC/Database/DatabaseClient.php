@@ -117,7 +117,7 @@ abstract class DatabaseClient implements IService {
 	}
 
 	/**
-	 * 执行非Select语句。并返回影响的行数。
+	 * 执行非Select语句，并返回影响的行数。
 	 * 一般是Insert、Update、Delete之类。
 	 * 如果要从Insert语句中返回insertedId，用query方法，从返回的statement里取得。
 	 *
