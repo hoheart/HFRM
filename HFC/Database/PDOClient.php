@@ -204,7 +204,7 @@ abstract class PDOClient extends DatabaseClient {
 		return $this->mClient;
 	}
 
-	protected function connect () {
+	public function connect () {
 		return $this->getClient();
 	}
 

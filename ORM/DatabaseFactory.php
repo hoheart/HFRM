@@ -204,7 +204,7 @@ class DatabaseFactory extends AbstractDataFactory {
 			
 			$val = $db->change2SqlValue($item->value, $attr->var);
 			
-			if (Condition::OPERATION_IN == $item->operation) {
+			if (Condition::OPERATION_IN == $item->operation || Condition::OPERATION_NOT_IN == $item->operation) {
 				$condSqlArr[] = "$key {$item->operation} (" . implode(',', $val) . ')';
 			} else {
 				$condSqlArr[] = $key . ' ' . $item->operation . ' ' . $val;

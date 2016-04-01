@@ -154,7 +154,7 @@ class RegexRouter implements IRegexRouter {
             return false;
         }
 
-        $pathInfo = $request->getPathInfo();
+        $pathInfo = $request->getUrl();
         $suffix = (string)($this->suffix === null ? $manager->suffix : $this->suffix);
 
         if ($suffix !== '' && $pathInfo !== '') {

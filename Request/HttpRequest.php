@@ -48,7 +48,24 @@ class HttpRequest implements IRequest {
 	}
 
 	public function getResource () {
-		$uri = urldecode($_SERVER['REQUEST_URI']);
+		if (isset($_SERVER['HTTP_X_REWRITE_URL'])) { // IIS
+			$requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
+		} elseif (isset($_SERVER['REQUEST_URI'])) {
+			$requestUri = $_SERVER['REQUEST_URI'];
+			if ($requestUri !== '' && $requestUri[0] !== '/') {
+				$requestUri = preg_replace('/^(http|https):\/\/[^\/]+/i', '', $requestUri);
+			}
+		} elseif (isset($_SERVER['ORIG_PATH_INFO'])) { // IIS 5.0 CGI
+			$requestUri = $_SERVER['ORIG_PATH_INFO'];
+			if (! empty($_SERVER['QUERY_STRING'])) {
+				$requestUri .= '?' . $_SERVER['QUERY_STRING'];
+			}
+		} else {
+			throw new \Exception('Unable to determine the request URI.');
+		}
+		
+		$uri = urldecode($requestUri);
+		
 		return $uri;
 	}
 

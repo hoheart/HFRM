@@ -29,6 +29,7 @@ namespace Framework\ORM {
 		const OPERATION_LESS = '<';
 		const OPERATION_LIKE = 'LIKE';
 		const OPERATION_IN = 'IN';
+		const OPERATION_NOT_IN = 'NOT IN';
 		
 		/**
 		 * 子条件组合关系类型
@@ -71,6 +72,7 @@ namespace Framework\ORM {
 			self::OPERATION_LESS_EQUAL,
 			self::OPERATION_LESS,
 			self::OPERATION_LIKE,
+			self::OPERATION_NOT_IN,
 			self::OPERATION_IN
 		);
 		
