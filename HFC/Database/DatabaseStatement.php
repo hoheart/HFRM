@@ -37,8 +37,6 @@ abstract class DatabaseStatement {
 		$this->closeCursor();
 	}
 
-	abstract public function closeCursor ();
-
 	abstract public function rowCount ();
 
 	abstract public function fetch ($fetchStyle = self::FETCH_ASSOC, $cursorOrientation = self::FETCH_ORI_NEXT, $cursorOffset = 0);

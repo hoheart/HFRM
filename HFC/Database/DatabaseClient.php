@@ -33,21 +33,6 @@ abstract class DatabaseClient implements IService {
 	const MAX_ROW_COUNT = 200;
 	
 	/**
-	 * prepare用到的属性，游标
-	 *
-	 * @var integer
-	 */
-	const ATTR_CURSOR = 10; // \PDO::ATTR_CURSOR;
-	
-	/**
-	 * 游标类型常量
-	 *
-	 * @var integer
-	 */
-	const CURSOR_FWDONLY = 0; // \PDO::CURSOR_FWDONLY;
-	const CURSOR_SCROLL = 1; // \PDO::CURSOR_SCROLL;
-	
-	/**
 	 * 是否已经停止
 	 *
 	 * @var boolean
@@ -100,8 +85,6 @@ abstract class DatabaseClient implements IService {
 		}
 	}
 
-	abstract protected function connect ();
-
 	public function start () {
 		$this->mStoped = false;
 	}
@@ -115,6 +98,8 @@ abstract class DatabaseClient implements IService {
 		
 		$this->mStoped = true;
 	}
+
+	abstract public function connect ();
 
 	/**
 	 * 执行非Select语句，并返回影响的行数。
@@ -140,7 +125,7 @@ abstract class DatabaseClient implements IService {
 	 *
 	 * @return array
 	 */
-	abstract public function select ($sql, $inputParams, $start = 0, $size = self::MAX_ROW_COUNT);
+	abstract public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false);
 
 	/**
 	 * 选择一行。
@@ -195,7 +180,7 @@ abstract class DatabaseClient implements IService {
 	 * @return DatabaseStatement
 	 *
 	 */
-	abstract public function query ($sql, $cursorType = self::CURSOR_FWDONLY);
+	abstract public function query ($sql);
 
 	/**
 	 * 把普通sql语句转换成limit select语句。
