@@ -9,21 +9,21 @@ abstract class DatabaseStatement {
 	 *
 	 * @var integer
 	 */
-	const FETCH_ASSOC = 2; // \PDO::FETCH_ASSOC;
-	const FETCH_NUM = 3; // \PDO::FETCH_NUM;
-	const FETCH_BOTH = 4; // \PDO::FETCH_BOTH;
+	const FETCH_ASSOC = \PDO::FETCH_ASSOC;
+	const FETCH_NUM = \PDO::FETCH_NUM;
+	const FETCH_BOTH = \PDO::FETCH_BOTH;
 	
 	/**
 	 * 获取数据的位置类型。
 	 *
 	 * @var integer
 	 */
-	const FETCH_ORI_NEXT = 0; // \PDO::FETCH_ORI_NEXT;
-	const FETCH_ORI_PRIOR = 1; // \PDO::FETCH_ORI_PRIOR;
-	const FETCH_ORI_FIRST = 2; // \PDO::FETCH_ORI_FIRST;
-	const FETCH_ORI_LAST = 3; // \PDO::FETCH_ORI_LAST;
-	const FETCH_ORI_ABS = 4; // \PDO::FETCH_ORI_ABS;
-	const FETCH_ORI_REL = 5; // \PDO::FETCH_ORI_REL;
+	const FETCH_ORI_NEXT = \PDO::FETCH_ORI_NEXT;
+	const FETCH_ORI_PRIOR = \PDO::FETCH_ORI_PRIOR;
+	const FETCH_ORI_FIRST = \PDO::FETCH_ORI_FIRST;
+	const FETCH_ORI_LAST = \PDO::FETCH_ORI_LAST;
+	const FETCH_ORI_ABS = \PDO::FETCH_ORI_ABS;
+	const FETCH_ORI_REL = \PDO::FETCH_ORI_REL;
 	
 	/**
 	 *

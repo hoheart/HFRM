@@ -2,7 +2,6 @@
 
 namespace HFC\Database;
 
-use HFC\Exception\NotImplementedException;
 use HFC\Exception\SQLInjectionRiskException;
 
 /**
@@ -59,6 +58,12 @@ abstract class PDOClient extends DatabaseClient {
 		}
 		
 		return $sqlVal;
+	}
+
+	public function query ($sql) {
+		$stmt = $this->getClient()->query($sql);
+		
+		return new PDOStatement($this, $stmt);
 	}
 
 	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
@@ -197,9 +202,10 @@ abstract class PDOClient extends DatabaseClient {
 			throw new DatabaseConnectException('On Connection Error.' . $e->getMessage());
 		}
 		
-		$this->mClient->setAttribute(3/*\PDO::ATTR_ERRMODE*/, 2/*\PDO::ERRMODE_EXCEPTION*/);
-		$this->mClient->setAttribute(0/*\PDO::ATTR_AUTOCOMMIT*/,$this->mAutocommit);
-		$this->mClient->setAttribute(20/*\PDO::ATTR_EMULATE_PREPARES*/, false);
+		$this->mClient->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+		$this->mClient->setAttribute(\PDO::ATTR_AUTOCOMMIT, $this->mAutocommit);
+		$this->mClient->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+		$this->mClient->setAttribute(\PDO::ATTR_TIMEOUT, 86400); // 超时时间设置为1天
 		
 		return $this->mClient;
 	}
@@ -227,9 +233,5 @@ abstract class PDOClient extends DatabaseClient {
 						 $originalMsg);
 		$e->setSourceCode($sourceCode);
 		throw $e;
-	}
-
-	public function change2SqlValue ($str, $type = 'string') {
-		throw new NotImplementedException('this method must be Override.');
 	}
 }

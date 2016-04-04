@@ -3,36 +3,8 @@
 namespace HFC\Database\Mysql;
 
 use HFC\Database\PDOClient;
-use HFC\Exception\NotImplementedException;
 
 class MysqlClient extends PDOClient {
-	protected $mInited = false;
-
-	public function query ($sql, $cursorType = self::CURSOR_FWDONLY) {
-		if (self::CURSOR_FWDONLY != $cursorType) {
-			throw new NotImplementedException('mysql database can not support scroll cursor.');
-		}
-		
-		return parent::query($sql, $cursorType);
-	}
-
-	protected function getClient () {
-		$client = parent::getClient();
-		if (! $this->mInited) {
-			$this->mInited = true;
-			
-			$dt = new \DateTime();
-			$tz = $dt->getTimezone();
-			
-			$intTz = (int) ($tz->getOffset($dt) / 3600);
-			if ($intTz > 0) {
-				$intTz = '+' . $intTz;
-			}
-			$client->exec("SET time_zone = '$intTz:00';COMMIT;");
-		}
-		
-		return $client;
-	}
 
 	protected function getDSN () {
 		$host = $this->mConf['server'];

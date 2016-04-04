@@ -8,8 +8,8 @@ class PDOStatement extends DatabaseStatement {
 	 *
 	 * @var int
 	 */
-	const PARAM_INT = 1; // \PDO::PARAM_INT;
-	const PARAM_STR = 2; // \PDO::PARAM_STR;
+	const PARAM_INT = \PDO::PARAM_INT;
+	const PARAM_STR = \PDO::PARAM_STR;
 	
 	/**
 	 * 对应DBMS的语句对象。

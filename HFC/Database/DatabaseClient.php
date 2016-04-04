@@ -33,6 +33,21 @@ abstract class DatabaseClient implements IService {
 	const MAX_ROW_COUNT = 200;
 	
 	/**
+	 * prepare用到的属性，游标
+	 *
+	 * @var integer
+	 */
+	const ATTR_CURSOR = 10; // \PDO::ATTR_CURSOR;
+	
+	/**
+	 * 游标类型常量
+	 *
+	 * @var integer
+	 */
+	const CURSOR_FWDONLY = 0; // \PDO::CURSOR_FWDONLY;
+	const CURSOR_SCROLL = 1; // \PDO::CURSOR_SCROLL;
+	
+	/**
 	 * 是否已经停止
 	 *
 	 * @var boolean
@@ -87,12 +102,16 @@ abstract class DatabaseClient implements IService {
 
 	public function start () {
 		$this->mStoped = false;
+		
+		if (! $this->mAutocommit) {
+			$this->beginTransaction();
+		}
 	}
 
 	public function stop () {
 		if (! $this->mStoped) {
 			if (! $this->mAutocommit) {
-				$this->exec('COMMIT;');
+				$this->commit();
 			}
 		}
 		

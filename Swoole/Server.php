@@ -41,10 +41,14 @@ class Server {
 	 * @var string
 	 */
 	public static $PID_FILE_PATH = '';
+	
+	protected $mLocker = null;
 
 	public function __construct ($pidFilePath) {
 		self::$PID_FILE_PATH = $pidFilePath;
 		$this->mApp = App::Instance();
+		
+		$this->mLocker = new \swoole_lock(SWOOLE_SEM);
 	}
 
 	public function init () {
@@ -84,10 +88,19 @@ class Server {
 				function  () {
 					\swoole_set_process_name($this->mServerName . '_manager');
 				});
+		$this->mServer->on('workerError', array(
+			$this,
+			'onWorkerError'
+		));
 	}
 
 	public function start () {
 		$this->mServer->start();
+	}
+
+	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
+		$sm = $this->mApp->getServiceManager();
+		$sm->initPoolService('db');
 	}
 
 	public function onStart () {
@@ -99,6 +112,8 @@ class Server {
 	}
 
 	public function onRequest ($req, $resp) {
+		$this->mLocker->lock();
+		$this->mLocker->lock();
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		

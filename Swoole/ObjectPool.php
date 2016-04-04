@@ -3,6 +3,7 @@
 namespace Framework\Swoole;
 
 use Framework\IService;
+use HFC\Database\DatabaseClient;
 
 class ObjectPool implements IService {
 	
@@ -54,6 +55,9 @@ class ObjectPool implements IService {
 	 * 让每个进程获取db服务时，从Pool里取一个，并锁上，不让其他进程再取得。
 	 */
 	public function get () {
+		$foundObj = null;
+		$foundLocker = null;
+		
 		foreach ($this->mLockerArray as $key => $locker) {
 			if (! $locker->trylock()) {
 				continue;
@@ -62,16 +66,26 @@ class ObjectPool implements IService {
 			$obj = $this->mObjectArray[$key];
 			$this->mLabelArray[$key] = true;
 			
-			return $obj;
+			$foundObj = $obj;
+			$foundLocker = $locker;
 		}
 		
-		// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
-		$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
-		$this->mLockerArray[$indx]->lock();
-		$obj = $this->mObjectArray[$indx];
-		$this->mLabelArray[$indx] = true;
+		if (null == $foundObj) {
+			// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
+			$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
+			$this->mLockerArray[$indx]->lock();
+			$obj = $this->mObjectArray[$indx];
+			$this->mLabelArray[$indx] = true;
+			
+			$foundObj = $obj;
+			$foundLocker = $this->mLockerArray[$indx];
+		}
 		
-		return $obj;
+		if ($foundObj instanceof DatabaseClient) {
+			return new DatabaseClientProxy($foundObj, $foundLocker);
+		} else {
+			return new ObjectProxy($foundObj, $foundLocker);
+		}
 	}
 
 	public function release () {
