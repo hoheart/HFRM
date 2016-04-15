@@ -10,6 +10,13 @@ use Framework\App;
 class Server {
 	
 	/**
+	 * 默认的连接数
+	 *
+	 * @var int
+	 */
+	const DEFAULT_CONNECTIONS_NUM = 5;
+	
+	/**
 	 * swoole服务器
 	 *
 	 * @var swoole_http_server
@@ -41,7 +48,6 @@ class Server {
 	 * @var string
 	 */
 	public static $PID_FILE_PATH = '';
-	
 	protected $mLocker = null;
 
 	public function __construct ($pidFilePath) {
@@ -92,6 +98,35 @@ class Server {
 			$this,
 			'onWorkerError'
 		));
+	}
+
+	public function initPoolService ($name) {
+		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
+		foreach ($moduleAliasArr as $alias) {
+			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
+			if (empty($conf)) {
+				continue;
+			}
+			$num = $conf['connections_num'];
+			if (empty($num)) {
+				$num = self::DEFAULT_CONNECTIONS_NUM;
+			}
+			
+			$pool = new ObjectPool();
+			$pool->init(array(
+				'num' => $num
+			));
+			
+			for ($i = 0; $i < $num; ++ $i) {
+				$s = $this->createService($name, $alias);
+				$pool->addObject($i, $s);
+			}
+			
+			$proxy = new ObjectProxy($pool);
+			
+			$keyName = $this->getKeyName($name, $alias);
+			$this->add2Map($keyName, $proxy);
+		}
 	}
 
 	public function start () {

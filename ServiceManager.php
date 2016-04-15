@@ -5,7 +5,6 @@ namespace Framework;
 use Framework\Module\ModuleManager;
 use Framework\IService;
 use Framework\Exception\ConfigErrorException;
-use Framework\Swoole\ObjectPool;
 
 /**
  * 服务管理器，可以在主进程里初始化服务池。
@@ -14,13 +13,6 @@ use Framework\Swoole\ObjectPool;
  *        
  */
 class ServiceManager {
-	
-	/**
-	 * 默认的连接数
-	 *
-	 * @var int
-	 */
-	const DEFAULT_CONNECTIONS_NUM = 5;
 	
 	/**
 	 *
@@ -42,45 +34,6 @@ class ServiceManager {
 	public function stop () {
 		foreach ($this->mServiceMap as $service) {
 			$service->stop();
-			
-			if ($service instanceof ObjectPool) {
-				$service->release();
-			}
-		}
-	}
-
-	public function initPoolService ($name) {
-		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
-		foreach ($moduleAliasArr as $alias) {
-			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
-			if (empty($conf)) {
-				continue;
-			}
-			$num = $conf['connections_num'];
-			if (empty($num)) {
-				$num = self::DEFAULT_CONNECTIONS_NUM;
-			}
-			
-			$pool = new ObjectPool();
-			$pool->init(array(
-				'num' => $num
-			));
-			
-			for ($i = 0; $i < $num; ++ $i) {
-				$s = $this->createService($name, $alias);
-				$pool->addObject($i, $s);
-			}
-			
-			$keyName = $this->getKeyName($name, $alias);
-			$this->add2Map($keyName, $pool);
-		}
-	}
-
-	public function releasePoolService () {
-		foreach ($this->mServiceMap as $service) {
-			if ($service instanceof ObjectPool) {
-				$service->release();
-			}
 		}
 	}
 
@@ -92,9 +45,6 @@ class ServiceManager {
 		$keyName = $this->getKeyName($name, $caller);
 		if (array_key_exists($keyName, $this->mServiceMap)) {
 			$s = $this->mServiceMap[$keyName];
-			if ($s instanceof ObjectPool) {
-				$s = $s->get();
-			}
 			
 			return $s;
 		}

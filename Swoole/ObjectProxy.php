@@ -2,36 +2,41 @@
 
 namespace Framework\Swoole;
 
-use Framework\IService;
-
 class ObjectProxy {
 	
 	/**
-	 * 源对象
 	 *
-	 * @var IService
+	 * @var object
 	 */
-	protected $mObj = null;
+	protected $mOriginObj = null;
 	
 	/**
 	 *
-	 * @var \swoole_lock
+	 * @var ObjectPool
 	 */
-	protected $mLocker = null;
+	protected $mPool = null;
 
-	public function __construct ($obj, $locker) {
-		$this->mObj = $obj;
-		$this->mLocker = $locker;
+	public function __construct (ObjectPool $pool) {
+		$this->mPool = $pool;
 	}
 
 	public function __destruct () {
-		$this->mLocker->unlock();
+		if (null != $this->mOriginObj) {
+			$this->mPool->release($this->mOriginObj);
+		}
 	}
 
 	public function __call ($name, $arguments) {
-		return call_user_func_array(array(
-			$this->mObj,
+		$obj = $this->mPool->get();
+		$this->mOriginObj = $obj;
+		
+		$ret = call_user_func_array(array(
+			$obj,
 			$name
 		), $arguments);
+		
+		$this->mPool->release($obj);
+		
+		return $ret;
 	}
 }
