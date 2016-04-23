@@ -121,4 +121,11 @@ class HttpResponse implements IHttpResponse {
 	public function getContent () {
 		return $this->mBody;
 	}
+
+	public function clear () {
+		$this->mStatus = 0;
+		$this->mBody = '';
+		$this->mCookieMap = array();
+		$this->mHeaderMap = array();
+	}
 }

@@ -12,7 +12,6 @@ namespace Framework {
 	use Framework\Request\RequestFilter;
 	use Framework\Router\PathParseRouter;
 	use Framework\View\ViewRender;
-	use Framework\Facade\Module;
 	use Framework\Output\StandardOutputStream;
 	use Framework\Output\IOutputStream;
 	use Framework\Response\IResponse;
@@ -75,13 +74,6 @@ namespace Framework {
 		protected $mRequest = null;
 		
 		/**
-		 * 路由器
-		 *
-		 * @var IRouter
-		 */
-		protected $mRouter = null;
-		
-		/**
 		 * 启动的Controller，即url中指定要访问的Controller。
 		 *
 		 * @var \Framework\Controller
@@ -115,6 +107,9 @@ namespace Framework {
 			chdir(self::$ROOT_DIR);
 		}
 
+		/**
+		 * 单独提出来，可能有的程序只想用自动加载器
+		 */
 		public function registerAutoloader () {
 			$this->mClassLoader = new ClassLoader();
 			$this->mClassLoader->register2System();
@@ -131,9 +126,6 @@ namespace Framework {
 			
 			// 还没想好怎么处理，暂时放这儿。
 			date_default_timezone_set(Config::Instance()->get('app.localTimezone'));
-			
-			// 防止直接echo等的输出，避免xss攻击。
-			ob_start();
 			
 			$this->mModuleManager = ModuleManager::Instance();
 			
@@ -155,13 +147,6 @@ namespace Framework {
 			}
 			
 			$this->mModuleManager->stop();
-			
-			if (Config::Instance()->get('app.debugOutput')) {
-				ob_flush();
-				flush();
-			} else {
-				ob_clean();
-			}
 		}
 
 		/**
@@ -178,6 +163,9 @@ namespace Framework {
 				$request = $this->generateRequest();
 			}
 			$this->mRequest = $request;
+			
+			// 防止直接echo等的输出，避免xss攻击。
+			ob_start();
 			
 			// 2.根据请求，取得路由
 			try {
@@ -223,6 +211,8 @@ namespace Framework {
 			}
 			
 			$this->mOutputStream->output($resp);
+			// 当此输出完后，清空，以备下次输出。
+			$resp->clear();
 			
 			$this->mOutputStream->flush();
 			$this->mOutputStream->close();
@@ -239,11 +229,8 @@ namespace Framework {
 			return $this->mResponse;
 		}
 
-		public function getRequest () {
-			return $this->mRequest;
-		}
-
 		protected function operationLog ($moduleAlias, $ctrlClassName, $actionName, $controller, $e = null) {
+			// EndAppException相当于调用exit，不是错误
 			if ($e instanceof EndAppException) {
 				$e = null;
 			}
@@ -348,10 +335,6 @@ namespace Framework {
 				return $moduleName;
 			} else {
 				return null;
-				
-				// throw new ParameterErrorException(
-				// 'can not get module name from class:' . $clsName . '. do not
-				// use global namespace.');
 			}
 		}
 
@@ -426,7 +409,8 @@ namespace Framework {
 		}
 
 		/**
-		 * 直接结束程序运行。
+		 * 直接结束程序运行。相当于调用exit。
+		 * 在swoole框架里，调用exit会引起所有资源回收，导致连接池破损。
 		 *
 		 * @throws EndAppException
 		 */

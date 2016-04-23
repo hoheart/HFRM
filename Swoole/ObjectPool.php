@@ -3,7 +3,6 @@
 namespace Framework\Swoole;
 
 use Framework\IService;
-use HFC\Database\DatabaseClient;
 
 class ObjectPool implements IService {
 	
@@ -30,7 +29,7 @@ class ObjectPool implements IService {
 	}
 
 	public function __destruct () {
-		$this->release();
+		$this->releaseAll();
 	}
 
 	public function init (array $conf) {
@@ -57,14 +56,15 @@ class ObjectPool implements IService {
 	public function get () {
 		$foundObj = null;
 		$foundLocker = null;
+		$index = - 1;
 		
-		foreach ($this->mLockerArray as $key => $locker) {
+		foreach ($this->mLockerArray as $index => $locker) {
 			if (! $locker->trylock()) {
 				continue;
 			}
 			
-			$obj = $this->mObjectArray[$key];
-			$this->mLabelArray[$key] = true;
+			$obj = $this->mObjectArray[$index];
+			$this->mLabelArray[$index] = true;
 			
 			$foundObj = $obj;
 			$foundLocker = $locker;
@@ -81,19 +81,21 @@ class ObjectPool implements IService {
 			$foundLocker = $this->mLockerArray[$indx];
 		}
 		
-		if ($foundObj instanceof DatabaseClient) {
-			return new DatabaseClientProxy($foundObj, $foundLocker);
-		} else {
-			return new ObjectProxy($foundObj, $foundLocker);
+		return array(
+			$foundObj,
+			$index
+		);
+	}
+
+	public function release ($index) {
+		if ($index >= 0 && $index < count($this->mLockerArray)) {
+			$this->mLockerArray[$index]->unlock();
 		}
 	}
 
-	public function release () {
-		foreach ($this->mLabelArray as $key => $isLock) {
-			if ($isLock) {
-				$this->mLockerArray[$key]->unlock();
-				$this->mLabelArray[$key] = false;
-			}
+	public function releaseAll () {
+		foreach ($this->mLockerArray as $locker) {
+			$locker->unlock();
 		}
 	}
 }

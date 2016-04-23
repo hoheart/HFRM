@@ -54,6 +54,8 @@ class JsonRender {
 		
 		$str = json_encode($this->mTree);
 		$resp->addContent($str);
+		
+		return $resp;
 	}
 
 	public function node ($path, $data, $template = null) {

@@ -37,15 +37,15 @@ abstract class DatabaseClient implements IService {
 	 *
 	 * @var integer
 	 */
-	const ATTR_CURSOR = 10; // \PDO::ATTR_CURSOR;
+	const ATTR_CURSOR = \PDO::ATTR_CURSOR;
 	
 	/**
 	 * 游标类型常量
 	 *
 	 * @var integer
 	 */
-	const CURSOR_FWDONLY = 0; // \PDO::CURSOR_FWDONLY;
-	const CURSOR_SCROLL = 1; // \PDO::CURSOR_SCROLL;
+	const CURSOR_FWDONLY = \PDO::CURSOR_FWDONLY;
+	const CURSOR_SCROLL = \PDO::CURSOR_SCROLL;
 	
 	/**
 	 * 是否已经停止
@@ -94,10 +94,6 @@ abstract class DatabaseClient implements IService {
 				$this->mAutocommit = true;
 			}
 		}
-		
-		if (! $this->mConf['lazy_connection']) {
-			$this->connect();
-		}
 	}
 
 	public function start () {
@@ -119,6 +115,8 @@ abstract class DatabaseClient implements IService {
 	}
 
 	abstract public function connect ();
+
+	abstract public function isConnect ();
 
 	/**
 	 * 执行非Select语句，并返回影响的行数。

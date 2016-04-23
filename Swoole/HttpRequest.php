@@ -12,6 +12,12 @@ class HttpRequest implements IRequest {
 	 * @var swoole_http_request
 	 */
 	protected $mRequest = null;
+	
+	/**
+	 *
+	 * @var array $mAllParam
+	 */
+	protected $mAllParam = array();
 
 	public function __construct ($req) {
 		$this->mRequest = $req;
@@ -92,10 +98,26 @@ class HttpRequest implements IRequest {
 	}
 
 	public function getAllParams () {
-		return $this->mBody;
+		if (empty($this->mAllParam)) {
+			if (is_array($this->mRequest->get)) {
+				$this->mAllParam = array_merge($this->mAllParam, $this->mRequest->get);
+			}
+			if (is_array($this->mRequest->post)) {
+				$this->mAllParam = array_merge($this->mAllParam, $this->mRequest->post);
+			}
+			if (is_array($this->mRequest->cookie)) {
+				$this->mAllParam = array_merge($this->mAllParam, $this->mRequest->cookie);
+			}
+		}
+		
+		return $this->mAllParam;
 	}
 
 	public function getMethod () {
 		return $this->mRequest->server['request_method'];
+	}
+
+	public function getHost () {
+		return $this->mRequest->header['host'];
 	}
 }

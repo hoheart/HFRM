@@ -88,8 +88,6 @@ class ErrorHandler {
 			}
 		} else {
 			if (Config::Instance()->get('app.debug')) {
-				ob_clean();
-				
 				$out = App::Instance()->getOutputStream();
 				$out->write("Error:$errno:$errstr.");
 				$out->write('<br>');

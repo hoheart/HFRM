@@ -50,21 +50,21 @@ class ServiceManager {
 		}
 		
 		$s = $this->createService($name, $caller);
-		
-		$this->add2Map($keyName, $s);
+		$this->addService($s, $keyName);
 		
 		return $s;
 	}
 
-	protected function getKeyName ($name, $caller) {
+	public function getKeyName ($name, $caller) {
 		return $caller . '.' . $name;
 	}
 
-	protected function add2Map ($keyName, $s) {
+	public function addService (IService $s, $keyName) {
+		$s->start();
 		$this->mServiceMap[$keyName] = $s;
 	}
 
-	protected function createService ($name, $caller) {
+	public function createService ($name, $caller) {
 		$conf = Config::Instance()->getModuleConfig($caller, 'service.' . $name);
 		if (empty($conf)) {
 			return null;
@@ -89,12 +89,11 @@ class ServiceManager {
 		} else {
 			$s = new $clsName();
 		}
-		$s->init($serviceConf);
-		$s->start();
-		
 		if (! $s instanceof IService) {
 			throw new ConfigErrorException('the service is not a implementation of IService: service:' . $name);
 		}
+		
+		$s->init($serviceConf);
 		
 		return $s;
 	}

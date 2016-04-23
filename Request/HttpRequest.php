@@ -121,4 +121,8 @@ class HttpRequest implements IRequest {
 	public function getMethod () {
 		return $_SERVER['REQUEST_METHOD'];
 	}
+
+	public function getHost () {
+		return $_SERVER['HTTP_HOST'];
+	}
 }

@@ -35,8 +35,10 @@ class ViewRender {
 		// date_default_timezone_set($tmzone);
 		
 		// $v 一般等于null，Controller一般不会返回任何数据
-		$ctrl = App::Instance()->getCurrentController();
-		$v = $ctrl->getView();
+		if (null == $v) {
+			$ctrl = App::Instance()->getCurrentController();
+			$v = $ctrl->getView();
+		}
 		if (null == $v) {
 			if (HttpRequest::isAjaxRequest()) {
 				$v = new View('', 'common::Common.frame', View::VIEW_TYPE_JSON);

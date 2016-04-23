@@ -68,8 +68,8 @@ class PDOStatement extends DatabaseStatement {
 		return $this->mStatement->fetchAll($fetchStyle);
 	}
 
-	public function bindParam ($parameter, &$variable, $dataType = self::PARAM_STR, $length = 0, $options = null) {
-		return $this->mStatement->bindParam($parameter, $variable, $dataType, $length, $options);
+	public function bindParam ($parameter, $variable, $dataType = self::PARAM_STR) {
+		return $this->mStatement->bindParam($parameter, $variable, $dataType);
 	}
 
 	public function errorInfo () {

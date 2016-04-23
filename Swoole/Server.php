@@ -2,10 +2,11 @@
 
 namespace Framework\Swoole;
 
-use Framework\Config;
 use Framework\Output\SwooleHttpOutputStream;
 use Framework\Swoole\HttpRequest;
 use Framework\App;
+use Framework\Module\ModuleManager;
+use Framework\Facade\Config;
 
 class Server {
 	
@@ -17,6 +18,13 @@ class Server {
 	const DEFAULT_CONNECTIONS_NUM = 5;
 	
 	/**
+	 * pid文件路径
+	 *
+	 * @var string
+	 */
+	public static $PID_FILE_PATH = '';
+	
+	/**
 	 * swoole服务器
 	 *
 	 * @var swoole_http_server
@@ -25,7 +33,7 @@ class Server {
 	
 	/**
 	 *
-	 * @var Framework\App
+	 * @var \Framework\App
 	 */
 	protected $mApp;
 	
@@ -34,47 +42,33 @@ class Server {
 	 * @var IOutputStream $mOutputStream
 	 */
 	protected $mOutputStream = null;
-	protected $mGlobal = null;
 	
 	/**
 	 *
 	 * @var string
 	 */
 	protected $mServerName = 'mdserver';
-	
-	/**
-	 * pid文件路径
-	 *
-	 * @var string
-	 */
-	public static $PID_FILE_PATH = '';
-	protected $mLocker = null;
 
 	public function __construct ($pidFilePath) {
 		self::$PID_FILE_PATH = $pidFilePath;
 		$this->mApp = App::Instance();
-		
-		$this->mLocker = new \swoole_lock(SWOOLE_SEM);
 	}
 
-	public function init () {
+	protected function init () {
 		$this->mApp->init();
 		
-		$config = Config::Instance();
-		
-		$this->mServerName = $config->get('server.serverName');
+		$this->mServerName = Config::get('server.serverName');
 		\swoole_set_process_name($this->mServerName);
 		
-		$sm = $this->mApp->getServiceManager();
-		$sm->initPoolService('db');
+		$this->initPoolService();
 		
 		$this->mOutputStream = new SwooleHttpOutputStream();
 		
-		$host = $config->get('server.host');
-		$port = $config->get('server.port');
+		$host = Config::get('server.host');
+		$port = Config::get('server.port');
 		
 		$this->mServer = new \swoole_http_server($host, $port);
-		$swooleConfig = $config->get('server.swooleConfig');
+		$swooleConfig = Config::get('server.swooleConfig');
 		$this->mServer->set($swooleConfig);
 		
 		$this->mServer->on('request', array(
@@ -100,7 +94,21 @@ class Server {
 		));
 	}
 
-	public function initPoolService ($name) {
+	public function onRequest ($req, $resp) {
+		$this->mOutputStream->setSwooleResponse($resp);
+		$this->mApp->setOutputStream($this->mOutputStream);
+		
+		$this->mApp->run(new HttpRequest($req));
+	}
+
+	protected function initPoolService () {
+		$serviceArr = Config::get('server.poolService');
+		foreach ($serviceArr as $name => $cls) {
+			$this->initOnePoolService($name, $cls);
+		}
+	}
+
+	protected function initOnePoolService ($name, $cls = '') {
 		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
 		foreach ($moduleAliasArr as $alias) {
 			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
@@ -117,15 +125,20 @@ class Server {
 				'num' => $num
 			));
 			
+			$sm = App::Instance()->getServiceManager();
+			$s = null;
 			for ($i = 0; $i < $num; ++ $i) {
-				$s = $this->createService($name, $alias);
+				$s = $sm->createService($name, $alias);
 				$pool->addObject($i, $s);
 			}
 			
-			$proxy = new ObjectProxy($pool);
+			if ('' == $cls) {
+				$cls = 'Framework\Swoole\ObjectProxy';
+			}
+			$proxy = new $cls($pool);
 			
-			$keyName = $this->getKeyName($name, $alias);
-			$this->add2Map($keyName, $proxy);
+			$keyName = $sm->getKeyName($name, $alias);
+			$sm->addService($proxy, $keyName);
 		}
 	}
 
@@ -134,8 +147,7 @@ class Server {
 	}
 
 	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
-		$sm = $this->mApp->getServiceManager();
-		$sm->initPoolService('db');
+		$this->initPoolService();
 	}
 
 	public function onStart () {
@@ -144,18 +156,6 @@ class Server {
 		ftruncate($fp, 0);
 		fwrite($fp, $pid);
 		fclose($fp);
-	}
-
-	public function onRequest ($req, $resp) {
-		$this->mLocker->lock();
-		$this->mLocker->lock();
-		$this->mOutputStream->setSwooleResponse($resp);
-		$this->mApp->setOutputStream($this->mOutputStream);
-		
-		$ret = $this->mApp->run(new HttpRequest($req));
-		if (! $ret) { // 因为不释放app对象，所以出错了要主动释放锁
-			$this->mApp->getServiceManager()->releasePoolService();
-		}
 	}
 
 	public function stop () {

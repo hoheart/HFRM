@@ -28,11 +28,13 @@ abstract class AbstractDataFactory {
 
 	/**
 	 * 根据Condition 查询一个对象
-	 * @param $className
-	 * @param Condition $cond
+	 *
+	 * @param
+	 *        	$className
+	 * @param Condition $cond        	
 	 * @return mixed
 	 */
-	abstract public function getOne($className, Condition $cond);
+	abstract public function getOne ($className, Condition $cond);
 
 	abstract public function where ($className, Condition $cond = null);
 

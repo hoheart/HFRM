@@ -53,6 +53,10 @@ class MysqlClientMysqli extends DatabaseClient {
 		}
 	}
 
+	public function isConnect () {
+		return $this->mMysqli->ping();
+	}
+
 	public function exec ($sql) {
 		$ret = $this->mMysqli->query($sql);
 		if (true === $ret) {
@@ -87,14 +91,14 @@ class MysqlClientMysqli extends DatabaseClient {
 		if (is_array($inputParams)) {
 			$strType = '';
 			foreach ($inputParams as $key => $val) {
-				if( is_int( $val )){
+				if (is_int($val)) {
 					$strType .= 'i';
-				}else{
+				} else {
 					$strType .= 's';
 				}
 			}
 			
-			$stmt->bind_param( $strType, $strType , $a);
+			$stmt->bind_param($strType, $strType, $a);
 		}
 		
 		if (false === $stmt->execute()) {

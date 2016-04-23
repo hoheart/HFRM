@@ -20,8 +20,6 @@ class RegexUrlManager {
 	public static function Instance () {
 		if (self::$regexUrlManager == null) {
 			self::$regexUrlManager = new self();
-			$rules = Config::Instance()->get('rules.rules');
-			self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
 		}
 		return self::$regexUrlManager;
 	}
@@ -48,6 +46,11 @@ class RegexUrlManager {
 	}
 
 	public function getRoute ($request) {
+		if (empty(self::$regexUrlManager->rules)) {
+			$rules = Config::Instance()->get('rules.rules');
+			self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
+		}
+		
 		try {
 			$route = $this->parseRequest(new Request($request));
 		} catch (\Exception $e) {
@@ -95,7 +98,7 @@ class RegexUrlManager {
 		unset($params['#']);
 		$route = trim($params[0], '/');
 		unset($params[0]);
-		$baseUrl = (new Request())->getBaseUrl();
+		$baseUrl = ''; // (new Request())->getBaseUrl();
 		$cacheKey = $route . '?';
 		foreach ($params as $key => $value) {
 			if ($value !== null) {
@@ -248,15 +251,9 @@ class Request {
 		$hostInfo = '';
 		$secure = $this->getIsSecureConnection();
 		$http = $secure ? 'https' : 'http';
-		if (isset($_SERVER['HTTP_HOST'])) {
-			$hostInfo = $http . '://' . $_SERVER['HTTP_HOST'];
-		} elseif (isset($_SERVER['SERVER_NAME'])) {
-			$hostInfo = $http . '://' . $_SERVER['SERVER_NAME'];
-			$port = $secure ? $this->getSecurePort() : $this->getPort();
-			if (($port !== 80 && ! $secure) || ($port !== 443 && $secure)) {
-				$hostInfo .= ':' . $port;
-			}
-		}
+		
+		$hostInfo = $http . '://' . $this->mOriginReq->getHost();
+		
 		return $hostInfo;
 	}
 
