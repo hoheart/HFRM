@@ -5,6 +5,7 @@ namespace HFC\Log;
 use Framework\Facade\Module;
 use HFC\Log\Logger;
 use Framework\IService;
+use Framework\App;
 
 class LoggerClient implements IService {
 	
@@ -74,7 +75,8 @@ class LoggerClient implements IService {
 			'result' => $result,
 			'sessionId' => session_id(),
 			'desc' => $desc,
-			'clientIp' => $this->mConf['localMachineName'],
+			'clientIp' => App::Instance()->getRequest()->getClientIP(),
+			'machineName' => $this->mConf['localMachineName'],
 			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
@@ -88,7 +90,8 @@ class LoggerClient implements IService {
 			'moduleName' => $modulePath,
 			'desc' => $str,
 			'level' => $level,
-			'clientIp' => $this->mConf['localMachineName'],
+			'clientIp' => App::Instance()->getRequest()->getClientIP(),
+			'machineName' => $this->mConf['localMachineName'],
 			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
@@ -96,6 +99,3 @@ class LoggerClient implements IService {
 		$this->mExchange->publish(json_encode($data), '');
 	}
 }
-
-
-

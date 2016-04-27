@@ -265,34 +265,18 @@ class Logger implements IService {
 			$logFilePath .= $logInfo->platformName . DIRECTORY_SEPARATOR;
 		}
 		
-		if ('' != $logInfo->ip) {
-			$logFilePath .= $logInfo->ip . DIRECTORY_SEPARATOR;
-		}
+		// if ('' != $logInfo->ip) {
+		// $logFilePath .= $logInfo->ip . DIRECTORY_SEPARATOR;
+		// }
 		
 		return $logFilePath;
 	}
 
 	protected function createLogDir ($conf, $logInfo) {
-		$logFilePath = $conf['root_dir'];
-		if (! file_exists($logFilePath)) {
-			if (false === mkdir($logFilePath)) {
-				throw new ConfigErrorException('can not create folder:' . $logFilePath);
-			}
-		}
-		if ('' != $logInfo->platformName) {
-			$logFilePath .= $logInfo->platformName . DIRECTORY_SEPARATOR;
-		}
-		if (! file_exists($logFilePath)) {
-			if (false === mkdir($logFilePath)) {
-				throw new ConfigErrorException('can not create folder:' . $logFilePath);
-			}
-		}
-		if ('' != $logInfo->ip) {
-			$logFilePath .= $logInfo->ip . DIRECTORY_SEPARATOR;
-		}
-		if (! file_exists($logFilePath)) {
-			if (false === mkdir($logFilePath)) {
-				throw new ConfigErrorException('can not create folder:' . $logFilePath);
+		$logDir = $this->getLogDir($conf, $logInfo);
+		if (! file_exists($logDir)) {
+			if (false === mkdir($logDir)) {
+				throw new ConfigErrorException('can not create folder:' . $logDir);
 			}
 		}
 	}

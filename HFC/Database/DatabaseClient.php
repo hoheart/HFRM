@@ -81,7 +81,10 @@ abstract class DatabaseClient implements IService {
 		// 因为现在用连接池了，所以，在对象消失时，要回滚。否则连接建立时，会提交。
 		if (! $this->mStoped) {
 			if (! $this->mAutocommit) {
-				$this->exec('ROLLBACK;');
+				try {
+					$this->exec('ROLLBACK;');
+				} catch (\Exception $e) {
+				}
 			}
 		}
 	}
