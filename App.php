@@ -206,15 +206,17 @@ namespace Framework {
 
 		public function respond (IResponse $resp = null) {
 			if (null == $resp) {
-				$resp = $this->mResponse;
+				$resp = $this->getResponse();
 			}
 			
-			$this->mOutputStream->output($resp);
+			$output = $this->getOutputStream();
+			
+			$output->output($resp);
 			// 当此输出完后，清空，以备下次输出。
 			$resp->clear();
 			
-			$this->mOutputStream->flush();
-			$this->mOutputStream->close();
+			$output->flush();
+			$output->close();
 		}
 
 		public function getResponse () {

@@ -38,7 +38,7 @@ class StandardOutputStream implements IOutputStream {
 			}
 		}
 		
-		foreach ($resp->getAllCooike() as $key => $cookie) {
+		foreach ($resp->getAllCookie() as $key => $cookie) {
 			setcookie($key, $cookie['value'], $cookie['expire'], $cookie['path'], $cookie['domain'], $cookie['secure'], 
 					$cookie['httponly']);
 		}

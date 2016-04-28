@@ -5,7 +5,7 @@ namespace HFC\Log;
 use Framework\Facade\Module;
 use HFC\Log\Logger;
 use Framework\IService;
-use Framework\Module\ModuleManager;
+use Framework\App;
 
 class LoggerClient implements IService {
 	
@@ -64,8 +64,10 @@ class LoggerClient implements IService {
 	}
 
 	public function operationLog ($moduleName, $controllerName, $actionName, $operationName, $result, $desc) {
+		$login = Module::getService('user', 'User\API\ILogin');
 		$data = array(
 			'type' => Logger::LOG_TYPE_OPERATION,
+			'operatorId' => $login->getLoginedUserId(),
 			'moduleName' => $moduleName,
 			'controllerName' => $controllerName,
 			'actionName' => $actionName,
@@ -73,16 +75,11 @@ class LoggerClient implements IService {
 			'result' => $result,
 			'sessionId' => session_id(),
 			'desc' => $desc,
-			'clientIp' => $this->mConf['localMachineName'],
+			'clientIp' => App::Instance()->getRequest()->getClientIP(),
+			'machineName' => $this->mConf['localMachineName'],
 			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
-		
-		$mm = ModuleManager::Instance();
-		if ($mm->isModuleEnable('user')) {
-			$login = Module::getService('user', 'User\API\ILogin');
-			$data['operatorId'] = $login->getLoginedUserId();
-		}
 		
 		$this->mExchange->publish(json_encode($data), '');
 	}
@@ -93,7 +90,8 @@ class LoggerClient implements IService {
 			'moduleName' => $modulePath,
 			'desc' => $str,
 			'level' => $level,
-			'clientIp' => $this->mConf['localMachineName'],
+			'clientIp' => App::Instance()->getRequest()->getClientIP(),
+			'machineName' => $this->mConf['localMachineName'],
 			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
 		);
@@ -101,6 +99,3 @@ class LoggerClient implements IService {
 		$this->mExchange->publish(json_encode($data), '');
 	}
 }
-
-
-
