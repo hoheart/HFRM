@@ -171,7 +171,6 @@ namespace Framework {
 			try {
 				$route = $this->mRouter->getRoute($request);
 				list ($moduleAlias, $ctrlClassName, $actionMethodName) = $route;
-				$this->mModuleManager->preloadModule($moduleAlias);
 				
 				// 3.根据配置，创建controller和action并执行
 				$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
