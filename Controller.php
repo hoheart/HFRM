@@ -35,10 +35,16 @@ abstract class Controller {
 	 * @param array $data        	
 	 * @param string $viewName        	
 	 */
-	public function setJsonView ($data, $viewName = 'common::Common.jsonDefault') {
+	public function setJsonView ($data, $viewName = '') {
 		$this->mView = new View($this->mModuleAlias, $viewName, View::VIEW_TYPE_JSON);
 		
-		$this->assign('data', $data);
+		$node = array(
+			'errcode' => 0,
+			'errstr' => '',
+			'data' => $data
+		);
+		
+		$this->assign(0, $node);
 	}
 
 	public function getView () {

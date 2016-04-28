@@ -45,9 +45,16 @@ class JsonRender {
 		$resp->status(200);
 		$resp->header('Content-Type', 'application/json; charset=utf-8');
 		
-		extract($view->getDataMap());
+		$templatePath = $view->getTemplatePath();
+		$dataMap = $view->getDataMap();
+		$ret = null;
+		if (empty($templatePath)) {
+			$ret = $dataMap[0];
+		} else {
+			$ret = include $view->getTemplatePath();
+			extract($dataMap);
+		}
 		
-		$ret = include $view->getTemplatePath();
 		if (is_array($ret)) {
 			$this->mTree = $ret;
 		}

@@ -31,6 +31,12 @@ class View {
 	protected $mDataMap = array();
 	
 	/**
+	 *
+	 * @var string
+	 */
+	protected $mTemplateName = '';
+	
+	/**
 	 * 视图文件路径
 	 *
 	 * @var string
@@ -48,21 +54,21 @@ class View {
 	protected $mViewType = self::VIEW_TYPE_UNKNOWN;
 
 	public function __construct ($myAlias, $name = '', $type = self::VIEW_TYPE_HTML) {
-		if (empty($name)) {
-			throw new ParameterErrorException('did not assign view name.');
-		}
-		
 		if (self::VIEW_TYPE_JSON == $type) {
 			$this->mViewType = $type;
 		} else {
 			$this->mViewType = self::VIEW_TYPE_HTML;
 		}
 		
+		$this->mTemplateName = $name;
 		$this->mCurrentModuleAlias = $myAlias;
-		$this->mTemplatePath = self::ParseViewPath($myAlias, $name);
 	}
 
 	static public function ParseViewPath ($myAlias, $name) {
+		if (empty($name)) {
+			return '';
+		}
+		
 		$arr = explode('::', $name);
 		$path = '';
 		if (1 == count($arr)) {
@@ -103,6 +109,10 @@ class View {
 	}
 
 	public function getTemplatePath () {
+		if (empty($this->mTemplatePath)) {
+			$this->mTemplatePath = self::ParseViewPath($this->mCurrentModuleAlias, $this->mTemplateName);
+		}
+		
 		return $this->mTemplatePath;
 	}
 
