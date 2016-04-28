@@ -117,6 +117,7 @@ class Logger implements IService {
 	 * @var integer
 	 */
 	protected $mBufferSize = 0;
+	
 	/**
 	 * 上次写入磁盘事件
 	 *
@@ -326,26 +327,17 @@ class Logger implements IService {
 			
 			$fileDir = $rootDir . $platformName . DIRECTORY_SEPARATOR;
 			$platformDP = opendir($fileDir);
-			while (false !== ($ip = readdir($platformDP))) {
-				if ('..' == $ip || '.' == $ip) {
+			while (false !== ($fileName = readdir($platformDP))) {
+				if ('..' == $fileName || '.' == $fileName) {
 					continue;
 				}
 				
-				$fileDir = $rootDir . $platformName . DIRECTORY_SEPARATOR . $ip . DIRECTORY_SEPARATOR;
-				$ipDP = opendir($fileDir);
-				while (false !== ($fileName = readdir($ipDP))) {
-					if ('..' == $fileName || '.' == $fileName) {
-						continue;
-					}
-					
-					$filePath = $fileDir . $fileName;
-					if (is_dir($filePath)) {
-						continue;
-					}
-					
-					$this->moveFile2DateDir($filePath, $fileDir, $lastMoveDate);
+				$filePath = $fileDir . $fileName;
+				if (is_dir($filePath)) {
+					continue;
 				}
-				closedir($ipDP);
+				
+				$this->moveFile2DateDir($filePath, $fileDir, $lastMoveDate);
 			}
 			closedir($platformDP);
 		}
@@ -399,16 +391,15 @@ class Logger implements IService {
 		}
 		
 		$now = microtime(true);
-		if (null === $this->mLastTime) {
-			$this->mLastTime = $now;
-		}
-		
-		// 1.如果到了配置的时间，把日志写入文件。
-		// 2.如果是前一天的日志还没写入，写入文件。
-		// 目前是一次性把缓存清空到临时文件，再移动临时文件，所以，缓存不能含有两天的日志。
-		if (($now - $this->mLastTime) >= $this->mConf['interval'] || $this->mLastTime < strtotime(date('Y-m-d', $now))) {
+		// 如果是前一天的日志还没写入，写入文件。
+		if (null === $this->mLastTime || $this->mLastTime < strtotime(date('Y-m-d', $now))) {
 			$this->writeBuffer2File($now);
 			$this->movePreviousTempFile();
+		}
+		
+		// 如果到了配置的时间，把日志写入文件。
+		if (($now - $this->mLastTime) >= $this->mConf['interval']) {
+			$this->writeBuffer2File($now);
 		}
 		
 		// 先把这条放进去，该写入磁盘时直接写入，保证日志及时写入。
@@ -417,7 +408,6 @@ class Logger implements IService {
 		$this->mBufferSize += $logInfo->size;
 		if ($this->mBufferSize > $this->mConf['buffer_size']) {
 			$this->writeBuffer2File($now);
-			$this->movePreviousTempFile();
 		}
 	}
 }
