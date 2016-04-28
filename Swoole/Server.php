@@ -49,9 +49,10 @@ class Server {
 	 */
 	protected $mServerName = 'mdserver';
 
-	public function __construct ($pidFilePath) {
-		self::$PID_FILE_PATH = $pidFilePath;
+	public function __construct () {
 		$this->mApp = App::Instance();
+		
+		self::$PID_FILE_PATH = dirname(Config::get('server.swooleConfig.log_file')) . DIRECTORY_SEPARATOR . '.pid';
 	}
 
 	protected function init () {
@@ -79,6 +80,12 @@ class Server {
 			$this,
 			'onStart'
 		));
+		$this->mServer->on('shutdown', 
+				function  () {
+					if (file_exists(self::$PID_FILE_PATH)) {
+						@unlink(self::$PID_FILE_PATH);
+					}
+				});
 		$this->mServer->on('workerStart', 
 				function  () {
 					\swoole_set_process_name($this->mServerName . '_worker');
