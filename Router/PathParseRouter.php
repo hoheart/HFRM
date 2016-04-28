@@ -3,11 +3,10 @@
 namespace Framework\Router;
 
 use Framework\Request\IRequest;
-use Framework\Exception\RequestErrorException;
 use Framework\Config;
 use Framework\Module\ModuleManager;
-use Framework\Exception\ConfigErrorException;
 use Framework\Exception\NotFoundHttpException;
+use Framework\Exception\ModuleNotAvailableException;
 
 /**
  * 解析请求路径，对应到Controller和Action的的路由器
@@ -55,135 +54,56 @@ class PathParseRouter implements IRouter {
 		$ctrlName = '';
 		$actionName = '';
 		
-		// 找模块别名
-		$uri = $this->getRequestUri($req);
-		$uri = preg_replace('/\/{2,}/', '/', $uri);
-		$arr = explode('/', $uri);
+		// 解析路径
+		$uri = $req->getUri($req);
+		$uri = preg_replace('/\/{1,}/', '\\', $uri);
+		$arr = explode('\\', $uri);
 		if (empty($arr[0])) {
 			array_shift($arr);
 		}
+		
+		// 分析出模块别名和action名字，剩下的就是controller名。
 		$moduleAlias = $arr[0];
 		$mm = ModuleManager::Instance();
 		if (! $mm->isModuleEnable($moduleAlias)) {
 			$moduleAlias = Config::Instance()->get('app.defaultModule');
 			if (! ModuleManager::Instance()->isModuleEnable($moduleAlias)) {
-				throw new RequestErrorException('the request url is not found:' . $uri);
+				throw new ModuleNotAvailableException();
 			}
 		} else {
 			array_shift($arr);
 		}
-		
-		// 已备后面检查路径存不存在用
-		ModuleManager::Instance()->preloadModule($moduleAlias);
-		
-		// 找路径
-		list ($moduleName, $ctrlName, $ctrlFilePath) = $this->parsePathSection($moduleAlias, $arr);
-		
-		// 找控制器名
-		$section = ucfirst($arr[0]);
-		$ctrlFilePath .= $section . 'Controller.php';
-		if (empty($section) || ! file_exists($ctrlFilePath)) {
-			$ctrlName = Config::Instance()->getModuleConfig($moduleAlias, 'app.defaultController');
-			if (empty($ctrlName)) {
-				throw new RequestErrorException('the request url is not found:' . $uri);
-			}
-		} else {
-			$ctrlName .= $section . 'Controller';
-			array_shift($arr);
+		$actionName = array_pop($arr);
+		// Controller名
+		$ctrlName = $mm->getModuleName($moduleAlias) . '\\Controller';
+		foreach ($arr as $section) {
+			$ctrlName .= '\\' . ucfirst($section);
 		}
-		if (! class_exists($ctrlName)) {
+		$ctrlName .= 'Controller';
+		
+		if (! $this->exists($moduleAlias, $ctrlName, $actionName)) {
 			throw new NotFoundHttpException();
 		}
 		
-		// action
-		$actionName = $this->parseAction($arr);
-		if (! method_exists($ctrlName, $actionName)) {
-			throw new NotFoundHttpException();
-		}
-		
-		$this->mRedirection = array(
+		$route = array(
 			$moduleAlias,
 			$ctrlName,
 			$actionName
 		);
-		
-		return $this->mRedirection;
+		$this->mRedirection = $route;
+		return $route;
 	}
 
-	protected function parseAction ($arr) {
-		$actionName = $arr[0];
-		
-		$pos = strpos($actionName, '?');
-		if (false !== $pos) {
-			$actionName = substr($actionName, 0, $pos);
+	public function exists ($moduleAlias, $ctrlName, $actionName) {
+		// 检查是否存在
+		ModuleManager::Instance()->preloadModule($moduleAlias);
+		if (! class_exists($ctrlName)) {
+			return false;
+		}
+		if (! method_exists($ctrlName, $actionName)) {
+			return false;
 		}
 		
-		$pos = strpos($actionName, '.');
-		if (false !== $pos) {
-			$actionName = substr($actionName, 0, $pos);
-		}
-		
-		$pos = strpos($actionName, '#');
-		if (false !== $pos) {
-			$actionName = substr($actionName, 0, $pos);
-		}
-		
-		if (empty($actionName)) {
-			$actionName = 'index';
-		}
-		
-		return $actionName;
-	}
-
-	protected function parsePathSection ($moduleAlias, &$arr) {
-		$moduleName = ModuleManager::Instance()->getModuleName($moduleAlias);
-		$moduleCtrlPath = Config::Instance()->getModuleConfig($moduleAlias, 'app.controllerDir');
-		if (empty($moduleCtrlPath)) {
-			$moduleCtrlPath = 'Controller' . DIRECTORY_SEPARATOR;
-		}
-		$ctrlName = $moduleName . '\\' . str_replace('/', '\\', $moduleCtrlPath);
-		
-		$ctrlFilePath = $moduleName . DIRECTORY_SEPARATOR . $moduleCtrlPath;
-		while (count($arr) > 0) {
-			$section = ucfirst($arr[0]);
-			if (! file_exists($ctrlFilePath . $section)) {
-				break;
-			} else {
-				$ctrlName .= $section . '\\';
-				array_shift($arr);
-			}
-			
-			$ctrlFilePath .= $section . DIRECTORY_SEPARATOR;
-		}
-		
-		return array(
-			$moduleName,
-			$ctrlName,
-			$ctrlFilePath
-		);
-	}
-
-	protected function getRequestUri (IRequest $req) {
-		$retUri = '/';
-		
-		$uri = $req->getResource();
-		$baseUrl = Config::Instance()->get('app.baseUrl');
-		$baseUrlArr = parse_url($baseUrl);
-		$path = $baseUrlArr['path']; // path是域名之后，问号之前的东西
-		if (! empty($path)) {
-			$pos = strpos($uri, $path);
-			// 配置的baseUrl只能是url的开头部分。1表示baseUrl里没有带/
-			if (0 != $pos && 1 != $pos) {
-				throw new ConfigErrorException('app.baseUrl config error.');
-			}
-			
-			$uri = substr($uri, strlen($path));
-		}
-		
-		if (null != $uri) {
-			$retUri = $uri;
-		}
-		
-		return $retUri;
+		return true;
 	}
 }

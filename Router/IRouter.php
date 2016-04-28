@@ -14,4 +14,6 @@ interface IRouter {
 	 * @return array 第一个值为controller类全名，第二个值为action名称
 	 */
 	public function getRoute (IRequest $req);
+
+	public function exists ($moduleAlias, $ctrlName, $actionName);
 }
