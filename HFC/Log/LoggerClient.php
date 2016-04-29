@@ -6,6 +6,7 @@ use Framework\Facade\Module;
 use HFC\Log\Logger;
 use Framework\IService;
 use Framework\App;
+use Framework\Module\ModuleManager;
 
 class LoggerClient implements IService {
 	
@@ -64,10 +65,14 @@ class LoggerClient implements IService {
 	}
 
 	public function operationLog ($moduleName, $controllerName, $actionName, $operationName, $result, $desc) {
-		$login = Module::getService('user', 'User\API\ILogin');
+		$operatorId = - 1;
+		if (ModuleManager::Instance()->isModuleEnable('user')) {
+			$operatorId = Module::getService('user', 'User\API\ILogin')->getLoginedUserId();
+		}
+		
 		$data = array(
 			'type' => Logger::LOG_TYPE_OPERATION,
-			'operatorId' => $login->getLoginedUserId(),
+			'operatorId' => $operatorId,
 			'moduleName' => $moduleName,
 			'controllerName' => $controllerName,
 			'actionName' => $actionName,

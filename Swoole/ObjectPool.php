@@ -19,7 +19,8 @@ class ObjectPool implements IService {
 	protected $mLockerArray = null;
 	
 	/**
-	 * 用于标记是否锁住了
+	 * 用于标记是否锁住了。
+	 * 注意：不能用map，锁了一个就往里push，因为没有对该变量加锁。
 	 *
 	 * @var array $mLabelArray
 	 */
@@ -55,7 +56,6 @@ class ObjectPool implements IService {
 	 */
 	public function get () {
 		$foundObj = null;
-		$foundLocker = null;
 		$index = - 1;
 		
 		foreach ($this->mLockerArray as $index => $locker) {
@@ -63,22 +63,18 @@ class ObjectPool implements IService {
 				continue;
 			}
 			
-			$obj = $this->mObjectArray[$index];
+			$foundObj = $this->mObjectArray[$index];
 			$this->mLabelArray[$index] = true;
 			
-			$foundObj = $obj;
-			$foundLocker = $locker;
+			break;
 		}
 		
 		if (null == $foundObj) {
 			// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
 			$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
 			$this->mLockerArray[$indx]->lock();
-			$obj = $this->mObjectArray[$indx];
+			$foundObj = $this->mObjectArray[$indx];
 			$this->mLabelArray[$indx] = true;
-			
-			$foundObj = $obj;
-			$foundLocker = $this->mLockerArray[$indx];
 		}
 		
 		return array(
@@ -89,13 +85,17 @@ class ObjectPool implements IService {
 
 	public function release ($index) {
 		if ($index >= 0 && $index < count($this->mLockerArray)) {
+			$this->mLabelArray[$index] = false;
+			
 			$this->mLockerArray[$index]->unlock();
 		}
 	}
 
 	public function releaseAll () {
-		foreach ($this->mLockerArray as $locker) {
-			$locker->unlock();
+		foreach ($this->mLabelArray as $index => $val) {
+			if ($val) {
+				$this->release($index);
+			}
 		}
 	}
 }

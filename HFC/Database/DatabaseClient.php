@@ -97,6 +97,10 @@ abstract class DatabaseClient implements IService {
 				$this->mAutocommit = true;
 			}
 		}
+		
+		if (! $this->isConnect()) {
+			$this->connect();
+		}
 	}
 
 	public function start () {
@@ -112,9 +116,9 @@ abstract class DatabaseClient implements IService {
 			if (! $this->mAutocommit) {
 				$this->commit();
 			}
+			
+			$this->mStoped = true;
 		}
-		
-		$this->mStoped = true;
 	}
 
 	abstract public function connect ();
@@ -200,7 +204,7 @@ abstract class DatabaseClient implements IService {
 	 * @return DatabaseStatement
 	 *
 	 */
-	abstract public function query ($sql);
+	abstract public function query ($sql, array $inputParams = array());
 
 	/**
 	 * 把普通sql语句转换成limit select语句。

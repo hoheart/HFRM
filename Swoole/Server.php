@@ -48,6 +48,13 @@ class Server {
 	 * @var string
 	 */
 	protected $mServerName = 'mdserver';
+	
+	/**
+	 * 对象池集合
+	 *
+	 * @var array $mPoolArr
+	 */
+	protected $mPoolArr = array();
 
 	public function __construct () {
 		$this->mApp = App::Instance();
@@ -106,6 +113,10 @@ class Server {
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
 		$this->mApp->run(new HttpRequest($req));
+		
+		foreach ($this->mPoolArr as $pool) {
+			$pool->releaseAll();
+		}
 	}
 
 	protected function initPoolService () {
@@ -146,6 +157,8 @@ class Server {
 			
 			$keyName = $sm->getKeyName($name, $alias);
 			$sm->addService($proxy, $keyName);
+			
+			$this->mPoolArr[] = $pool;
 		}
 	}
 

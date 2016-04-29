@@ -82,7 +82,7 @@ class HttpRequest implements IRequest {
 			} else if (isset($this->mRequest->header["http_client_ip"])) {
 				$IPaddress = $this->mRequest->header["http_client_ip"];
 			} else {
-				$IPaddress = $this->mRequest->header["remote_addr"];
+				$IPaddress = $this->mRequest->server["remote_addr"];
 			}
 		} else {
 			if (getenv("HTTP_X_FORWARDED_FOR")) {

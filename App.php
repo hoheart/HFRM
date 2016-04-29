@@ -139,6 +139,13 @@ namespace Framework {
 		}
 
 		public function start () {
+			if (null != $this->mModuleManager) {
+				$this->mModuleManager->start();
+			}
+			
+			if (null != $this->mServiceManager) {
+				$this->mServiceManager->start();
+			}
 		}
 
 		public function stop () {
@@ -146,7 +153,9 @@ namespace Framework {
 				$this->mServiceManager->stop();
 			}
 			
-			$this->mModuleManager->stop();
+			if (null != $this->mModuleManager) {
+				$this->mModuleManager->stop();
+			}
 		}
 
 		/**
@@ -156,8 +165,6 @@ namespace Framework {
 		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
 		 */
 		public function run (IRequest $request = null) {
-			$this->start();
-			
 			// 1.产生请求对象
 			if (null == $request) {
 				$request = $this->generateRequest();
@@ -169,6 +176,8 @@ namespace Framework {
 			
 			// 2.根据请求，取得路由
 			try {
+				$this->start();
+				
 				$route = $this->mRouter->getRoute($request);
 				list ($moduleAlias, $ctrlClassName, $actionMethodName) = $route;
 				
@@ -217,6 +226,10 @@ namespace Framework {
 			
 			$output->flush();
 			$output->close();
+		}
+
+		public function getRequest () {
+			return $this->mRequest;
 		}
 
 		public function getResponse () {

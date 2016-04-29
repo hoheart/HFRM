@@ -44,44 +44,7 @@ class DatabaseClientProxy extends DatabaseClient {
 		return $ret;
 	}
 
-	public function connect () {
-		// 该函数不能直接被调用，在调用该函数之前就连接好。
-		throw new NotImplementedException();
-	}
-
-	public function exec ($sql) {
-		return $this->mOriginObj->exec($sql);
-	}
-
-	public function transLimitSelect ($sql, $start, $size) {
-		return $this->mOriginObj->transLimitSelect($sql, $start, $size);
-	}
-
-	public function change2SqlValue ($str, $type = 'string') {
-		return $this->mOriginObj->change2SqlValue($str, $type);
-	}
-
-	public function query ($sql) {
-		return $this->mOriginObj->query($sql);
-	}
-
-	public function isConnect () {
-		return $this->mOriginObj->isConnect();
-	}
-
-	public function inTransaction () {
-		return $this->mOriginObj->inTransaction();
-	}
-
-	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
-		return $this->mOriginObj->select($sql, $inputParams, $start, $size, $isOrm);
-	}
-
 	public function start () {
-		$this->beginTransaction();
-	}
-
-	public function beginTransaction () {
 		list ($obj, $index) = $this->mPool->get();
 		$this->mOriginObj = $obj;
 		$this->mOriginIndex = $index;
@@ -90,6 +53,41 @@ class DatabaseClientProxy extends DatabaseClient {
 			$this->mOriginObj->connect();
 		}
 		
+		$this->mOriginObj->start();
+	}
+
+	public function stop () {
+		$this->mOriginObj->stop();
+		
+		$this->mPool->release($this->mOriginIndex);
+	}
+
+	public function connect () {
+		// 该函数不能直接被调用，在调用该函数之前就连接好。
+		throw new NotImplementedException();
+	}
+
+	public function isConnect () {
+		return $this->mOriginObj->isConnect();
+	}
+
+	public function exec ($sql) {
+		return $this->mOriginObj->exec($sql);
+	}
+
+	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
+		return $this->mOriginObj->select($sql, $inputParams, $start, $size, $isOrm);
+	}
+
+	public function query ($sql, array $inputParams = array()) {
+		return $this->mOriginObj->query($sql, $inputParams);
+	}
+
+	public function transLimitSelect ($sql, $start, $size) {
+		return $this->mOriginObj->transLimitSelect($sql, $start, $size);
+	}
+
+	public function beginTransaction () {
 		$this->mOriginObj->beginTransaction();
 	}
 
@@ -98,9 +96,6 @@ class DatabaseClientProxy extends DatabaseClient {
 	 */
 	public function rollBack () {
 		$this->mOriginObj->rollBack();
-		$this->mPool->release($this->mOriginIndex);
-		
-		$this->beginTransaction();
 	}
 
 	/**
@@ -108,8 +103,13 @@ class DatabaseClientProxy extends DatabaseClient {
 	 */
 	public function commit () {
 		$this->mOriginObj->commit();
-		$this->mPool->release($this->mOriginIndex);
-		
-		$this->beginTransaction();
+	}
+
+	public function inTransaction () {
+		return $this->mOriginObj->inTransaction();
+	}
+
+	public function change2SqlValue ($str, $type = 'string') {
+		return $this->mOriginObj->change2SqlValue($str, $type);
 	}
 }

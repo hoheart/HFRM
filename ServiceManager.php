@@ -12,15 +12,44 @@ use Framework\Exception\ConfigErrorException;
  * @author Hoheart
  *        
  */
-class ServiceManager {
+class ServiceManager implements IService {
 	
 	/**
 	 *
 	 * @var array
 	 */
 	protected $mServiceMap = array();
+	
+	/**
+	 *
+	 * @var true $mStoped
+	 */
+	protected $mStoped = true;
 
 	public function __construct () {
+	}
+
+	public function init (array $conf = array()) {
+	}
+
+	public function start () {
+		if ($this->mStoped) {
+			foreach ($this->mServiceMap as $service) {
+				$service->start();
+			}
+			
+			$this->mStoped = false;
+		}
+	}
+
+	public function stop () {
+		if (! $this->mStoped) {
+			foreach ($this->mServiceMap as $service) {
+				$service->stop();
+			}
+			
+			$this->mStoped = true;
+		}
 	}
 
 	public function get ($name, $caller = null) {
@@ -29,12 +58,6 @@ class ServiceManager {
 		}
 		
 		return $this->getService($name, $caller);
-	}
-
-	public function stop () {
-		foreach ($this->mServiceMap as $service) {
-			$service->stop();
-		}
 	}
 
 	public function getService ($name, $caller = null) {
@@ -50,6 +73,10 @@ class ServiceManager {
 		}
 		
 		$s = $this->createService($name, $caller);
+		if (empty($s)) {
+			return $s;
+		}
+		
 		$this->addService($s, $keyName);
 		
 		return $s;
@@ -60,7 +87,6 @@ class ServiceManager {
 	}
 
 	public function addService (IService $s, $keyName) {
-		$s->start();
 		$this->mServiceMap[$keyName] = $s;
 	}
 

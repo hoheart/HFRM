@@ -11,19 +11,19 @@ namespace Framework;
 interface IService {
 
 	/**
-	 * 对服务进行初始化
+	 * 对服务进行初始化。比如：建立连接以用于发送请求数据包。
 	 *
 	 * @param array $conf        	
 	 */
 	public function init (array $conf);
 
 	/**
-	 * 启动服务
+	 * 启动服务。
 	 */
 	public function start ();
 
 	/**
-	 * 停止服务，回收资源
+	 * 停止服务，比如：提交事务，但不断开连接。
 	 */
 	public function stop ();
 }

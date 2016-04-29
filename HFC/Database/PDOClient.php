@@ -60,10 +60,41 @@ abstract class PDOClient extends DatabaseClient {
 		return $sqlVal;
 	}
 
-	public function query ($sql) {
-		$stmt = $this->getClient()->query($sql);
+	public function query ($sql, array $inputArr = array()) {
+		if (empty($inputArr)) {
+			$stmt = $this->getClient()->query($sql);
+			
+			return new PDOStatement($this, $stmt);
+		} else {
+			return $this->bindParams($sql, $inputArr, false);
+		}
+	}
+
+	protected function bindParams ($sql, $inputParams, $isOrm) {
+		// 由于不能为IN()语句绑定多个值，所以先过滤掉
+		if (is_array($inputParams)) {
+			foreach ($inputParams as $key => $val) {
+				if (is_array($val)) {
+					$sqlVal = $this->createArrayParams($val);
+					$sql = str_replace($key, $sqlVal, $sql);
+					
+					unset($inputParams[$key]);
+				}
+			}
+		}
 		
-		return new PDOStatement($this, $stmt);
+		$stmt = $this->prepare($sql, self::CURSOR_FWDONLY, $isOrm);
+		
+		if (is_array($inputParams)) {
+			foreach ($inputParams as $key => $val) {
+				$type = is_int($val) ? PDOStatement::PARAM_INT : PDOStatement::PARAM_STR;
+				$stmt->bindParam($key, $val, $type);
+			}
+		}
+		
+		$stmt->execute();
+		
+		return $stmt;
 	}
 
 	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
@@ -72,28 +103,7 @@ abstract class PDOClient extends DatabaseClient {
 		$sql = $this->transLimitSelect($sql, $start, $size);
 		
 		try {
-			// 由于不能为IN()语句绑定多个值，所以先过滤掉
-			if (is_array($inputParams)) {
-				foreach ($inputParams as $key => $val) {
-					if (is_array($val)) {
-						$sqlVal = $this->createArrayParams($val);
-						$sql = str_replace($key, $sqlVal, $sql);
-						
-						unset($inputParams[$key]);
-					}
-				}
-			}
-			
-			$stmt = $this->prepare($sql, self::CURSOR_FWDONLY, $isOrm);
-			
-			if (is_array($inputParams)) {
-				foreach ($inputParams as $key => $val) {
-					$type = is_int($val) ? PDOStatement::PARAM_INT : PDOStatement::PARAM_STR;
-					$stmt->bindParam($key, $val, $type);
-				}
-			}
-			
-			$stmt->execute();
+			$stmt = $this->bindParams($sql, $inputParams, $isOrm);
 			
 			$ret = $stmt->fetchAll(DatabaseStatement::FETCH_ASSOC);
 			if (false === $stmt->closeCursor()) {
@@ -215,7 +225,7 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function isConnect () {
-		return null == $this->mClient;
+		return null !== $this->mClient;
 	}
 
 	protected function throwError ($sql, $stmt = null, \Exception $originalException = null) {
