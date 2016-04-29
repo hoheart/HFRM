@@ -11,7 +11,7 @@ use Framework\View\View;
 class RPCServiceController extends Controller {
 
 	public function serve (IRequest $req) {
-		$data = file_get_contents('php://input');
+		$data = $req->get('d');
 		$reqArr = unserialize($data);
 		$moduleAlias = $reqArr['module'];
 		$apiName = $reqArr['api'];
@@ -26,9 +26,7 @@ class RPCServiceController extends Controller {
 				$methodName
 			), $parameterArr);
 			
-			$this->setView('common::Common.frame', View::VIEW_TYPE_JSON);
-			$this->assign('errcode', 0);
-			$this->assign('data', $ret . '');
+			$this->setJsonView($ret);
 		} catch (\Exception $e) {
 			$this->setView('common::Common.frame', View::VIEW_TYPE_JSON);
 			$this->assign('errcode', SystemErrcode::RPCServiceError);

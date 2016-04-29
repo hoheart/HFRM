@@ -131,7 +131,7 @@ class ServiceAgent implements IModuleService {
 			'method' => $methodName,
 			'parameters' => $arguments
 		);
-		$httpBody = serialize($rpParam);
+		$httpBody = 'd=' . serialize($rpParam);
 		
 		$strCookies = http_build_query($_COOKIE, '', ';');
 		
@@ -150,7 +150,7 @@ class ServiceAgent implements IModuleService {
 			throw new RPCServiceErrorException($oResp->errstr);
 		}
 		
-		return json_decode($oResp->data);
+		return $oResp->data;
 	}
 
 	protected function choseRemoteServer ($urlArr) {

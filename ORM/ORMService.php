@@ -86,11 +86,11 @@ class ORMService implements IService {
 		return $this->mFactory->get($clsName, $id);
 	}
 
-	public function getOne($clsName, Condition $cond) {
+	public function getOne ($clsName, Condition $cond) {
 		list ($caller, $callerModuleName) = App::GetCallerModule();
 		$dbClient = App::Instance()->getService('db', $caller);
 		$this->mFactory->setDatabaseClient($dbClient);
-
+		
 		return $this->mFactory->getOne($clsName, $cond);
 	}
 
@@ -102,7 +102,7 @@ class ORMService implements IService {
 		return $this->mFactory->count($clsName, $cond);
 	}
 
-	public function where ($clsName, Condition $cond = null, $start = 0, $num = DatabaseFactory::MAX_AMOUNT, $order = '') {
+	public function where ($clsName, Condition $cond = null, $start = 0, $num = DatabaseFactory::MAX_AMOUNT, $order = '', $orderType = 'DESC') {
 		list ($caller, $callerModuleName) = App::GetCallerModule();
 		$dbClient = App::Instance()->getService('db', $caller);
 		$this->mFactory->setDatabaseClient($dbClient);

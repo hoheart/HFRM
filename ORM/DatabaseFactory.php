@@ -116,7 +116,8 @@ class DatabaseFactory extends AbstractDataFactory {
 		return $cnt;
 	}
 
-	public function where ($className, Condition $cond = null, $start = 0, $num = self::MAX_AMOUNT, ClassDesc $clsDesc = null, $order = '') {
+	public function where ($className, Condition $cond = null, $start = 0, $num = self::MAX_AMOUNT, ClassDesc $clsDesc = null, $order = '', 
+			$orderType = 'DESC') {
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc($className);
 		}
@@ -128,7 +129,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		
 		if (! empty($order)) {
-			$sql .= ' ORDER BY ' . $order;
+			$sql .= ' ORDER BY ' . $order . ' ' . $orderType;
 		}
 		
 		$objArr = array();
