@@ -90,12 +90,17 @@ class LoggerClient implements IService {
 	}
 
 	public function log ($str, $type = Logger::LOG_TYPE_RUN, $modulePath = '', $level = Logger::LOG_LEVEL_FATAL) {
+		$clientIp = '';
+		$req = App::Instance()->getRequest();
+		if( null != $req ){
+			$clientIp = $req->getClientIP();
+		}
 		$data = array(
 			'type' => $type,
 			'moduleName' => $modulePath,
 			'desc' => $str,
 			'level' => $level,
-			'clientIp' => App::Instance()->getRequest()->getClientIP(),
+			'clientIp' => $clientIp,
 			'machineName' => $this->mConf['localMachineName'],
 			'platformId' => $this->mConf['platformId'],
 			'createdTime' => date('Y-m-d H:i:s')
