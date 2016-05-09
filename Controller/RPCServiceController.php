@@ -6,7 +6,6 @@ use Framework\Controller;
 use Framework\Request\IRequest;
 use Framework\Module\ModuleManager;
 use Framework\Exception\SystemErrcode;
-use Framework\View\View;
 
 class RPCServiceController extends Controller {
 
@@ -28,9 +27,8 @@ class RPCServiceController extends Controller {
 			
 			$this->setJsonView($ret);
 		} catch (\Exception $e) {
-			$this->setView('common::Common.frame', View::VIEW_TYPE_JSON);
-			$this->assign('errcode', SystemErrcode::RPCServiceError);
-			$this->assign('errmsg', $e->getMessage() . 'On ' . $e->getFile() . ' : ' . $e->getLine());
+			$errstr = $e->getMessage() . 'On ' . $e->getFile() . ' : ' . $e->getLine();
+			$this->setErrorJsonView(SystemErrcode::RPCServiceError, $errstr);
 		}
 	}
 }

@@ -13,7 +13,7 @@ use HFC\Exception\ParameterErrorException;
  * @author Hoheart
  *        
  */
-class DataClass {
+class DataClass implements \JsonSerializable {
 	
 	/**
 	 * 该类对象的存在状态定义。
@@ -236,16 +236,26 @@ class DataClass {
 		return $this->createdTime;
 	}
 
+	public function jsonSerialize () {
+		return $this->toArray();
+	}
+
 	public function __toString () {
-		$this->mFactory = null;
-		
-		$arr = get_object_vars($this);
+		$arr = $this->toArray();
 		
 		return json_encode($arr);
 	}
 
+	public function __sleep () {
+		return $this->toArray();
+	}
+
 	public function toArray () {
-		return get_object_vars($this);
+		$arr = get_object_vars($this);
+		unset($arr['mFactory']);
+		unset($arr['mDataObjectExistingStatus']);
+		
+		return $arr;
 	}
 
 	public function assignByArray ($arr) {

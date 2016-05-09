@@ -107,6 +107,6 @@ class ORMService implements IService {
 		$dbClient = App::Instance()->getService('db', $caller);
 		$this->mFactory->setDatabaseClient($dbClient);
 		
-		return $this->mFactory->where($clsName, $cond, $start, $num, null, $order);
+		return $this->mFactory->where($clsName, $cond, $start, $num, null, $order, $orderType);
 	}
 }
