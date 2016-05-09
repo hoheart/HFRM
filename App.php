@@ -39,7 +39,7 @@ namespace Framework {
 		/**
 		 * 整个APP的根目录
 		 */
-		public static $ROOT_DIR;
+		public static $ROOT_DIR = '';
 		
 		/**
 		 * 存放ClassLoader。
@@ -105,6 +105,20 @@ namespace Framework {
 		protected function __construct () {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
+		}
+
+		/**
+		 * 取得唯一实例。
+		 *
+		 * @return \Framework\App
+		 */
+		static public function Instance () {
+			static $me = null;
+			if (null == $me) {
+				$me = new App();
+			}
+			
+			return $me;
 		}
 
 		/**
@@ -266,20 +280,6 @@ namespace Framework {
 					$log->operationLog($moduleAlias, $ctrlClassName, $actionName, $operationName, $opResult, '');
 				}
 			}
-		}
-
-		/**
-		 * 取得唯一实例。
-		 *
-		 * @return \Framework\App
-		 */
-		static public function Instance () {
-			static $me = null;
-			if (null == $me) {
-				$me = new App();
-			}
-			
-			return $me;
 		}
 
 		public function getVersion () {
