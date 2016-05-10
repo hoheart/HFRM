@@ -28,7 +28,7 @@ class RPCServiceController extends Controller {
 			$this->setJsonView($ret);
 		} catch (\Exception $e) {
 			$errstr = $e->getMessage() . 'On ' . $e->getFile() . ' : ' . $e->getLine();
-			$this->setErrorJsonView(SystemErrcode::RPCServiceError, $errstr);
+			$this->setErrorJsonView($e->getCode(), $errstr);
 		}
 	}
 }

@@ -131,7 +131,7 @@ class ServiceAgent implements IModuleService {
 			'method' => $methodName,
 			'parameters' => $arguments
 		);
-		$httpBody = 'd=' . serialize($rpParam);
+		$httpBody = 'd=' . urldecode(serialize($rpParam));
 		
 		$strCookies = http_build_query($_COOKIE, '', ';');
 		
@@ -144,10 +144,13 @@ class ServiceAgent implements IModuleService {
 		$resp = curl_exec($ch);
 		curl_close($ch);
 		
-		$oResp = json_decode($resp);
+		if (false === $resp) {
+			throw new RPCServiceErrorException(curl_error($ch));
+		}
 		
+		$oResp = json_decode($resp);
 		if (0 != $oResp->errcode) {
-			throw new RPCServiceErrorException($oResp->errstr);
+			throw new \Exception($oResp->errstr, $oResp->errcode);
 		}
 		
 		return $oResp->data;
