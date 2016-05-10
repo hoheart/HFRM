@@ -131,8 +131,8 @@ class ServiceAgent implements IModuleService {
 			'method' => $methodName,
 			'parameters' => $arguments
 		);
-
-		$httpBody = 'd=' . urlencode(serialize($rpParam));
+		
+		$httpBody = 'd=' . urlencode(json_encode($rpParam));
 		
 		$strCookies = http_build_query($_COOKIE, '', ';');
 		
