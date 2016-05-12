@@ -28,7 +28,7 @@ abstract class PDOClient extends DatabaseClient {
 	public function exec ($sql) {
 		try {
 			$ret = $this->getClient()->exec($sql);
-		} catch (\Exception $e) {
+		} catch (\PDOException $e) {
 			$this->throwError($sql, null, $e);
 		}
 		
@@ -61,10 +61,15 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function query ($sql, array $inputArr = array()) {
+		$stmt = null;
 		if (empty($inputArr)) {
-			$stmt = $this->getClient()->query($sql);
-			
-			return new PDOStatement($this, $stmt);
+			try {
+				$stmt = $this->getClient()->query($sql);
+				
+				return new PDOStatement($this, $stmt);
+			} catch (\PDOException $e) {
+				$this->throwError($sql, $stmt, $e);
+			}
 		} else {
 			return $this->bindParams($sql, $inputArr, false);
 		}
@@ -109,7 +114,7 @@ abstract class PDOClient extends DatabaseClient {
 			if (false === $stmt->closeCursor()) {
 				$this->throwError($sql, $stmt);
 			}
-		} catch (\Exception $e) {
+		} catch (\PDOException $e) {
 			$this->throwError($sql, $stmt, $e);
 		}
 		
@@ -118,13 +123,14 @@ abstract class PDOClient extends DatabaseClient {
 
 	public function prepare ($sql, $cursorType = self::CURSOR_FWDONLY, $isOrm) {
 		try {
-			$stmt = $this->getClient()->prepare($sql, array(
+			$c = $this->getClient();
+			$stmt = $c->prepare($sql, array(
 				self::ATTR_CURSOR => $cursorType
 			));
 			if (false === $stmt) {
 				$this->throwError($sql);
 			}
-		} catch (\Exception $e) {
+		} catch (\PDOException $e) {
 			$this->throwError($sql, $stmt, $e);
 		}
 		
@@ -208,7 +214,7 @@ abstract class PDOClient extends DatabaseClient {
 		$dsn = $this->getDSN();
 		try {
 			$this->mClient = new \PDO($dsn, $this->mConf['user'], $this->mConf['password']);
-		} catch (\Exception $e) {
+		} catch (\PDOException $e) {
 			throw new DatabaseConnectException('On Connection Error.' . $e->getMessage());
 		}
 		
@@ -221,6 +227,9 @@ abstract class PDOClient extends DatabaseClient {
 	}
 
 	public function connect () {
+		// 每调用一次，都要重连一次。有的常驻内存的程序，需要断连后重连。
+		$this->mClient = null;
+		
 		return $this->getClient();
 	}
 
@@ -228,13 +237,17 @@ abstract class PDOClient extends DatabaseClient {
 		return null !== $this->mClient;
 	}
 
-	protected function throwError ($sql, $stmt = null, \Exception $originalException = null) {
+	protected function throwError ($sql, $stmt = null, \PDOException $originalException = null) {
+		if ($originalException instanceof DatabaseQueryException) {
+			throw $originalException;
+		}
+		
 		$originalMsg = '';
 		$sourceCode = 0;
 		if (null != $originalException) {
 			$originalMsg = '<br>The original message is: ' . $originalException->getMessage();
 			$sourceCode = $originalException->getCode();
-			if (0 == $sourceCode) {
+			if (! empty($sourceCode)) {
 				$sourceCode = $this->getClient()->errorCode();
 			}
 		} else {
@@ -246,6 +259,8 @@ abstract class PDOClient extends DatabaseClient {
 				'On execute SQL Error: errorCode:' . $info[1] . ',errorMessage:' . $info[2] . '. SQL: ' . $sql .
 						 $originalMsg);
 		$e->setSourceCode($sourceCode);
+		$e->setSourceException($originalException);
+		
 		throw $e;
 	}
 }

@@ -105,16 +105,12 @@ abstract class DatabaseClient implements IService {
 
 	public function start () {
 		$this->mStoped = false;
-		
-		if (! $this->mAutocommit) {
-			$this->beginTransaction();
-		}
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		if (! $this->mStoped) {
 			if (! $this->mAutocommit) {
-				$this->commit();
+				$this->exec('COMMIT;');
 			}
 			
 			$this->mStoped = true;

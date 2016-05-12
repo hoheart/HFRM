@@ -57,7 +57,7 @@ class ServiceAgent implements IModuleService {
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 	}
 
 	public function __call ($name, $arguments) {
@@ -141,6 +141,9 @@ class ServiceAgent implements IModuleService {
 		curl_setopt($ch, CURLOPT_COOKIE, $strCookies);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'HTTP_X_REQUESTED_WITH: xmlhttprequest'
+		));
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $httpBody);
 		$resp = curl_exec($ch);
 		

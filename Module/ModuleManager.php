@@ -79,7 +79,7 @@ class ModuleManager implements IService {
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		while (! empty($this->mModuleMap)) {
 			$m = array_pop($this->mModuleMap);
 			$m->release();

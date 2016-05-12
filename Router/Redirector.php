@@ -69,11 +69,8 @@ class Redirector {
 			$resp->header('Location', $path);
 			
 			$app->respond($resp);
+		}else{
+			$app->respond();
 		}
-		
-		// 在exit之前，必须要stop
-		$app->stop();
-		
-		App::end();
 	}
 }

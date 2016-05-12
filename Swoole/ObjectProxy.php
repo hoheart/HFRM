@@ -40,7 +40,7 @@ class ObjectProxy implements IService {
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 	}
 
 	public function __call ($name, $arguments) {

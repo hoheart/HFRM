@@ -45,6 +45,10 @@ class HttpResponse implements IHttpResponse {
 	 */
 	protected $mOutputStream = null;
 
+	public function __construct ($body = '') {
+		$this->mBody = $body;
+	}
+
 	public function status ($code) {
 		$this->mStatus = $code;
 	}

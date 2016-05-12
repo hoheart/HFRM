@@ -63,7 +63,7 @@ class SwooleHttpOutputStream implements IOutputStream {
 
 	public function close () {
 		$this->flush();
-		$this->mResponse->end();
+		@$this->mResponse->end();
 		return $this;
 	}
 }

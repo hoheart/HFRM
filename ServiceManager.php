@@ -42,7 +42,7 @@ class ServiceManager implements IService {
 		}
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		if (! $this->mStoped) {
 			foreach ($this->mServiceMap as $service) {
 				$service->stop();
@@ -87,6 +87,7 @@ class ServiceManager implements IService {
 	}
 
 	public function addService (IService $s, $keyName) {
+		unset($this->mServiceMap[$keyName]);
 		$this->mServiceMap[$keyName] = $s;
 	}
 

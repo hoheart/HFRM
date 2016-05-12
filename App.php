@@ -162,7 +162,7 @@ namespace Framework {
 			}
 		}
 
-		public function stop () {
+		public function stop ($normal = true) {
 			if (null != $this->mServiceManager) {
 				$this->mServiceManager->stop();
 			}
@@ -220,6 +220,7 @@ namespace Framework {
 				$this->stop();
 			} catch (\Exception $e) {
 				$this->mErrorHandler->handleException($e);
+				$this->stop(false);
 			}
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);

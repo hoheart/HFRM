@@ -3,7 +3,6 @@
 namespace Framework\View;
 
 use Framework\App;
-use Framework\Request\HttpRequest;
 use Framework\Config;
 
 /**
@@ -40,7 +39,7 @@ class ViewRender {
 			$v = $ctrl->getView();
 		}
 		if (null == $v) {
-			if (HttpRequest::isAjaxRequest()) {
+			if (App::Instance()->getRequest()->isAjaxRequest()) {
 				$v = new View('', 'common::Common.frame', View::VIEW_TYPE_JSON);
 				$v->assign('errcode', 0);
 			} else {

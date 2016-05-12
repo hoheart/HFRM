@@ -16,18 +16,13 @@ class RPCServiceController extends Controller {
 		$methodName = $req->method;
 		$parameterArr = $req->parameters;
 		
-		try {
-			$module = ModuleManager::Instance()->get($moduleAlias);
-			$service = $module->getService($apiName);
-			$ret = call_user_func_array(array(
-				$service,
-				$methodName
-			), $parameterArr);
-			
-			$this->setJsonView($ret);
-		} catch (\Exception $e) {
-			$errstr = $e->getMessage() . 'On ' . $e->getFile() . ' : ' . $e->getLine();
-			$this->setErrorJsonView($e->getCode(), $errstr);
-		}
+		$module = ModuleManager::Instance()->get($moduleAlias);
+		$service = $module->getService($apiName);
+		$ret = call_user_func_array(array(
+			$service,
+			$methodName
+		), $parameterArr);
+		
+		$this->setJsonView($ret);
 	}
 }

@@ -163,7 +163,7 @@ class Logger implements IService {
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		$this->writeBuffer2File(null);
 		$this->movePreviousTempFile();
 	}

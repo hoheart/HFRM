@@ -133,7 +133,7 @@ class ValidatorService implements IService {
 	/**
 	 * 停止服务，回收资源
 	 */
-	public function stop() {
+	public function stop($normal = true) {
 
 	}
 }

@@ -47,18 +47,6 @@ abstract class Controller {
 		$this->assign(0, $node);
 	}
 
-	public function setErrorJsonView ($errcode, $errstr) {
-		$this->mView = new View($this->mModuleAlias, '', View::VIEW_TYPE_JSON);
-		
-		$node = array(
-			'errcode' => $errcode,
-			'errstr' => $errstr,
-			'data' => null
-		);
-		
-		$this->assign(0, $node);
-	}
-
 	public function getView () {
 		return $this->mView;
 	}

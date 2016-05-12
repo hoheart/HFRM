@@ -40,7 +40,7 @@ class ORMService implements IService {
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 	}
 
 	public function save (DataClass $dataObj) {

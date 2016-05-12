@@ -4,6 +4,7 @@ namespace Framework\Swoole;
 
 use HFC\Database\DatabaseClient;
 use Framework\Exception\NotImplementedException;
+use HFC\Database\DatabaseQueryException;
 
 class DatabaseClientProxy extends DatabaseClient {
 	
@@ -36,10 +37,24 @@ class DatabaseClientProxy extends DatabaseClient {
 	}
 
 	public function __call ($name, $arguments) {
-		$ret = call_user_func_array(array(
-			$this->mOriginObj,
-			$name
-		), $arguments);
+		try {
+			$ret = call_user_func_array(array(
+				$this->mOriginObj,
+				$name
+			), $arguments);
+		} catch (DatabaseQueryException $e) {
+			$se = $e->getSourceException();
+			if ($se->errorInfo[1] == 2006 || $se->errorInfo[1] == 70100) {
+				if ($this->mOriginObj->connect()) {
+					$ret = call_user_func_array(array(
+						$this->mOriginObj,
+						$name
+					), $arguments);
+					
+					Server::Instance()->needExit(Server::ERRCODE_DB_RECONNECT);
+				}
+			}
+		}
 		
 		return $ret;
 	}
@@ -56,7 +71,7 @@ class DatabaseClientProxy extends DatabaseClient {
 		$this->mOriginObj->start();
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		$this->mOriginObj->stop();
 		
 		$this->mPool->release($this->mOriginIndex);
@@ -68,48 +83,48 @@ class DatabaseClientProxy extends DatabaseClient {
 	}
 
 	public function isConnect () {
-		return $this->mOriginObj->isConnect();
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function exec ($sql) {
-		return $this->mOriginObj->exec($sql);
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
-		return $this->mOriginObj->select($sql, $inputParams, $start, $size, $isOrm);
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function query ($sql, array $inputParams = array()) {
-		return $this->mOriginObj->query($sql, $inputParams);
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function transLimitSelect ($sql, $start, $size) {
-		return $this->mOriginObj->transLimitSelect($sql, $start, $size);
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function beginTransaction () {
-		$this->mOriginObj->beginTransaction();
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	/**
 	 * 回滚一个事务。
 	 */
 	public function rollBack () {
-		$this->mOriginObj->rollBack();
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	/**
 	 * 提交一个事务。
 	 */
 	public function commit () {
-		$this->mOriginObj->commit();
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function inTransaction () {
-		return $this->mOriginObj->inTransaction();
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
 	public function change2SqlValue ($str, $type = 'string') {
-		return $this->mOriginObj->change2SqlValue($str, $type);
+		return $this->__call(__FUNCTION__, func_get_args());
 	}
 }

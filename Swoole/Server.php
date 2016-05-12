@@ -18,6 +18,12 @@ class Server {
 	const DEFAULT_CONNECTIONS_NUM = 5;
 	
 	/**
+	 *
+	 * @var int
+	 */
+	const ERRCODE_DB_RECONNECT = 1;
+	
+	/**
 	 * pid文件路径
 	 *
 	 * @var string
@@ -50,16 +56,31 @@ class Server {
 	protected $mServerName = 'mdserver';
 	
 	/**
+	 *
+	 * @var int $mNeedExitErrorCode
+	 */
+	protected $mNeedExitErrorCode = 0;
+	
+	/**
 	 * 对象池集合
 	 *
 	 * @var array $mPoolArr
 	 */
 	protected $mPoolArr = array();
 
-	public function __construct () {
+	protected function __construct () {
 		$this->mApp = App::Instance();
 		
 		self::$PID_FILE_PATH = dirname(Config::get('server.swooleConfig.log_file')) . DIRECTORY_SEPARATOR . '.pid';
+	}
+
+	static public function Instance () {
+		static $me = null;
+		if (null === $me) {
+			$me = new self();
+		}
+		
+		return $me;
 	}
 
 	protected function init () {
@@ -108,14 +129,24 @@ class Server {
 		));
 	}
 
+	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
+		// 目前exit退出的错误码，在这儿拿不到。if (self::ERRCODE_DB_RECONNECT == $exit_code) {
+		$this->initPoolService();
+		// }
+	}
+
 	public function onRequest ($req, $resp) {
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
-		$this->mApp->run(new HttpRequest($req));
+		if (! $this->mApp->run(new HttpRequest($req))) {
+			foreach ($this->mPoolArr as $pool) {
+				$pool->releaseAll();
+			}
+		}
 		
-		foreach ($this->mPoolArr as $pool) {
-			$pool->releaseAll();
+		if (0 !== $this->mNeedExitErrorCode) {
+			exit($this->mNeedExitErrorCode);
 		}
 	}
 
@@ -166,10 +197,6 @@ class Server {
 		$this->mServer->start();
 	}
 
-	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
-		$this->initPoolService();
-	}
-
 	public function onStart () {
 		$pid = $this->mServer->master_pid;
 		$fp = fopen(self::$PID_FILE_PATH, 'a+');
@@ -178,12 +205,16 @@ class Server {
 		fclose($fp);
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		if (file_exists(self::$PID_FILE_PATH)) {
 			$pid = file_get_contents(self::$PID_FILE_PATH);
 			@\swoole_process::kill($pid);
 			unlink(self::$PID_FILE_PATH);
 		}
+	}
+
+	public function needExit ($errcode) {
+		$this->mNeedExitErrorCode = $errcode;
 	}
 
 	public function main () {

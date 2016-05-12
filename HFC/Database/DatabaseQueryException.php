@@ -12,6 +12,12 @@ class DatabaseQueryException extends \Exception {
 	 * @var string
 	 */
 	protected $mSourceCode = 0;
+	
+	/**
+	 *
+	 * @var \Exception
+	 */
+	protected $mSourceException = null;
 
 	public function __construct ($msg = '', \Exception $previous = null) {
 		parent::__construct($msg, SystemErrcode::DatabaseQuery, $previous);
@@ -23,5 +29,13 @@ class DatabaseQueryException extends \Exception {
 
 	public function getSourceCode () {
 		return $this->mSourceCode;
+	}
+
+	public function setSourceException (\Exception $e) {
+		$this->mSourceException = $e;
+	}
+
+	public function getSourceException () {
+		return $this->mSourceException;
 	}
 }

@@ -2,20 +2,18 @@
 
 namespace Framework;
 
-use Framework\View\JsonRender;
-use Framework\Exception\UserErrcode;
-use Framework\Request\HttpRequest;
 use Framework\View\View;
 use Framework\Facade\Service;
 use HFC\Log\Logger;
 use Framework\Facade\Redirect;
+use Framework\Response\HttpResponse;
 
 class ErrorHandler {
 
 	public function register2System () {
 		// 关闭所有错误输出
-		ini_set('display_errors', 'On');
-		error_reporting(- 1);
+		ini_set('display_errors', 'Off');
+		error_reporting(0);
 		
 		set_error_handler(array(
 			$this,
@@ -39,7 +37,7 @@ class ErrorHandler {
 	}
 
 	public function handleException (\Exception $e) {
-		$this->handle($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine(), $e);
+		$this->handle(0, '', '', - 1, $e);
 	}
 
 	public function processError ($errno, $errstr, $errfile, $errline, array $errcontext) {
@@ -47,26 +45,21 @@ class ErrorHandler {
 	}
 
 	public function handle ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
-		$notProcessError = array(
-			E_NOTICE,
-			E_STRICT
-		);
-		
-		$errcode = UserErrcode::ErrorOK;
-		if (in_array($errno, $notProcessError)) {
+		if (null != $e) {
+			$errno = $e->getCode();
+		}
+		// 永远不处理这两个错误，这是php好用的地方。
+		if (E_STRICT === $errno || E_NOTICE === $errno) {
 			return;
 		}
 		
-		$log = Service::get('log');
-		$logstr = '';
-		if (! empty($errstr)) {
-			$logstr = "errno: $errno , errstr: $errstr On: $errfile:$errline";
-		}
-		if (null != $e) {
-			$logstr .= (string) $e;
-		}
-		$log->log($logstr, Logger::LOG_TYPE_ERROR, '', Logger::LOG_LEVEL_FATAL);
+		$jsonDetail = self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		
+		// 记录日志
+		$log = Service::get('log');
+		$log->log($jsonDetail, Logger::LOG_TYPE_ERROR, '', Logger::LOG_LEVEL_FATAL);
+		
+		// 调用用户配置的错误处理
 		$errConf = Config::Instance()->get('app.error_processor');
 		if (! empty($errConf)) {
 			$p = new $errConf();
@@ -75,32 +68,34 @@ class ErrorHandler {
 			return;
 		}
 		
-		if (HttpRequest::isAjaxRequest()) {
+		if (App::Instance()->getRequest()->isAjaxRequest()) {
 			if (Config::Instance()->get('app.debug')) {
-				if (is_array($e)) {
-					$e[] = $errstr;
-					$this->rendJson($errno, $errstr, $e);
-				} else {
-					$this->rendJson($errno, $errstr, $e);
-				}
+				$json = $jsonDetail;
 			} else {
-				$this->rendJson($errno, $errstr);
+				$json = self::GetErrorJsonByDebug($errno, $errstr, $errfile, $errline, $e, $errcontext);
 			}
+			$resp = new HttpResponse($json);
+			App::Instance()->respond($resp);
 		} else {
 			if (Config::Instance()->get('app.debug')) {
+				if (null != $e) {
+					$errstr = $e->getMessage();
+					$errfile = $e->getFile();
+					$errline = $e->getLine();
+				}
 				$out = App::Instance()->getOutputStream();
 				$out->write("Error:$errno:$errstr.");
 				$out->write('<br>');
 				$out->write("In file:$errfile:$errline.");
 				$out->write('<br>');
 				$out->write('<pre>');
-				$out->write('<br>');
 				
 				ob_start();
-				print_r($e);
-				if (! $e instanceof \Exception) {
+				if (null === $e) {
 					// 当调用栈太大时，会导致内存达到配置的最大内存限制
-					debug_print_backtrace();
+					debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
+				} else {
+					print_r($e);
 				}
 				$out->write(ob_get_contents());
 				ob_clean();
@@ -108,32 +103,56 @@ class ErrorHandler {
 				$out->write('</pre>');
 				$out->close();
 			} else {
-				try {
-					// echo $errno;
-					// Log::e("Error:$errno:$errstr.\nIn
-					// file:$errfile:$errline.");
-				} catch (\Exception $e) {
-				}
-				
-				// $this->rendJson($errno, $errstr);
 				Redirect::to('/error');
 			}
 		}
+		
+		if (Config::Instance()->get('app.debug')) {
+			exit();
+		}
 	}
 
-	protected function rendJson ($errno, $errstr, $e = null) {
-		$view = new View('', 'common::Common.frame', View::VIEW_TYPE_JSON);
-		
-		if (Config::Instance()->get('app.debug') || ($errno > 400000 && $errno <= 500000)) {
-			$view->assign('errcode', $errno);
-			$view->assign('errstr', $errstr);
-			$view->assign('data', $e);
-		} else {
-			$view->assign('errcode', 500000);
-			$view->assign('errstr', 'system error.');
+	static public function GetErrorJsonDetail ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		$node = array(
+			'errcode' => $errno,
+			'errstr' => $errstr,
+			'errDetail' => array(
+				'errfile' => $errfile,
+				'errline' => $errline,
+				'errcontext' => $errcontext
+			),
+			'data' => null
+		);
+		if (null != $e) {
+			$node['errcode'] = $e->getCode();
+			$node['errstr'] = $e->getMessage();
+			$node['errDetail'] = $e->__toString();
 		}
 		
-		$render = new JsonRender();
-		$render->render($view);
+		return json_encode($node);
+	}
+
+	static public function GetErrorJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		$view = new View('', '', View::VIEW_TYPE_JSON);
+		if (Config::Instance()->get('app.debug')) {
+			return self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
+		} else {
+			$node = array(
+				'errcode' => $errno,
+				'errstr' => $errstr,
+				'data' => null
+			);
+			if (null != $e) {
+				$node['errcode'] = $e->getCode();
+				$node['errstr'] = $e->getMessage();
+			}
+			if ($node['errcode'] < 400000 || $node['errcode'] >= 500000) {
+				$node['errcode'] = 500000;
+				$node['errstr'] = 'system error.';
+				$node['data'] = null;
+			}
+			
+			return json_encode($node);
+		}
 	}
 }

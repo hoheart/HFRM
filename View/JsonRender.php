@@ -34,10 +34,9 @@ class JsonRender {
 		 */
 		$resp = App::Instance()->getResponse();
 		
-		$previousContent = ob_get_contents();
-		ob_end_clean();
+		// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
+		$previousContent = ob_get_clean();
 		if ($previousContent != '') {
-			// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
 			$resp->addContent($previousContent);
 			return;
 		}

@@ -24,6 +24,9 @@ interface IService {
 
 	/**
 	 * 停止服务，比如：提交事务，但不断开连接。
+	 * 
+	 * @param bool $normal
+	 *        	是否正常结束，比如数据库对象，如果不是正常结束，应该回滚。
 	 */
-	public function stop ();
+	public function stop ($normal = true);
 }
