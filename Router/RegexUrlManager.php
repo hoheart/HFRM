@@ -1,0 +1,309 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: HeYanLong
+ * Date: 2016/3/1
+ * Time: 14:07
+ */
+namespace Framework\Router;
+
+use Framework\Config;
+use Framework\Request\IRequest;
+
+class RegexUrlManager {
+	public $suffix;
+	private $rules = [];
+	private $_ruleCache;
+	public static $regexUrlManager = null;
+
+	public static function Instance () {
+		if (self::$regexUrlManager == null) {
+			self::$regexUrlManager = new self();
+		}
+		return self::$regexUrlManager;
+	}
+
+	private function buildRules ($rules) {
+		$compiledRules = [];
+		$verbs = 'GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS';
+		
+		foreach ($rules as $key => $rule) {
+			
+			if (preg_match("/^((?:($verbs),)*($verbs))\\s+(.*)$/", $key, $matches)) {
+				$verb = explode(',', $matches[1]);
+				// rules that do not apply for GET requests should not be use to
+				// create urls
+				if (! in_array('GET', $rule['verb'])) {
+					$mode = RegexRouter::PARSING_ONLY;
+				}
+				$key = $matches[4];
+			}
+			
+			$compiledRules[] = new RegexRouter($key, $rule, $verb, $mode);
+		}
+		return $compiledRules;
+	}
+
+	public function getRoute ($request) {
+		if (empty(self::$regexUrlManager->rules)) {
+			$rules = Config::Instance()->get('rules.rules');
+			self::$regexUrlManager->rules = self::$regexUrlManager->buildRules($rules);
+		}
+		
+		try {
+			$route = $this->parseRequest(new Request($request));
+		} catch (\Exception $e) {
+			$route = null;
+		}
+		
+		if ($route !== null) {
+			// 处理0
+			$pathArr = explode('/', $route[0]);
+			$action = end($pathArr);
+			array_pop($pathArr);
+			$path = '';
+			foreach ($pathArr as $key => $value) {
+				$value = ucfirst($value);
+				if ($key == 0) {
+					$value .= '\\Controller';
+				}
+				$path .= $value . "\\";
+			}
+			
+			if (! empty($route[1])) {
+				
+				$_REQUEST = array_merge($route[1], $_REQUEST);
+				$request->setBody($_REQUEST);
+			}
+			return [
+				lcfirst($pathArr[0]),
+				rtrim($path, "\\") . 'Controller',
+				$action
+			];
+		} else {
+			// 走默认路由器
+			$unmatch = Config::Instance()->get('rules.unmatch');
+			if (! empty($unmatch)) {
+				return $unmatch::Instance()->getRoute($request);
+			} else {
+				return (PathParseRouter::Instance()->getRoute($request));
+			}
+		}
+	}
+
+	public function createUrl ($params) {
+		$params = (array) $params;
+		$anchor = isset($params['#']) ? '#' . $params['#'] : '';
+		unset($params['#']);
+		$route = trim($params[0], '/');
+		unset($params[0]);
+		$baseUrl = ''; // (new Request())->getBaseUrl();
+		$cacheKey = $route . '?';
+		foreach ($params as $key => $value) {
+			if ($value !== null) {
+				$cacheKey .= $key . '&';
+			}
+		}
+		/* @var $rule UrlRule */
+		$url = false;
+		if (isset(self::$regexUrlManager->_ruleCache[$cacheKey])) {
+			foreach (self::$regexUrlManager->_ruleCache[$cacheKey] as $rule) {
+				if (($url = $rule->createUrl($this, $route, $params)) !== false) {
+					break;
+				}
+			}
+		} else {
+			self::$regexUrlManager->_ruleCache[$cacheKey] = [];
+		}
+		
+		if ($url === false) {
+			$cacheable = true;
+			foreach (self::$regexUrlManager->rules as $rule) {
+				if (($url = $rule->createUrl(self::$regexUrlManager, $route, $params)) !== false) {
+					if ($cacheable) {
+						self::$regexUrlManager->_ruleCache[$cacheKey][] = $rule;
+					}
+					break;
+				}
+			}
+		}
+		
+		if ($url !== false) {
+			if (strpos($url, '://') !== false) {
+				if ($baseUrl !== '' && ($pos = strpos($url, '/', 8)) !== false) {
+					return substr($url, 0, $pos) . $baseUrl . substr($url, $pos) . $anchor;
+				} else {
+					return $url . $baseUrl . $anchor;
+				}
+			} else {
+				return "$baseUrl/{$url}{$anchor}";
+			}
+		}
+		if ($this->suffix !== null) {
+			$route .= $this->suffix;
+		}
+		if (! empty($params) && ($query = http_build_query($params)) !== '') {
+			$route .= '?' . $query;
+		}
+		return "$baseUrl/{$route}{$anchor}";
+	}
+
+	public function createAbsoluteUrl ($params, $scheme = null) {
+		$params = (array) $params;
+		$url = $this->createUrl($params);
+		if (strpos($url, '://') === false) {
+			$url = (new Request())->getHostInfo() . $url;
+		}
+		if (is_string($scheme) && ($pos = strpos($url, '://')) !== false) {
+			$url = $scheme . substr($url, $pos);
+		}
+		return $url;
+	}
+
+	public function parseRequest ($request) {
+		
+		/**
+		 *
+		 * @var $rule RegexRouter
+		 */
+		foreach ($this->rules as $rule) {
+			
+			if (($result = $rule->parseRequest($this, $request)) !== false) {
+				return $result;
+			}
+		}
+		return null;
+	}
+}
+
+// 私有Request
+class Request {
+	
+	/**
+	 *
+	 * @var IRequest
+	 */
+	protected $mOriginReq = null;
+
+	public function __construct ($req = null) {
+		$this->mOriginReq = $req;
+	}
+
+	/**
+	 *
+	 * @throws \Exception
+	 */
+	public function getUrl () {
+		$uri = $this->mOriginReq->getResource();
+		
+		return $uri;
+	}
+
+	public function getScriptFile () {
+		if (isset($_SERVER['SCRIPT_FILENAME'])) {
+			return $_SERVER['SCRIPT_FILENAME'];
+		} else {
+			throw new \Exception();
+		}
+	}
+
+	public function getScriptUrl () {
+		$scriptFile = $this->getScriptFile();
+		$scriptName = basename($scriptFile);
+		if (isset($_SERVER['SCRIPT_NAME']) && basename($_SERVER['SCRIPT_NAME']) === $scriptName) {
+			$scriptUrl = $_SERVER['SCRIPT_NAME'];
+		} elseif (isset($_SERVER['PHP_SELF']) && basename($_SERVER['PHP_SELF']) === $scriptName) {
+			$scriptUrl = $_SERVER['PHP_SELF'];
+		} elseif (isset($_SERVER['ORIG_SCRIPT_NAME']) && basename($_SERVER['ORIG_SCRIPT_NAME']) === $scriptName) {
+			$scriptUrl = $_SERVER['ORIG_SCRIPT_NAME'];
+		} elseif (isset($_SERVER['PHP_SELF']) && ($pos = strpos($_SERVER['PHP_SELF'], '/' . $scriptName)) !== false) {
+			$scriptUrl = substr($_SERVER['SCRIPT_NAME'], 0, $pos) . '/' . $scriptName;
+		} elseif (! empty($_SERVER['DOCUMENT_ROOT']) && strpos($scriptFile, $_SERVER['DOCUMENT_ROOT']) === 0) {
+			$scriptUrl = str_replace('\\', '/', str_replace($_SERVER['DOCUMENT_ROOT'], '', $scriptFile));
+		} else {
+			throw new \Exception('Unable to determine the entry script URL.');
+		}
+		
+		return $scriptUrl;
+	}
+
+	public function getBaseUrl () {
+		return rtrim(dirname($this->getScriptUrl()), '\\/');
+	}
+
+	public function getIsSecureConnection () {
+		return isset($_SERVER['HTTPS']) && (strcasecmp($_SERVER['HTTPS'], 'on') === 0 || $_SERVER['HTTPS'] == 1) || isset(
+				$_SERVER['HTTP_X_FORWARDED_PROTO']) && strcasecmp($_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') === 0;
+	}
+
+	public function getSecurePort () {
+		$securePort = $this->getIsSecureConnection() && isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 443;
+		
+		return $securePort;
+	}
+
+	public function getPort () {
+		return ! $this->getIsSecureConnection() && isset($_SERVER['SERVER_PORT']) ? (int) $_SERVER['SERVER_PORT'] : 80;
+	}
+
+	public function getHostInfo () {
+		$hostInfo = '';
+		$secure = $this->getIsSecureConnection();
+		$http = $secure ? 'https' : 'http';
+		
+		$hostInfo = $http . '://' . $this->mOriginReq->getHost();
+		
+		return $hostInfo;
+	}
+
+	public function getMethod () {
+		if (isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
+			return strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']);
+		}
+		
+		if (isset($_SERVER['REQUEST_METHOD'])) {
+			return strtoupper($_SERVER['REQUEST_METHOD']);
+		}
+		
+		return 'GET';
+	}
+
+	public function getPathInfo () {
+		$pathInfo = $this->getUrl();
+		if (($pos = strpos($pathInfo, '?')) !== false) {
+			$pathInfo = substr($pathInfo, 0, $pos);
+		}
+		$pathInfo = urldecode($pathInfo);
+		// try to encode in UTF8 if not so
+		// http://w3.org/International/questions/qa-forms-utf-8.html
+		if (! preg_match(
+				'%^(?:
+            [\x09\x0A\x0D\x20-\x7E]              # ASCII
+            | [\xC2-\xDF][\x80-\xBF]             # non-overlong 2-byte
+            | \xE0[\xA0-\xBF][\x80-\xBF]         # excluding overlongs
+            | [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}  # straight 3-byte
+            | \xED[\x80-\x9F][\x80-\xBF]         # excluding surrogates
+            | \xF0[\x90-\xBF][\x80-\xBF]{2}      # planes 1-3
+            | [\xF1-\xF3][\x80-\xBF]{3}          # planes 4-15
+            | \xF4[\x80-\x8F][\x80-\xBF]{2}      # plane 16
+            )*$%xs', $pathInfo)) {
+			$pathInfo = utf8_encode($pathInfo);
+		}
+		$scriptUrl = $this->getScriptUrl();
+		$baseUrl = $this->getBaseUrl();
+		if (strpos($pathInfo, $scriptUrl) === 0) {
+			$pathInfo = substr($pathInfo, strlen($scriptUrl));
+		} elseif ($baseUrl === '' || strpos($pathInfo, $baseUrl) === 0) {
+			$pathInfo = substr($pathInfo, strlen($baseUrl));
+		} elseif (isset($_SERVER['PHP_SELF']) && strpos($_SERVER['PHP_SELF'], $scriptUrl) === 0) {
+			$pathInfo = substr($_SERVER['PHP_SELF'], strlen($scriptUrl));
+		} else {
+			throw new \Exception('Unable to determine the path info of the current request.');
+		}
+		if (substr($pathInfo, 0, 1) === '/') {
+			$pathInfo = substr($pathInfo, 1);
+		}
+		return (string) $pathInfo;
+	}
+}

@@ -1,6 +1,8 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
+
+use HFC\Database\DatabaseClient;
 
 /**
  * 抽象的持久化类
@@ -9,6 +11,26 @@ namespace orm;
  *        
  */
 abstract class AbstractPersistence {
+	
+	/**
+	 * 数据库客户端
+	 *
+	 * @var DatabaseClient
+	 */
+	protected $mDatabaseClient = null;
+
+	/**
+	 * 设置数据库客户端。
+	 *
+	 * @param DatabaseClient $dbClient        	
+	 */
+	public function setDatabaseClient (DatabaseClient $dbClient) {
+		$this->mDatabaseClient = $dbClient;
+	}
+
+	public function getDatabaseClient () {
+		return $this->mDatabaseClient;
+	}
 
 	/**
 	 * 保存数据对象，包括了的添加和更新情况，会自己判断是更新还是添加操作。
@@ -24,14 +46,20 @@ abstract class AbstractPersistence {
 		
 		$status = $this->getPropertyVal($dataObj, 'mDataObjectExistingStatus');
 		// 只要开始保存这个对象，就设置保存成功，否则两个类相互引用会死循环。
+		$oldExistingStatus = $dataObj->mDataObjectExistingStatus;
 		$this->setPropertyVal($dataObj, 'mDataObjectExistingStatus', DataClass::DATA_OBJECT_EXISTING_STATUS_SAVED);
 		
-		if (DataClass::DATA_OBJECT_EXISTING_STATUS_NEW == $status) {
-			return $this->add($dataObj, $clsDesc);
-		} else if (DataClass::DATA_OBJECT_EXISTING_STATUS_DIRTY == $status) {
-			return $this->update($dataObj, $clsDesc);
-		} else {
-			return 0;
+		try {
+			if (DataClass::DATA_OBJECT_EXISTING_STATUS_NEW == $status) {
+				return $this->add($dataObj, $clsDesc);
+			} else if (DataClass::DATA_OBJECT_EXISTING_STATUS_DIRTY == $status) {
+				return $this->update($dataObj, $clsDesc);
+			} else {
+				return 0;
+			}
+		} catch (\Exception $e) {
+			$this->setPropertyVal($dataObj, 'mDataObjectExistingStatus', $oldExistingStatus);
+			throw $e;
 		}
 	}
 
@@ -59,4 +87,3 @@ abstract class AbstractPersistence {
 	 */
 	abstract public function delete ($className, Condition $condition = null);
 }
-?>

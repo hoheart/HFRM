@@ -1,18 +1,28 @@
 <?php
 
-namespace hhp {
+namespace Framework {
 
-	use hhp\app\ClassLoader;
-	use hfc\util\Util;
-	use hhp\ErrorHandler;
-	use hhp\exception\RequestErrorException;
+	use Framework\App\ClassLoader;
+	use Framework\Request\HttpRequest;
+	use Framework\Request\CliRequest;
+	use Framework\Request\IRequest;
+	use Framework\Module\ModuleManager;
+	use HFC\Exception\ParameterErrorException;
+	use Framework\Config;
+	use Framework\Request\RequestFilter;
+	use Framework\Router\PathParseRouter;
+	use Framework\View\ViewRender;
+	use Framework\Output\StandardOutputStream;
+	use Framework\Output\IOutputStream;
+	use Framework\Response\IResponse;
+	use Framework\Response\HttpResponse;
+	use Framework\Exception\EndAppException;
 
 	/**
-	 * 框架核心类，完成路由执行控制器和Action，并集成了常用方法。
-	 * 当框架所在的应用程序被启动后，整个进程里应该就一个App实例--虽然由于PHP的特性并非这样，但丝毫不影响把App类设计成单实例。
-	 * 启动App的顺序：
-	 * $app = App::Instance();
-	 * $app->run($conf);
+	 * 框架的核心就三个组件：
+	 * ClassLoader：保证模块之间的隔离；
+	 * ModuleManager：提供模块管理功能和接口调用；
+	 * ServiceManager：提供像数据库等常用的服务，可以通过配置文件任意指定。
 	 *
 	 * @author Hoheart
 	 *        
@@ -29,57 +39,65 @@ namespace hhp {
 		/**
 		 * 整个APP的根目录
 		 */
-		public static $ROOT_DIR;
-		
-		/**
-		 * 应用程序配置。
-		 *
-		 * @var map
-		 */
-		protected $mAppConf = null;
-		
-		/**
-		 * 启动模块的配置文件，即当前访问的controller所在的模块的配置。
-		 *
-		 * @var map
-		 */
-		protected $mBootModuleConf = null;
-		
-		/**
-		 * 本来ServiceManager也是一个IServer实例，但还没ServiceManager实例时，只能是放这儿了，
-		 * 其他的可以通过ServiceManager来保存。
-		 *
-		 * @var \hhp\ServiceManager
-		 */
-		protected $mServiceManager = null;
+		public static $ROOT_DIR = '';
 		
 		/**
 		 * 存放ClassLoader。
 		 *
-		 * @var \hhp\App\ClassLoader
+		 * @var ClassLoader
 		 */
 		protected $mClassLoader = null;
 		
 		/**
+		 *
+		 * @var ErrorHandler
+		 */
+		protected $mErrorHandler = null;
+		
+		/**
+		 *
+		 * @var ModuleManager
+		 */
+		protected $mModuleManager = null;
+		
+		/**
+		 *
+		 * @var ServiceManager
+		 */
+		protected $mServiceManager = null;
+		
+		/**
+		 * 以上的成员变量都是框架所需的三个组件，下面的就是这次请求有关的组件，一般是可以通过配置或根据请求参数更改的。
+		 *
+		 * @var IRequest
+		 */
+		protected $mRequest = null;
+		
+		/**
 		 * 启动的Controller，即url中指定要访问的Controller。
 		 *
-		 * @var \hhp\Controller
+		 * @var \Framework\Controller
 		 */
-		protected $mBootController = null;
+		protected $mCurrentController = null;
 		
 		/**
-		 * 根据请求的url，取得模块名、controller名、action。
+		 * 试图渲染器
 		 *
-		 * @var array
+		 * @var ViewRender
 		 */
-		protected $mRedirection = null;
+		protected $mViewRender = null;
 		
 		/**
-		 * 模块配置文件Map。
 		 *
-		 * @var array
+		 * @var IOutputStream
 		 */
-		protected $mModuleConfMap = array();
+		protected $mOutputStream = null;
+		
+		/**
+		 *
+		 * @var IResponse
+		 */
+		protected $mResponse = null;
 
 		/**
 		 * 构造函数，创建ClassLoader，并调用其register2System。
@@ -87,20 +105,12 @@ namespace hhp {
 		protected function __construct () {
 			// 切换到App目录。
 			chdir(self::$ROOT_DIR);
-			
-			date_default_timezone_set('Asia/Chongqing');
-			
-			$this->mClassLoader = new ClassLoader();
-			$this->mClassLoader->register2System();
-			
-			$errorHandler = new ErrorHandler();
-			$errorHandler->register2System();
 		}
 
 		/**
 		 * 取得唯一实例。
 		 *
-		 * @return \hhp\App
+		 * @return \Framework\App
 		 */
 		static public function Instance () {
 			static $me = null;
@@ -111,6 +121,169 @@ namespace hhp {
 			return $me;
 		}
 
+		/**
+		 * 单独提出来，可能有的程序只想用自动加载器
+		 */
+		public function registerAutoloader () {
+			$this->mClassLoader = new ClassLoader();
+			$this->mClassLoader->register2System();
+		}
+
+		public function init () {
+			$this->registerAutoloader();
+			
+			$this->mErrorHandler = new ErrorHandler();
+			$this->mErrorHandler->register2System();
+			
+			// 还没想好怎么处理，暂时放这儿。
+			RequestFilter::RemoveSQLInjection();
+			
+			// 还没想好怎么处理，暂时放这儿。
+			date_default_timezone_set(Config::Instance()->get('app.localTimezone'));
+			
+			$this->mModuleManager = ModuleManager::Instance();
+			
+			$routerCls = Config::Instance()->get('app.router');
+			if (empty($routerCls)) {
+				$routerCls = '\Framework\Router\PathParseRouter';
+			}
+			$this->mRouter = $routerCls::Instance();
+			
+			$this->mViewRender = new ViewRender();
+		}
+
+		public function start () {
+			if (null != $this->mModuleManager) {
+				$this->mModuleManager->start();
+			}
+			
+			if (null != $this->mServiceManager) {
+				$this->mServiceManager->start();
+			}
+		}
+
+		public function stop ($normal = true) {
+			if (null != $this->mServiceManager) {
+				$this->mServiceManager->stop($normal);
+			}
+			
+			if (null != $this->mModuleManager) {
+				$this->mModuleManager->stop($normal);
+			}
+		}
+
+		/**
+		 * 运行应用程序
+		 *
+		 * @param IRequest $request
+		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
+		 */
+		public function run (IRequest $request = null) {
+			// 1.产生请求对象
+			if (null == $request) {
+				$request = $this->generateRequest();
+			}
+			$this->mRequest = $request;
+			
+			// 防止直接echo等的输出，避免xss攻击。
+			ob_start();
+			
+			// 2.根据请求，取得路由
+			try {
+				$this->start();
+				
+				$route = $this->mRouter->getRoute($request);
+				list ($moduleAlias, $ctrlClassName, $actionMethodName) = $route;
+				
+				// 3.根据配置，创建controller和action并执行
+				$preExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.pre_executor');
+				$dataObj = $route;
+				foreach ($preExecutor as $class) {
+					$executor = $class::Instance();
+					$dataObj = $executor->run($dataObj);
+				}
+				
+				$this->mCurrentController = new $ctrlClassName($moduleAlias);
+				$dataObj = $this->mCurrentController->$actionMethodName($request);
+				
+				$laterExecutor = Config::Instance()->getModuleConfig($moduleAlias, 'app.executor.later_executor');
+				foreach ($laterExecutor as $class) {
+					$executor = $class::Instance();
+					$dataObj = $executor->run($dataObj);
+				}
+				
+				$response = $this->mViewRender->render($dataObj);
+				
+				// 输出剩余内容,放在stop前，让浏览器更快看到页面。
+				$this->respond($response);
+				
+				$this->stop();
+			} catch (\Exception $e) {
+				// 出错了，赶紧结束掉，该回滚的回滚，释放错误的资源占用。而且，handleException在debug模式下会退出。
+				$this->stop(false);
+				$this->mErrorHandler->handleException($e);
+			}
+			
+			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);
+			
+			return null === $e ? true : false;
+		}
+
+		public function respond (IResponse $resp = null) {
+			if (null == $resp) {
+				$resp = $this->getResponse();
+			}
+			
+			$output = $this->getOutputStream();
+			
+			$output->output($resp);
+			// 当此输出完后，清空，以备下次输出。
+			$resp->clear();
+			
+			$output->flush();
+			$output->close();
+		}
+
+		public function getRequest () {
+			return $this->mRequest;
+		}
+
+		public function getResponse () {
+			if (null == $this->mResponse) {
+				$this->mResponse = new HttpResponse();
+				
+				$stream = $this->getOutputStream();
+				$this->mResponse->setOutputStream($stream);
+			}
+			
+			return $this->mResponse;
+		}
+
+		protected function operationLog ($moduleAlias, $ctrlClassName, $actionName, $controller, $e = null) {
+			// EndAppException相当于调用exit，不是错误
+			if ($e instanceof EndAppException) {
+				$e = null;
+			}
+			$enableOperationLog = Config::Instance()->getModuleConfig($moduleAlias, 'app.enableOperationLog');
+			if ($enableOperationLog) {
+				$isOperation = true;
+				if (method_exists($controller, 'isNotOperation')) {
+					$isOperation = ! $controller->isNotOperation($actionName);
+				}
+				
+				if ($isOperation) {
+					$opResult = null == $e ? true : false;
+					$operationName = '';
+					if (method_exists($controller, 'getOperationName')) {
+						$operationName = $controller->getOperationName($actionName);
+					}
+					
+					$log = $this->getService('log');
+					$log->operationLog($moduleAlias, $ctrlClassName, $actionName, $operationName, $opResult, '');
+				}
+			}
+		}
+
 		public function getVersion () {
 			return $this->getConfigValue('version');
 		}
@@ -118,67 +291,14 @@ namespace hhp {
 		/**
 		 * 返回启动的Controller。
 		 *
-		 * @return \hhp\Controller
+		 * @return \Framework\Controller
 		 */
 		public function getCurrentController () {
-			return $this->mBootController;
+			return $this->mCurrentController;
 		}
 
 		public function getController () {
-			return $this->mBootController;
-		}
-
-		/**
-		 * 启动应用程序。
-		 *
-		 * @param array $conf
-		 *        	模块的配置。
-		 */
-		public function run () {
-			// 1.取得系统配置文件
-			$this->mAppConf = $this->mClassLoader->loadFile('config' . DIRECTORY_SEPARATOR . 'Config.php');
-			$request = $this->generateRequest();
-			
-			// 2.根据请求，取得请求模块的配置文件。
-			list ($moduleAlias, $ctrlName, $actionName) = $this->getRedirection($request);
-			if (empty($moduleAlias)) {
-				$moduleAlias = $this->mAppConf['default_module'];
-			}
-			$moduleConf = $this->getModuleConf($moduleAlias);
-			$this->mBootModuleConf = Util::mergeArray($this->mAppConf, $moduleConf);
-			
-			// 3.根据配置，加载controller类，合并新的配置
-			if (empty($ctrlName)) {
-				$ctrlName = $this->mBootModuleConf['default_controller']['controller_name'];
-				$actionName = $this->mBootModuleConf['default_controller']['action_name'];
-			}
-			if (empty($actionName)) {
-				$actionName = $this->mBootModuleConf['default_controller']['action_name'];
-			}
-			$actionMethodName = $actionName . 'Action';
-			
-			$ctrlClassName = $this->mClassLoader->loadController($moduleAlias, $ctrlName);
-			if (! method_exists($ctrlClassName, $actionMethodName)) {
-				throw new RequestErrorException('Request resource is not available.');
-			}
-			
-			$this->mBootModuleConf = $this->combinActionConf($ctrlClassName, $this->mBootModuleConf, $actionName);
-			
-			// 4.这时，就可以根据配置，进行路由了
-			$confExecutorArr = $this->getConfigValue('executor');
-			$dataObj = null;
-			foreach ($confExecutorArr['pre_executor'] as $class) {
-				$executor = $class::Instance();
-				$dataObj = $executor->run($dataObj);
-			}
-			
-			$this->mBootController = new $ctrlClassName($this->generateRequest());
-			$dataObj = $this->mBootController->$actionMethodName($request);
-			
-			foreach ($confExecutorArr['later_executor'] as $class) {
-				$executor = $class::Instance();
-				$dataObj = $executor->run($dataObj);
-			}
+			return $this->mCurrentController;
 		}
 
 		protected function generateRequest () {
@@ -189,60 +309,12 @@ namespace hhp {
 			}
 		}
 
-		/**
-		 * 根据请求的url，取得重定向相关信息。
-		 *
-		 * @param IRequest $request        	
-		 * @return multitype:
-		 */
-		protected function getRedirection (IRequest $request) {
-			if (! empty($this->mRedirection)) {
-				return $this->mRedirection;
+		public function getServiceManager () {
+			if (null == $this->mServiceManager) {
+				$this->mServiceManager = new ServiceManager();
 			}
 			
-			$uri = $request->getResource();
-			$uriLen = strlen($uri);
-			
-			$actionName = '';
-			$pos = strrpos($uri, '?');
-			if ($pos > 0) {
-				$pos -= 1;
-			} else {
-				$pos = $uriLen - 1;
-			}
-			$pos1 = strrpos($uri, '/', $pos - $uriLen);
-			$actionName = substr($uri, $pos1 + 1, $pos - $pos1);
-			
-			$ctrlName = '';
-			while ($pos1 > 0) {
-				$pos = $pos1 - 1;
-				$pos1 = strrpos($uri, '/', $pos - $uriLen);
-				$ctrlName = substr($uri, $pos1 + 1, $pos - $pos1);
-				if (empty($ctrlName)) {
-					continue;
-				}
-				
-				break;
-			}
-			
-			$moduleAlias = substr($uri, 1, $pos1 - $uriLen);
-			
-			$this->mRedirection = array(
-				$moduleAlias,
-				$ctrlName,
-				$actionName
-			);
-			
-			return $this->mRedirection;
-		}
-
-		protected function combinActionConf ($ctrlClassName, $oldConf, $action) {
-			$actionConf = array();
-			
-			if (method_exists($ctrlClassName, 'getConfig')) {
-				$actionConf = $ctrlClassName::getConfig($action);
-			}
-			return Util::mergeArray($oldConf, $actionConf);
+			return $this->mServiceManager;
 		}
 
 		/**
@@ -250,172 +322,36 @@ namespace hhp {
 		 * 先检查mServiceManager是否已经设置，如果没有，new一个。再调用其getServer方法。
 		 *
 		 * @param string $name        	
-		 * @return \hhp\IService
+		 * @param string $caller
+		 *        	调用者的模块别名
+		 * @return \Framework\IService
 		 */
-		public function getService ($name) {
-			if (null == $this->mServiceManager) {
-				$conf = $this->getConfigValue('service');
-				$this->mServiceManager = new ServiceManager($conf);
-			}
+		public function getService ($name, $caller = null) {
+			$sm = $this->getServiceManager();
 			
-			return $this->mServiceManager->getService($name);
+			return $sm->getService($name, $caller);
 		}
 
 		/**
-		 * 对EventManager的trigger的包装。
+		 * 根据类名取得模块名
+		 * 该函数本来应该放在模块管理类里，但autoload时ModuleManager还没有加载，所以直接放这儿，作为框架的约束：模块名即为类名第一个单词。
 		 *
-		 * @param object $event        	
-		 * @param object $sender        	
-		 * @param object $dataObj        	
+		 * @param string $clsName        	
+		 * @throws ParameterErrorException
+		 * @return string
 		 */
-		public function trigger ($event, $sender = null, $dataObject = null) {
-			$eventManager = $this->getService('EventManager');
-			$eventManager->trigger($event, $sender, $dataObject);
-		}
-
-		/**
-		 * 封装的ClassLoader的函数。
-		 *
-		 * @param string $moduleAlias        	
-		 */
-		public function getModuleConf ($moduleAlias) {
-			$conf = $this->mModuleConfMap[$moduleAlias];
-			if (empty($conf)) {
-				$appConfigModuleArr = $this->getConfigValue('module');
-				$appConfigModule = $appConfigModuleArr[$moduleAlias];
-				$configFilePath = $appConfigModule['dir'] . 'config' . DIRECTORY_SEPARATOR . 'Config.php';
-				$conf = $this->mClassLoader->loadFile($configFilePath);
-				$this->mModuleConfMap[$moduleAlias] = $conf;
-			}
+		static public function GetModuleNameByClass ($clsName) {
+			$moduleAlias = '';
+			$moduleName = '';
 			
-			return $conf;
-		}
-
-		/**
-		 * 先取得模块的配置，如果没有，再从app的配置里取得。
-		 *
-		 * @param string $name        	
-		 */
-		public function getConfigValue ($key) {
-			$conf = $this->mBootModuleConf;
-			if (empty($conf)) {
-				$conf = $this->mAppConf;
-			}
-			return $conf[$key];
-		}
-
-		static public function create ($className) {
-			$realClassName = self::Instance()->mClassLoader->autoload($className);
-			return new $realClassName();
-		}
-	}
-	
-	App::$ROOT_DIR = dirname(__DIR__) . DIRECTORY_SEPARATOR;
-}
-
-namespace hhp\App {
-
-	use hhp\exception\ModuleNotAvailableException;
-	use hhp\App;
-	use hhp\exception\APINotAvailableException;
-	use hhp\exception\ConfigErrorException;
-	use hhp\exception\RequestErrorException;
-
-	/**
-	 * 根据名字空间，include类的定义。此类的目的就是封装include函数。
-	 * PHP没有内部类的语法，把代码写在一个文件里解决。
-	 *
-	 * @author Hoheart
-	 *        
-	 */
-	class ClassLoader {
-		public static $HHP_DIR;
-		public static $HFC_DIR;
-		
-		/**
-		 * 记录模块路径与模块的对应关系。每调用一次记录一次。
-		 *
-		 * @var array
-		 */
-		private $mModuleDirIndex = array();
-
-		public function __construct () {
-			$this->mModuleDirIndex = array(
-				'hhp' . DIRECTORY_SEPARATOR => 'hhp',
-				'hhp' . DIRECTORY_SEPARATOR . 'hfc' . DIRECTORY_SEPARATOR
-			);
-		}
-
-		/**
-		 * 调用spl_autoload_register ( array ($this,'autoload'), true,true
-		 * );注册给PHP解释器。
-		 */
-		public function register2System () {
-			spl_autoload_register(array(
-				$this,
-				'autoload'
-			));
-		}
-
-		/**
-		 * 根据类名对应的路径，装在类。
-		 * 注意：模块别名和模块名不同的情况，要调用App提供的create函数。
-		 *
-		 * @param string $className        	
-		 */
-		public function autoload ($className) {
-			// 确定要载入的类所在的模块别名。（要引用别的模块，用模块别名打头）
-			list ($moduleAlias, $relativeClassName) = $this->getClassModule($className);
-			
-			$moduleName = $moduleAlias;
-			$moduleDir = null;
-			// 任何模块都可以调用hhp和hfc
-			if ('hhp' == $moduleAlias) {
-				$moduleDir = self::$HHP_DIR;
-			} else if ('hfc' == $moduleAlias) {
-				$moduleDir = self::$HFC_DIR;
+			$pos = strpos($clsName, '\\');
+			if (false !== $pos) {
+				$moduleName = substr($clsName, 0, $pos);
+				
+				return $moduleName;
 			} else {
-				list ($callerAlias, $callerName) = $this->getCallerModule();
-				
-				$app = App::Instance();
-				$appConfModuleArr = $app->getConfigValue('module');
-				$appConfModule = $appConfModuleArr[$moduleAlias];
-				if (empty($appConfModule)) {
-					// autoload函数里不要throw错误，否则会引起autoload多次调用，并且，class_exists函数的调用会直接被异常终端。
-					// throw new ConfigErrorException ( 'can not fond the config
-					// in app module.module:' . $moduleAlias );
-					return false;
-				}
-				
-				// 优先处理自己模块的调用关系。
-				// hhp和hfc可以调用任何模块
-				if ($callerName == $moduleAlias || 'hhp' == $callerAlias || 'hfc' == $callerAlias ||
-						 'orm' == $callerAlias) {
-					// 是自己调用自己，就取调用者的模块路径。
-					$moduleDir = $appConfModule['dir'];
-				} else {
-					$callerModuleConf = $app->getModuleConf($callerAlias);
-					$moduleConf = $app->getModuleConf($moduleAlias);
-					try {
-						$this->checkModuleConf($appConfModule, $callerModuleConf, $moduleConf, $moduleAlias, 
-								$relativeClassName);
-					} catch (\Exception $e) {
-						return false;
-					}
-					
-					$moduleDir = $appConfModule['dir'];
-				}
-				
-				$moduleName = $appConfModule['name'];
-				
-				$this->recoredModuleDirIndex($moduleDir, $moduleAlias);
+				return null;
 			}
-			
-			$path = $moduleDir . str_replace('\\', '/', $relativeClassName) . '.php';
-			
-			$this->loadFile($path);
-			
-			return $moduleName . '\\' . $relativeClassName;
 		}
 
 		/**
@@ -423,10 +359,15 @@ namespace hhp\App {
 		 *
 		 * @return array 第一个值是模块的别名，第二个值是模块名。
 		 */
-		protected function getCallerModule () {
+		static public function GetCallerModule () {
 			$callerStackInfo = debug_backtrace(~ DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-			$callerPath = $callerStackInfo[2]['file'];
-			if (empty($callerPath)) { // 如果是class_exists这种系统调用，类文件在第三个数组元素里。
+			$callerPath = $callerStackInfo[1]['file'];
+			// 如果是class_exists这种PHP语言调用时，类文件路径可能在第四个数组元素里，
+			// 二三分别被框架的Autoload函数和php语言的spl_autoload_call占据
+			if (empty($callerPath)) {
+				$callerPath = $callerStackInfo[2]['file'];
+			}
+			if (empty($callerPath)) {
 				$callerPath = $callerStackInfo[3]['file'];
 			}
 			
@@ -440,6 +381,7 @@ namespace hhp\App {
 			$posEnd = strlen($callerPath) - 4; // 去掉.php后缀。
 			$moduleDir = substr($callerPath, $posStart, $posEnd - $posStart);
 			
+			$mm = ModuleManager::Instance();
 			// 本来想通过debug_backtrace返回的类名，直接找到模块所在的dir，但有的类的名字空间与文件不一定一致，比如App\ClassLoader
 			while (true) {
 				$posEnd = strrpos($moduleDir, DIRECTORY_SEPARATOR, - 2); // -2表示从倒数第二个字符开始找
@@ -448,11 +390,13 @@ namespace hhp\App {
 				}
 				
 				$moduleDir = substr($moduleDir, 0, $posEnd + 1);
-				$callerModuleAlias = $this->mModuleDirIndex[$moduleDir];
-				if ('hhp' == $callerModuleAlias || 'hfc' == $callerModuleAlias) {
+				list ($callerModuleAlias, $moduleConf) = $mm->getLoadedModuleAliasByPath($moduleDir);
+				if ('framework' == $callerModuleAlias || 'HFC' == $callerModuleAlias) {
 					$callerModuleName = $callerModuleAlias;
+					
+					break;
 				} else if (! empty($callerModuleAlias)) {
-					$callerModuleName = App::Instance()->getConfigValue('module')[$callerModuleAlias]['name'];
+					$callerModuleName = $moduleConf['name'];
 					
 					break;
 				}
@@ -464,97 +408,134 @@ namespace hhp\App {
 			);
 		}
 
+		public function useModule ($alias) {
+			$this->mClassLoader->useModule($alias);
+		}
+
+		public function setOutputStream (IOutputStream $s) {
+			$this->mOutputStream = $s;
+		}
+
+		public function getOutputStream () {
+			if (null == $this->mOutputStream) {
+				$this->mOutputStream = new StandardOutputStream();
+			}
+			
+			return $this->mOutputStream;
+		}
+
 		/**
-		 * 检查被调用的模块的相关配置是否正确
+		 * 直接结束程序运行。相当于调用exit。
+		 * 在swoole框架里，调用exit会引起所有资源回收，导致连接池破损。
 		 *
-		 * @param array $appConfModule
-		 *        	app module配置里该模块的配置
-		 * @param array $callerModuleConf
-		 *        	调用者模块的配置
-		 * @param array $moduleConfig
-		 *        	被调用模块的配置
-		 * @param string $moduleAlias
-		 *        	被调用模块的别名
-		 * @param string $relativeClassName
-		 *        	除掉模块名，剩下的类名
-		 *        	
-		 * @throws ModuleNotAvailableException
-		 * @throws ConfigErrorException
-		 * @throws RequestErrorException
-		 * @throws APINotAvailableException
+		 * @throws EndAppException
 		 */
-		protected function checkModuleConf ($appConfModule, $callerModuleConf, $moduleConfig, $moduleAlias, 
-				$relativeClassName) {
-			// 1.检查被调用模块有没有被开启
-			if (! $appConfModule['enable']) {
-				throw new ModuleNotAvailableException("Module: {$appConfModule['name']} not enabled.");
-			}
-			
-			// 2.检查调用者有没有依赖这个模块
-			if (! key_exists($moduleAlias, $callerModuleConf['depends'])) {
-				throw new ConfigErrorException("no depends on module: $moduleAlias");
-			}
-			
-			// 3.检查模块有没有提供这个接口
-			$className = $appConfModule['name'] . '\\' . $relativeClassName;
-			if (! $moduleConfig['API'][$className]['enable']) {
-				throw new APINotAvailableException("API : $className is not available.");
+		static public function end () {
+			throw new EndAppException();
+		}
+	}
+	
+	App::$ROOT_DIR = dirname(__DIR__) . DIRECTORY_SEPARATOR;
+}
+
+namespace Framework\App {
+
+	use Framework\App;
+	use Framework\Module\ModuleManager;
+
+	/**
+	 * 根据名字空间，include类的定义。此类的目的就是封装include函数。
+	 * PHP没有内部类的语法，把代码写在一个文件里解决。
+	 *
+	 * @author Hoheart
+	 *        
+	 */
+	class ClassLoader {
+		
+		/**
+		 * 为了快速访问
+		 *
+		 * @var string
+		 */
+		public static $FRAMEWORK_DIR;
+		public static $HFC_DIR;
+		public static $COMMON_MODULE_DIR;
+		
+		/**
+		 * 当出现多个模块同名时，用这个。
+		 *
+		 * @var string
+		 */
+		protected $mUsedModule = '';
+
+		public function __construct () {
+		}
+
+		/**
+		 * 调用spl_autoload_register ( array ($this,'autoload'), true,true
+		 * );注册给PHP解释器。
+		 */
+		public function register2System () {
+			static $bRegister = false;
+			if (! $bRegister) {
+				spl_autoload_register(array(
+					$this,
+					'autoload'
+				));
+				
+				$bRegister = true;
 			}
 		}
 
 		/**
-		 * 加载controller。
+		 * 根据类名对应的路径，装载类。
 		 *
-		 * @param string $moduleAlias        	
-		 * @param string $controllerName
-		 *        	请求的controller名称，不带Controller字样，不带名字空间。
-		 * @throws RequestErrorException
+		 * @param string $className        	
 		 */
-		public function loadController ($moduleAlias, $controllerName) {
-			$app = App::Instance();
-			$appConfModule = $app->getConfigValue('module')[$moduleAlias];
-			if (! $appConfModule['enable']) {
-				throw new ModuleNotAvailableException("Module: $moduleAlias not exists or not enabled.");
+		public function autoload ($className) {
+			$moduleDir = null;
+			
+			$moduleName = App::GetModuleNameByClass($className);
+			if (null == $moduleName) {
+				return;
 			}
-			$moduleConf = $app->getModuleConf($moduleAlias);
 			
-			$moduleDir = $appConfModule['dir'];
-			$ctrlDir = $moduleConf['controller_dir'];
-			
-			$relativeClassName = ucfirst($controllerName) . 'Controller';
-			$ctrlClassName = $appConfModule['name'] . '\\';
-			if (DIRECTORY_SEPARATOR == '\\') {
-				$ctrlClassName = $ctrlClassName . $ctrlDir . $relativeClassName;
+			// 任何模块都可以调用Framework和HFC
+			if ('Framework' == $moduleName) {
+				$moduleDir = self::$FRAMEWORK_DIR;
+			} else if ('HFC' == $moduleName) {
+				$moduleDir = self::$HFC_DIR;
+			} else if ('Common' == $moduleName) {
+				$moduleDir = self::$COMMON_MODULE_DIR;
 			} else {
-				$ctrlClassName = $ctrlClassName . str_replace('/', '\\', $ctrlDir) . $relativeClassName;
-			}
-			
-			$controllerConf = $moduleConf['controller'][$ctrlClassName];
-			if (! empty($controllerConf)) {
-				if ($controllerConf['enable']) {
-					$path = $moduleDir . $ctrlDir . $relativeClassName . '.php';
-					
-					$this->recoredModuleDirIndex($moduleDir, $moduleAlias);
-					
-					$this->loadFile($path);
-					
-					return $ctrlClassName;
+				// 只允许访问调用者自己的模块
+				list ($callerAlias, $callerName) = App::GetCallerModule();
+				// 如果调用者不是Framework和HFC，只能是自己调用自己
+				// 一个模块调用另一个模块的服务，只能通过Module对象提供的服务调用。
+				if ('framework' != $callerAlias && 'hfc' != $callerAlias && $callerName != $moduleName) {
+					return null;
 				}
+				
+				// 根据调用的类名，取得调用的是哪个模块
+				$alias = '';
+				$aliasMap = ModuleManager::Instance()->getLoadedModuleAliasByName($moduleName);
+				if (1 == count($aliasMap)) {
+					$alias = key($aliasMap);
+				} else {
+					$alias = $this->mUsedModule;
+				}
+				$moduleDir = ModuleManager::Instance()->getModulePath($alias);
 			}
 			
-			throw new RequestErrorException('Request resource is not available.');
+			$pos = strpos($className, '\\');
+			$relativeClassName = substr($className, $pos + 1);
+			$path = $moduleDir . str_replace('\\', DIRECTORY_SEPARATOR, $relativeClassName) . '.php';
+			
+			return $this->loadFile($path);
 		}
 
-		/**
-		 * 记录模块dir的索引
-		 *
-		 * @param string $moduleDir        	
-		 * @param string $moduleAlias        	
-		 */
-		protected function recoredModuleDirIndex ($moduleDir, $moduleAlias) {
-			if (! key_exists($moduleDir, $this->mModuleDirIndex)) {
-				$this->mModuleDirIndex[$moduleDir] = $moduleAlias;
-			}
+		public function useModule ($alias) {
+			$this->mUsedModule = $alias;
 		}
 
 		/**
@@ -564,25 +545,11 @@ namespace hhp\App {
 		 *        	可以是绝对路径，也可以是app根目录的相对路径。
 		 */
 		public function loadFile ($path) {
-			return include_once $path; // 如果用require，就会产生一个系统错误，而用户自定义错误就截取不到了。
-		}
-
-		/**
-		 * 取得类所在的模块
-		 *
-		 * @param string $className        	
-		 * @return array 数组中的第一个值是模块的别名（如果是模块内部调用，就是模块名），第二个值是去掉模块别名剩下的字符串。
-		 */
-		protected function getClassModule ($className) {
-			$pos = strpos($className, '\\');
-			return array(
-				substr($className, 0, $pos),
-				substr($className, $pos + 1)
-			);
+			include_once App::$ROOT_DIR . $path; // 如果用require，就会产生一个系统错误，而用户自定义错误就截取不到了。
 		}
 	}
 	
-	ClassLoader::$HHP_DIR = 'hhp' . DIRECTORY_SEPARATOR;
-	ClassLoader::$HFC_DIR = ClassLoader::$HHP_DIR . 'hfc' . DIRECTORY_SEPARATOR;
+	ClassLoader::$FRAMEWORK_DIR = 'Framework' . DIRECTORY_SEPARATOR;
+	ClassLoader::$HFC_DIR = ClassLoader::$FRAMEWORK_DIR . 'HFC' . DIRECTORY_SEPARATOR;
+	ClassLoader::$COMMON_MODULE_DIR = 'Common' . DIRECTORY_SEPARATOR;
 }
-?>

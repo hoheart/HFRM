@@ -1,19 +1,14 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
 
-use orm\DatabasePersistence;
-use hhp\App;
+use Framework\ORM\DatabasePersistence;
 
 class DatabasePersistenceCreator {
 
 	public function create (array $conf = null) {
-		$db = App::Instance()->getService('db');
-		
 		$p = new DatabasePersistence();
-		$p->setDatabaseClient($db);
 		
 		return $p;
 	}
 }
-?>

@@ -1,10 +1,17 @@
 <?php
 
-namespace hhp\view;
+namespace Framework\View;
 
-use hhp\IExecutor;
+use Framework\App;
 
-class JsonRender implements IExecutor {
+class JsonRender {
+	
+	/**
+	 * 视图树
+	 *
+	 * @var array
+	 */
+	protected $mTree = array();
 
 	static public function Instance () {
 		static $me = null;
@@ -15,38 +22,67 @@ class JsonRender implements IExecutor {
 		return $me;
 	}
 
-	public function run ($do = null) {
-		if (null != $do && $do instanceof View) {
-			$this->render($do);
-		}
-	}
-
 	/**
 	 * 渲染试图
 	 *
 	 * @param View $view        	
 	 */
-	public function render ($view, $e = null) {
-		$data = $this->renderTemplate($view->getDataMap(), $view->getTemplatePath());
-		$errcode = null == $e ? 0 : $e->getCode();
-		$errstr = null == $e ? '' : $e->getMessage();
+	public function render (View $view) {
+		/**
+		 *
+		 * @var IHttpResponse
+		 */
+		$resp = App::Instance()->getResponse();
 		
-		$this->renderLayout($data, $view->getLayoutPath(), $errcode, $errstr);
+		// 因为json是严格的一棵树，如果前面已经有输出了，会破坏这棵树的结构，所以在输出也是没有意义的。
+		$previousContent = ob_get_clean();
+		if ($previousContent != '') {
+			$resp->addContent($previousContent);
+			return;
+		}
+		
+		$resp->status(200);
+		$resp->header('Content-Type', 'application/json; charset=utf-8');
+		
+		$templatePath = $view->getTemplatePath();
+		$dataMap = $view->getDataMap();
+		$ret = null;
+		if (empty($templatePath)) {
+			$ret = $dataMap[0];
+		} else {
+			$ret = include $view->getTemplatePath();
+			extract($dataMap);
+		}
+		
+		if (is_array($ret)) {
+			$this->mTree = $ret;
+		}
+		
+		$str = json_encode($this->mTree);
+		$resp->addContent($str);
+		
+		return $resp;
 	}
 
-	public function renderLayout ($data, $layoutPath, $errcode, $errstr) {
-		if (file_exists($layoutPath)) {
-			$jsonObj = include ($layoutPath);
-			echo json_encode($jsonObj);
+	public function node ($path, $data, $template = null) {
+		if (null != $template) {
+			// template是模版，如果没有指定模版，那path指定的肯定是模版路径，而不会是其他
+			if (is_array($data)) {
+				extract($data);
+			}
+			$this->mTree = include View::ParseViewPath('', $template);
 		} else {
-			echo $data;
+			$arr = explode('.', $path);
+			if (! empty($arr)) {
+				$local = &$this->mTree;
+				foreach ($arr as $val) {
+					$local = &$local[$val];
+				}
+				
+				$local = $data;
+			} else {
+				$local = $data;
+			}
 		}
 	}
-
-	protected function renderTemplate ($data, $templatePath) {
-		extract($data);
-		return include $templatePath;
-	}
 }
-
-?>

@@ -1,9 +1,9 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
 
-use hfc\database\DatabaseClient;
-use hfc\exception\MethodCallErrorException;
+use HFC\Exception\MethodCallErrorException;
+use HFC\Database\DatabaseClient;
 
 /**
  * 从数据库中取出各种数据类的工厂类。
@@ -19,18 +19,8 @@ class DatabaseFactory extends AbstractDataFactory {
 	 * @var integer
 	 */
 	const MAX_AMOUNT = 50;
-	
-	/**
-	 *
-	 * @var DatabaseClient
-	 */
-	protected $mDatabaseClient = null;
 
 	public function __construct () {
-	}
-
-	public function setDatabaseClient (DatabaseClient $client) {
-		$this->mDatabaseClient = $client;
 	}
 
 	public function get ($className, $id) {
@@ -40,7 +30,7 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		
 		$pk = is_array($clsDesc->primaryKey) ? $clsDesc->primaryKey[0] : $clsDesc->primaryKey;
-		$cond = new Condition($pk . '=' . $id);
+		$cond = new Condition($pk, '=', $id);
 		
 		$ret = $this->where($className, $cond, 0, 1, $clsDesc);
 		if (is_array($ret) && count($ret) > 0) {
@@ -50,8 +40,25 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 	}
 
+	/**
+	 * 根据Condition 查询一个对象
+	 *
+	 * @param
+	 *        	$className
+	 * @param Condition $cond        	
+	 * @return mixed
+	 */
+	public function getOne ($className, Condition $cond) {
+		$arr = $this->where($className, $cond, 0, 1);
+		if (count($arr) > 0) {
+			return $arr[0];
+		} else {
+			return null;
+		}
+	}
+
 	public function getRelatedAttribute (ClassAttribute $attr, DataClass $dataObj, ClassDesc $clsDesc) {
-		$myProp = $attr->selfAttribute2Relationship;
+		$myProp = $attr->attribute;
 		if (empty($myProp)) {
 			return null;
 		}
@@ -64,21 +71,24 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 		$val = null;
 		if (empty($attr->relationshipName)) { // 空的关系表示:本类的一个属性直接对应另一个累的一个属性。
-			$val = $this->where($attr->belongClass, new Condition($attr->anotherAttribute2Relationship . '=' . $myVal), 
-					null, 0, $amount);
+			$val = $this->where($attr->class, new Condition($attr->relationAttribute, '=', $myVal), 0, $amount);
 		} else { // 有关系表记录
 			$sqlMyVal = $this->mDatabaseClient->change2SqlValue($myVal, $clsDesc->attribute[$myProp]->var);
-			$sql = "SELECT {$attr->anotherAttributeInRelationship} FROM {$attr->relationshipName} WHERE {$attr->selfAttributeInRelationship}=$sqlMyVal";
+			$sql = "SELECT {$attr->relationAttributeInRelationship} FROM {$attr->relationshipName} WHERE {$attr->attributeInRelationship}=$sqlMyVal";
 			$ret = $this->mDatabaseClient->select($sql);
 			
 			$idArr = array();
 			foreach ($ret as $row) {
-				$idArr[] = $row[$attr->anotherAttributeInRelationship];
+				$idArr[] = $row[$attr->relationAttributeInRelationship];
 			}
-			$cond = new Condition();
-			$cond->add($attr->anotherAttribute2Relationship, 'in', $idArr);
 			
-			$val = $this->where($attr->belongClass, $cond);
+			if (empty($idArr)) {
+				return null;
+			}
+			
+			$cond = new Condition($attr->relationAttribute, 'in', $idArr);
+			
+			$val = $this->where($attr->class, $cond);
 		}
 		
 		if (1 == $amount) {
@@ -92,7 +102,22 @@ class DatabaseFactory extends AbstractDataFactory {
 		}
 	}
 
-	public function where ($className, Condition $cond = null, $start = 0, $num = self::MAX_AMOUNT, ClassDesc $clsDesc = null) {
+	public function count ($className, Condition $cond = null) {
+		$clsDesc = DescFactory::Instance()->getDesc($className);
+		
+		$sqlWhere = self::CreateSqlWhere($clsDesc, $cond, $this->mDatabaseClient);
+		$sql = 'SELECT COUNT(1) FROM `' . $clsDesc->saveName . '`';
+		if (! empty($sqlWhere)) {
+			$sql .= ' WHERE ' . $sqlWhere;
+		}
+		
+		$cnt = $this->mDatabaseClient->selectOne($sql, array(), true);
+		
+		return $cnt;
+	}
+
+	public function where ($className, Condition $cond = null, $start = 0, $num = self::MAX_AMOUNT, ClassDesc $clsDesc = null, $order = '', 
+			$orderType = 'DESC') {
 		if (null == $clsDesc) {
 			$clsDesc = DescFactory::Instance()->getDesc($className);
 		}
@@ -103,11 +128,17 @@ class DatabaseFactory extends AbstractDataFactory {
 			$sql .= 'WHERE ' . $sqlWhere;
 		}
 		
+		if (! empty($order)) {
+			$sql .= ' ORDER BY ' . $order . ' ' . $orderType;
+		}
+		
 		$objArr = array();
 		// 本来想用PDO::FETCH_CLASS，但如果类的属性值与表的键相同，则不会执行__set函数。
-		$ret = $this->mDatabaseClient->select($sql, $start, $num);
+		$ret = $this->mDatabaseClient->select($sql, array(), $start, $num, true);
 		foreach ($ret as $row) {
-			$obj = new $className();
+			$createdTime = $row['createdTime'];
+			$obj = new $className($createdTime);
+			$obj->setFactory($this);
 			
 			foreach ($clsDesc->attribute as $attrName => $attr) {
 				if (empty($attr->saveName)) {
@@ -142,11 +173,11 @@ class DatabaseFactory extends AbstractDataFactory {
 				continue;
 			}
 			
-			$sql .= $name . ',';
+			$sql .= "`$name`,";
 		}
 		$sql[strlen($sql) - 1] = ' ';
 		
-		$sql .= 'FROM ' . $clsDesc->saveName . ' ';
+		$sql .= 'FROM `' . $clsDesc->saveName . '` ';
 		
 		return $sql;
 	}
@@ -174,15 +205,15 @@ class DatabaseFactory extends AbstractDataFactory {
 			
 			$val = $db->change2SqlValue($item->value, $attr->var);
 			
-			if (Condition::OPERATION_IN == $item->operation) {
+			if (Condition::OPERATION_IN == $item->operation || Condition::OPERATION_NOT_IN == $item->operation) {
 				$condSqlArr[] = "$key {$item->operation} (" . implode(',', $val) . ')';
 			} else {
-				$condSqlArr[] = $key . $item->operation . $val;
+				$condSqlArr[] = $key . ' ' . $item->operation . ' ' . $val;
 			}
 		}
 		
 		foreach ($condition->children as $child) {
-			$condSqlArr[] = $this->createSqlWhere($child, $clsDesc);
+			$condSqlArr[] = self::CreateSqlWhere($clsDesc, $child, $db);
 		}
 		
 		$connector = Condition::RELATIONSHIP_OR == $condition->relationship ? ' OR ' : ' AND ';
@@ -194,4 +225,3 @@ class DatabaseFactory extends AbstractDataFactory {
 		return $sql;
 	}
 }
-?>

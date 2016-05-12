@@ -1,8 +1,8 @@
 <?php
 
-namespace orm {
+namespace Framework\ORM {
 
-	use orm\Condition\Item;
+	use ORM\Condition\Item;
 
 	/**
 	 * 条件类，存放key=>value形式的条件元素，key和value之间的比较关系有=、!=、<>、>、<、LIKE，
@@ -23,10 +23,13 @@ namespace orm {
 		const OPERATION_EQUAL = '=';
 		const OPERATION_INEQUAL = '!=';
 		const OPERATION_INEQUAL1 = '<>';
+		const OPERATION_GREATER_EQUAL = '>=';
+		const OPERATION_LESS_EQUAL = '<=';
 		const OPERATION_GREATER = '>';
 		const OPERATION_LESS = '<';
 		const OPERATION_LIKE = 'LIKE';
 		const OPERATION_IN = 'IN';
+		const OPERATION_NOT_IN = 'NOT IN';
 		
 		/**
 		 * 子条件组合关系类型
@@ -60,34 +63,31 @@ namespace orm {
 		 *
 		 * @var array
 		 */
-		protected static $SupportOperation = array(self::OPERATION_INEQUAL,		// 注意，一定要把两种不等号放前面，因为后面有=、<或者>是不等号的子集，会分析出错。
-		self::OPERATION_INEQUAL1,self::OPERATION_EQUAL,self::OPERATION_GREATER,self::OPERATION_LESS,self::OPERATION_LIKE,
-			self::OPERATION_IN);
+		protected static $SupportOperation = array(
+			self::OPERATION_INEQUAL, // 注意，一定要把两种不等号放前面，因为后面有=、<或者>是不等号的子集，会分析出错。
+			self::OPERATION_INEQUAL1,
+			self::OPERATION_EQUAL,
+			self::OPERATION_GREATER,
+			self::OPERATION_GREATER_EQUAL,
+			self::OPERATION_LESS_EQUAL,
+			self::OPERATION_LESS,
+			self::OPERATION_LIKE,
+			self::OPERATION_NOT_IN,
+			self::OPERATION_IN
+		);
 		
 		/**
 		 * 支持的子条件之间的关系。
 		 *
 		 * @var array
 		 */
-		protected static $SupportRelationship = array(self::RELATIONSHIP_AND,self::RELATIONSHIP_OR);
+		protected static $SupportRelationship = array(
+			self::RELATIONSHIP_AND,
+			self::RELATIONSHIP_OR
+		);
 
-		public function __construct ($str = null) {
-			if (! empty($str)) {
-				foreach (self::$SupportOperation as $op) {
-					$pos = stripos($str, $op);
-					if (false !== $pos) {
-						$item = new Item();
-						$item->key = trim(substr($str, 0, $pos));
-						$opLen = strlen($op);
-						$item->operation = $op;
-						$item->value = trim(substr($str, $pos + $opLen));
-						
-						$this->itemList[] = $item;
-						
-						return;
-					}
-				}
-			}
+		public function __construct ($key, $operation, $value) {
+			$this->add($key, $operation, $value);
 			
 			// 默认值
 			$this->relationship = self::RELATIONSHIP_AND;
@@ -182,7 +182,7 @@ namespace orm {
 	}
 }
 
-namespace orm\Condition {
+namespace ORM\Condition {
 
 	class Item {
 		
@@ -216,4 +216,3 @@ namespace orm\Condition {
 		}
 	}
 }
-?>

@@ -1,11 +1,12 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
 
-use orm\exception\ParseClassDescErrorException;
+use Framework\ORM\Exception\ParseClassDescErrorException;
 
 /**
  * 产生各种数据类的描述（即产生数据类的ClassDesc类）的工厂类。
+ * 不包含对private属性的操作。
  *
  * @author Hoheart
  *        
@@ -81,8 +82,7 @@ class DescFactory {
 		}
 		
 		// 取得每个属性的描述
-		$attrNameArr = $rc->getProperties(
-				\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);
+		$attrNameArr = $rc->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
 		foreach ($attrNameArr as $rp) {
 			$doc = $rp->getDocComment();
 			$keyVal = $this->parseDocComment($doc);
@@ -105,12 +105,12 @@ class DescFactory {
 			$attr->key = 'true' == $keyVal['key'];
 			$attr->autoIncrement = 'true' == $keyVal['autoIncrement'];
 			$attr->amountType = $keyVal['amountType'];
-			$attr->belongClass = $keyVal['belongClass'];
+			$attr->class = $keyVal['class'];
 			$attr->relationshipName = $keyVal['relationshipName'];
-			$attr->selfAttributeInRelationship = $keyVal['selfAttributeInRelationship'];
-			$attr->selfAttribute2Relationship = $keyVal['selfAttribute2Relationship'];
-			$attr->anotherAttributeInRelationship = $keyVal['anotherAttributeInRelationship'];
-			$attr->anotherAttribute2Relationship = $keyVal['anotherAttribute2Relationship'];
+			$attr->attributeInRelationship = $keyVal['attributeInRelationship'];
+			$attr->attribute = $keyVal['attribute'];
+			$attr->relationAttributeInRelationship = $keyVal['relationAttributeInRelationship'];
+			$attr->relationAttribute = $keyVal['relationAttribute'];
 			
 			$clsDesc->attribute[$rp->getName()] = $attr;
 			if (! empty($attr->saveName)) {
@@ -133,14 +133,14 @@ class DescFactory {
 		$docEnded = false;
 		$keyVal = array();
 		$var = '';
-		$arr = preg_split('/@|(\n[ \t\*]*)/', $doc, - 1, PREG_SPLIT_OFFSET_CAPTURE);
+		$arr = preg_split('/@|(\r?\n[ \t\*]*)/', $doc, - 1, PREG_SPLIT_OFFSET_CAPTURE);
 		foreach ($arr as $item) {
 			list ($str, $pos) = $item;
 			if ('@' == $doc[$pos - 1]) {
 				$docEnded = true;
 				
 				$rowArr = preg_split('/[ \t]/', $str);
-				if ('hhp:orm' == $rowArr[0]) {
+				if ('orm' == $rowArr[0]) {
 					$keyVal[$rowArr[1]] = $rowArr[2];
 				} else if ('var' == $rowArr[0]) {
 					$var = $rowArr[1];
@@ -160,4 +160,3 @@ class DescFactory {
 		return $keyVal;
 	}
 }
-?>

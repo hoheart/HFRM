@@ -1,14 +1,11 @@
 <?php
 
-namespace hhp\exception;
-
-use hhp\exception\SystemErrcode;
+namespace Framework\Exception;
 
 class ModuleNotAvailableException extends \Exception {
 
-	public function __construct ($msg) {
+	public function __construct ($msg = '') {
 		$this->code = SystemErrcode::ModuleNotEnable;
 		$this->message = $msg;
 	}
 }
-?>

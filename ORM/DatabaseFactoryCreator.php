@@ -1,19 +1,14 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
 
-use orm\DatabaseFactory;
-use hhp\App;
+use Framework\ORM\DatabaseFactory;
 
 class DatabaseFactoryCreator {
 
 	public function create (array $conf = null) {
-		$db = App::Instance()->getService('db');
-		
 		$f = new DatabaseFactory();
-		$f->setDatabaseClient($db);
 		
 		return $f;
 	}
 }
-?>

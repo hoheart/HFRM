@@ -1,6 +1,6 @@
 <?php
 
-namespace hhp;
+namespace Framework;
 
 interface IExecutor {
 
@@ -8,4 +8,3 @@ interface IExecutor {
 
 	public function run ($do = null);
 }
-?>

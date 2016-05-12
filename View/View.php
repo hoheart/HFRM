@@ -1,23 +1,40 @@
 <?php
 
-namespace hhp\view;
+namespace Framework\View;
 
-use hhp\App;
+use Framework\App;
+use HFC\Exception\ParameterErrorException;
+use Framework\Module\ModuleManager;
 
 /**
  * 视图类。
  * 其就是一个容器，包含了数据、模版、布局。
  *
- * @author Hoheart<youkj@yonyou.com>
+ * @author Hoheart
  *        
  */
 class View {
+	
+	/**
+	 *
+	 * @var integer
+	 */
+	const VIEW_TYPE_UNKNOWN = 0;
+	const VIEW_TYPE_HTML = 1;
+	const VIEW_TYPE_JSON = 2;
+	
 	/**
 	 * 数据map，存放controller assign的键值对数据。
 	 *
 	 * @var array
 	 */
 	protected $mDataMap = array();
+	
+	/**
+	 *
+	 * @var string
+	 */
+	protected $mTemplateName = '';
 	
 	/**
 	 * 视图文件路径
@@ -27,24 +44,54 @@ class View {
 	protected $mTemplatePath = '';
 	
 	/**
-	 * 布局文件路径
-	 *
-	 * @var string
 	 */
-	protected $mLayoutPath = '';
+	protected $mCurrentModuleAlias = '';
+	
+	/**
+	 *
+	 * @var integer
+	 */
+	protected $mViewType = self::VIEW_TYPE_UNKNOWN;
 
-	public function __construct ($name, $layoutPath = null) {
-		if (null === $layoutPath) {
-			$layoutPath = App::Instance()->getConfigValue('default_layout');
-			$this->mLayoutPath = $layoutPath;
+	public function __construct ($myAlias, $name = '', $type = self::VIEW_TYPE_HTML) {
+		if (self::VIEW_TYPE_JSON == $type) {
+			$this->mViewType = $type;
+		} else {
+			$this->mViewType = self::VIEW_TYPE_HTML;
 		}
 		
-		list ($moduleName, $ctrlName, $actionName) = explode('/', $name);
-		$confModuleArr = App::Instance()->getConfigValue('module');
-		$moduleDir = $confModuleArr[$moduleName]['dir'];
+		$this->mTemplateName = $name;
+		$this->mCurrentModuleAlias = $myAlias;
+	}
+
+	static public function ParseViewPath ($myAlias, $name) {
+		if (empty($name)) {
+			return '';
+		}
 		
-		$path = $moduleDir . 'view' . DIRECTORY_SEPARATOR . $ctrlName . DIRECTORY_SEPARATOR . $actionName . '.php';
-		$this->mTemplatePath = $path;
+		$arr = explode('::', $name);
+		$path = '';
+		if (1 == count($arr)) {
+			$moduleAlias = $myAlias;
+			$path = $arr[0];
+		} else {
+			$moduleAlias = $arr[0];
+			$path = $arr[1];
+		}
+		
+		$path = str_replace('.', DIRECTORY_SEPARATOR, $path);
+		$moduleDir = ModuleManager::Instance()->getModulePath($moduleAlias);
+		
+		// $ext = self::VIEW_TYPE_JSON == $this->mViewType ? '.json.php' :
+		// '.php';
+		
+		$path = App::$ROOT_DIR . $moduleDir . 'View' . DIRECTORY_SEPARATOR . $path . '.php';
+		
+		return $path;
+	}
+
+	public function getModuleAlias () {
+		return $this->mCurrentModuleAlias;
 	}
 
 	/**
@@ -57,30 +104,31 @@ class View {
 		$this->mDataMap[$key] = $val;
 	}
 
-	/**
-	 * 设置布局文件的绝对路径
-	 *
-	 * @param string $path        	
-	 */
-	public function setLayoutPath ($path) {
-		$this->mLayoutPath = $path;
-	}
-
-	public function getLayoutPath () {
-		return $this->mLayoutPath;
-	}
-
 	public function setTemplatePath ($path) {
 		$this->mTemplatePath = $path;
 	}
 
 	public function getTemplatePath () {
+		if (empty($this->mTemplatePath)) {
+			$this->mTemplatePath = self::ParseViewPath($this->mCurrentModuleAlias, $this->mTemplateName);
+		}
+		
 		return $this->mTemplatePath;
 	}
 
 	public function getDataMap () {
 		return $this->mDataMap;
 	}
-}
 
-?>
+	public function setType ($type) {
+		if (self::VIEW_TYPE_HTML == $type || self::VIEW_TYPE_JSON == $type) {
+			$this->mViewType = $type;
+		} else {
+			throw new ParameterErrorException();
+		}
+	}
+
+	public function getType () {
+		return $this->mViewType;
+	}
+}

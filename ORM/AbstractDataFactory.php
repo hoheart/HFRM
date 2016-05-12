@@ -1,6 +1,8 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
+
+use HFC\Database\DatabaseClient;
 
 /**
  * 抽象的数据工厂
@@ -9,6 +11,12 @@ namespace orm;
  *        
  */
 abstract class AbstractDataFactory {
+	
+	/**
+	 *
+	 * @var DatabaseClient
+	 */
+	protected $mDatabaseClient = null;
 
 	/**
 	 * 根据类的唯一主键的值进行查询
@@ -18,6 +26,23 @@ abstract class AbstractDataFactory {
 	 */
 	abstract public function get ($className, $id);
 
+	/**
+	 * 根据Condition 查询一个对象
+	 *
+	 * @param
+	 *        	$className
+	 * @param Condition $cond        	
+	 * @return mixed
+	 */
+	abstract public function getOne ($className, Condition $cond);
+
 	abstract public function where ($className, Condition $cond = null);
+
+	public function setDatabaseClient (DatabaseClient $client) {
+		$this->mDatabaseClient = $client;
+	}
+
+	public function getDatabaseClient () {
+		return $this->mDatabaseClient;
+	}
 }
-?>

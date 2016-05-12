@@ -1,8 +1,6 @@
 <?php
 
-namespace orm;
-
-use hfc\database\DatabaseClient;
+namespace Framework\ORM;
 
 /**
  * 根据AtrributeMap把数据对象持久化到数据库中。
@@ -11,24 +9,8 @@ use hfc\database\DatabaseClient;
  *        
  */
 class DatabasePersistence extends AbstractPersistence {
-	
-	/**
-	 * 数据库客户端
-	 *
-	 * @var DatabaseClient
-	 */
-	protected $mDatabaseClient = null;
 
 	public function __construct () {
-	}
-
-	/**
-	 * 设置数据库客户端。
-	 *
-	 * @param DatabaseClient $dbClient        	
-	 */
-	public function setDatabaseClient (DatabaseClient $dbClient) {
-		$this->mDatabaseClient = $dbClient;
 	}
 
 	/**
@@ -54,7 +36,7 @@ class DatabasePersistence extends AbstractPersistence {
 				);
 				foreach ($tmpValArr as $oneVal) {
 					$this->save($oneVal); // 不管是否是新增，都需要保存关系，因为本对象执行到这儿，肯定是新增，那么关系中就应该新增一条关系
-					if (empty($attr->relationshipName)) { // 如果是空，说明存放在本类中
+					if (empty($attrObj->relationshipName)) { // 如果是空，说明存放在本类中
 						$this->saveSelfAttribute($attrObj, $oneVal, $dataObj, $keyArr, $valArr);
 					} else {
 						$relationArr[] = array(
@@ -90,9 +72,9 @@ class DatabasePersistence extends AbstractPersistence {
 	 */
 	protected function saveSelfAttribute (ClassAttribute $attr, DataClass $anotherObj, DataClass $dataObj, &$keyArr, 
 			&$valArr) {
-		$attrName = $attr->selfAttribute2Relationship;
+		$attrName = $attr->attribute;
 		if (! empty($attrName)) {
-			$anotherAttrName = $attr->anotherAttribute2Relationship;
+			$anotherAttrName = $attr->relationAttribute;
 			$attrVal = $anotherObj->$anotherAttrName;
 			$dataObj->$attrName = $attrVal;
 			
@@ -111,10 +93,10 @@ class DatabasePersistence extends AbstractPersistence {
 			list ($attr, $anotherObj) = $row;
 			
 			$table = $attr->relationshipName;
-			$attrName = $attr->selfAttribute2Relationship;
-			$anotherAttrName = $attr->anotherAttribute2Relationship;
-			$tableAttrName = $attr->selfAttributeInRelationship;
-			$anotherTableAttrName = $attr->anotherAttributeInRelationship;
+			$attrName = $attr->attribute;
+			$anotherAttrName = $attr->relationAttribute;
+			$tableAttrName = $attr->attributeInRelationship;
+			$anotherTableAttrName = $attr->relationAttributeInRelationship;
 			$anotherVal = $anotherObj->$anotherAttrName;
 			if (null == $anotherVal) {
 				continue;
@@ -136,9 +118,13 @@ class DatabasePersistence extends AbstractPersistence {
 	}
 
 	protected function insertIntoDB ($tbName, $keyArr, $valArr) {
-		$sql = 'INSERT INTO ' . $tbName . '( ' . implode(',', $keyArr) . ' ) VALUES( ' . implode(',', $valArr) . ')';
-		$statment = $this->mDatabaseClient->query($sql);
-		$id = $statment->lastInsertId();
+		$keySql = "`$keyArr[0]`";
+		for ($i = 1; $i < count($keyArr); ++ $i) {
+			$keySql .= ",`$keyArr[$i]`";
+		}
+		$sql = 'INSERT INTO `' . $tbName . '` ( ' . $keySql . ' ) VALUES( ' . implode(',', $valArr) . ')';
+		$this->mDatabaseClient->exec($sql);
+		$id = $this->mDatabaseClient->lastInsertId();
 		
 		return $id;
 	}
@@ -181,16 +167,18 @@ class DatabasePersistence extends AbstractPersistence {
 		}
 		
 		$tbName = $clsDesc->saveName;
-		$sql = "UPDATE $tbName SET {$keyArr[0]} = {$valArr[0]} ";
+		$sql = "UPDATE `$tbName` SET `{$keyArr[0]}` = {$valArr[0]} ";
 		for ($i = 1; $i < count($keyArr); ++ $i) {
 			$sql .= ',';
-			$sql .= $keyArr[$i] . '=' . $valArr[$i];
+			$sql .= "`$keyArr[$i]`=$valArr[$i]";
 		}
 		
 		$condArr = array();
 		foreach ($pkArr as $k) {
 			$dbCol = $clsDesc->attribute[$k]->saveName;
-			$condArr[] = $dbCol . '=' . $dataObj->$k;
+			
+			$v = $this->mDatabaseClient->change2SqlValue($dataObj->$k, $clsDesc->attribute[$dbCol]->var);
+			$condArr[] = $dbCol . '=' . $v;
 		}
 		$sql .= ' WHERE ' . implode(' AND ', $condArr);
 		
@@ -208,7 +196,7 @@ class DatabasePersistence extends AbstractPersistence {
 			$sql .= ' WHERE ' . $whereSql;
 		}
 		
-		$this->mDatabaseClient->exec($sql);
+		return $this->mDatabaseClient->exec($sql);
 	}
 
 	/**
@@ -239,4 +227,3 @@ class DatabasePersistence extends AbstractPersistence {
 		return $refProperty->getValue($dataObj);
 	}
 }
-?>

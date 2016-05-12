@@ -1,9 +1,12 @@
 <?php
 
-namespace hhp;
+namespace Framework;
 
-use hhp\view\JsonRender;
-use hhp\exception\UserErrcode;
+use Framework\View\View;
+use Framework\Facade\Service;
+use HFC\Log\Logger;
+use Framework\Facade\Redirect;
+use Framework\Response\HttpResponse;
 
 class ErrorHandler {
 
@@ -14,7 +17,7 @@ class ErrorHandler {
 		
 		set_error_handler(array(
 			$this,
-			'handle'
+			'processError'
 		), E_ALL | E_STRICT);
 		set_exception_handler(array(
 			$this,
@@ -34,56 +37,122 @@ class ErrorHandler {
 	}
 
 	public function handleException (\Exception $e) {
-		$this->handle($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine(), $e);
+		$this->handle(0, '', '', - 1, $e);
 	}
 
 	public function processError ($errno, $errstr, $errfile, $errline, array $errcontext) {
-		$this->handle($errno, $errstr, $errfile, $errline, $errcontext);
+		$this->handle($errno, $errstr, $errfile, $errline, null, $errcontext);
 	}
 
-	public function handle ($errno, $errstr, $errfile, $errline, $e = null) {
-		$notProcessError = array(
-			E_NOTICE,
-			E_STRICT
-		);
-		
-		$errcode = UserErrcode::ErrorOK;
-		if (in_array($errno, $notProcessError)) {
+	public function handle ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		if (null != $e) {
+			$errno = $e->getCode();
+		}
+		// 永远不处理这两个错误，这是php好用的地方。
+		if (E_STRICT === $errno || E_NOTICE === $errno) {
 			return;
 		}
 		
-		if (App::Instance()->getConfigValue('debug')) {
-			echo "Error:$errno:$errstr.";
-			echo '<br>';
-			echo "In file:$errfile:$errline.";
-			echo '<br>';
-			echo '<pre>';
-			print_r($e);
-			echo '</pre>';
-		} else {
-			try {
-				// echo $errno;
-				// Log::e("Error:$errno:$errstr.\nIn file:$errfile:$errline.");
-			} catch (\Exception $e) {
-			}
+		$jsonDetail = self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
+		
+		// 记录日志
+		$log = Service::get('log');
+		$log->log($jsonDetail, Logger::LOG_TYPE_ERROR, '', Logger::LOG_LEVEL_FATAL);
+		
+		// 调用用户配置的错误处理
+		$errConf = Config::Instance()->get('app.error_processor');
+		if (! empty($errConf)) {
+			$p = new $errConf();
+			$p->handle($errno, $errstr, $errfile, $errline, $e, $errcontext);
 			
-			header('Nothing', '', 200); // 因为到这儿说明脚本出现了致命错误，虽然handle了，但还是会抛出http错误码500，所以这儿手动改一下。
-			
-			$render = new JsonRender();
-			
-			$outErrcode = 0;
-			if ($errno > 0 && ($errno < 400000 || $errno >= 500000)) {
-				// 一旦出现致命错误，之前的chdir就没用了。
-				$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', 50000, 
-						'System error, the Administrator has informed, looking for other pages.');
+			return;
+		}
+		
+		if (App::Instance()->getRequest()->isAjaxRequest()) {
+			if (Config::Instance()->get('app.debug')) {
+				$json = $jsonDetail;
 			} else {
-				$outErrcode = $errno;
-				$outErrstr = $errstr;
-				$render->renderLayout(null, App::$ROOT_DIR . 'common/view/layout.php', $outErrcode, $outErrstr);
+				$json = self::GetErrorJsonByDebug($errno, $errstr, $errfile, $errline, $e, $errcontext);
+			}
+			$resp = new HttpResponse($json);
+			App::Instance()->respond($resp);
+		} else {
+			if (Config::Instance()->get('app.debug')) {
+				if (null != $e) {
+					$errstr = $e->getMessage();
+					$errfile = $e->getFile();
+					$errline = $e->getLine();
+				}
+				$out = App::Instance()->getOutputStream();
+				$out->write("Error:$errno:$errstr.");
+				$out->write('<br>');
+				$out->write("In file:$errfile:$errline.");
+				$out->write('<br>');
+				$out->write('<pre>');
+				
+				ob_start();
+				if (null === $e) {
+					// 当调用栈太大时，会导致内存达到配置的最大内存限制
+					debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
+				} else {
+					print_r($e);
+				}
+				$out->write(ob_get_contents());
+				ob_clean();
+				
+				$out->write('</pre>');
+				$out->close();
+			} else {
+				Redirect::to('/error');
 			}
 		}
 		
-		exit(0);
+		if (Config::Instance()->get('app.debug')) {
+			exit();
+		}
+	}
+
+	static public function GetErrorJsonDetail ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		$node = array(
+			'errcode' => $errno,
+			'errstr' => $errstr,
+			'errDetail' => array(
+				'errfile' => $errfile,
+				'errline' => $errline,
+				'errcontext' => $errcontext
+			),
+			'data' => null
+		);
+		if (null != $e) {
+			$node['errcode'] = $e->getCode();
+			$node['errstr'] = $e->getMessage();
+			$node['errDetail'] = $e->__toString();
+		}
+		
+		return json_encode($node);
+	}
+
+	static public function GetErrorJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		$view = new View('', '', View::VIEW_TYPE_JSON);
+		if (Config::Instance()->get('app.debug')) {
+			return self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
+		} else {
+			$node = array(
+				'errcode' => $errno,
+				'errstr' => $errstr,
+				'data' => null
+			);
+			if (null != $e) {
+				$node['errcode'] = $e->getCode();
+				$node['errstr'] = $e->getMessage();
+			}
+			if ($node['errcode'] < 400000 || $node['errcode'] >= 500000) {
+				$node['errcode'] = 500000;
+				$node['errstr'] = 'system error.';
+				$node['data'] = null;
+			}
+			
+			return json_encode($node);
+		}
 	}
 }
-?>

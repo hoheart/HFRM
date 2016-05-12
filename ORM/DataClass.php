@@ -1,8 +1,9 @@
 <?php
 
-namespace orm;
+namespace Framework\ORM;
 
-use orm\exception\NoPropertyException;
+use Framework\ORM\Exception\NoPropertyException;
+use HFC\Exception\ParameterErrorException;
 
 /**
  * 数据类。对于私有的属性，调用__get和__set魔术方法获取和设置值，并构建对象属性的对象。
@@ -12,7 +13,7 @@ use orm\exception\NoPropertyException;
  * @author Hoheart
  *        
  */
-class DataClass {
+class DataClass implements \JsonSerializable {
 	
 	/**
 	 * 该类对象的存在状态定义。
@@ -25,11 +26,25 @@ class DataClass {
 	
 	/**
 	 * 框架用的属性。不能被继承。
-	 * @hhp:orm saveName
+	 * @orm saveName
 	 *
 	 * @var integer
 	 */
 	protected $mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW;
+	
+	/**
+	 * 框架用的属性。不能被继承。
+	 * 主要用于获取关系对象
+	 *
+	 * @orm saveName
+	 *
+	 * @var AbstractDataFactory
+	 */
+	protected $mFactory = null;
+
+	public function __construct ($t = null) {
+		$this->setCreatedTime($t);
+	}
 
 	public function __get ($name) {
 		return $this->getAttribute($name);
@@ -40,8 +55,16 @@ class DataClass {
 	}
 
 	protected function getFactory () {
-		$c = new DatabaseFactoryCreator();
-		return $c->create(array());
+		if (null == $this->mFactory) {
+			$c = new DatabaseFactoryCreator();
+			$this->mFactory = $c->create(array());
+		}
+		
+		return $this->mFactory;
+	}
+
+	public function setFactory ($f) {
+		$this->mFactory = $f;
 	}
 
 	/**
@@ -58,7 +81,7 @@ class DataClass {
 			
 			$attr = $clsDesc->attribute[$name];
 			// 只对属于另外一个类的属性去取值。
-			if ($attr->isClass()) {
+			if (null != $attr && $attr->isClass()) {
 				$this->$name = $this->getFactory()->getRelatedAttribute($attr, $this, $clsDesc);
 			}
 		}
@@ -67,8 +90,12 @@ class DataClass {
 		if (method_exists($this, $methodName)) {
 			return $this->$methodName();
 		} else {
-			throw new NoPropertyException(
-					'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no get mutator defined.');
+			if (property_exists($this, $name)) {
+				return $this->$name;
+			} else {
+				throw new NoPropertyException(
+						'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no get mutator defined.');
+			}
 		}
 	}
 
@@ -82,32 +109,35 @@ class DataClass {
 		}
 		
 		$clsDesc = DescFactory::Instance()->getDesc(get_class($this));
+		$val = $this->filterValue($value, $clsDesc->attribute[$name]->var);
 		
 		$methodName = 'set' . ucfirst($name);
 		if (method_exists($this, $methodName)) {
-			$val = $this->filterValue($value, $clsDesc->attribute[$name]->var);
 			$this->$methodName($val);
-			
-			$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW == $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
 		} else {
-			// 有可能是saveName
-			// if (! $isSaveName) {
-			// $attr = $clsDesc->saveNameIndexAttr[$name];
-			// if (! empty($attr)) {
-			// $name = $attr->name;
-			// return $this->setAttribute($name, $value, true);
-			// }
-			// }
-			throw new NoPropertyException(
-					'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no set mutator defined.');
+			if (property_exists($this, $name)) {
+				$this->$name = $val;
+			} else {
+				// 有可能是saveName
+				// if (! $isSaveName) {
+				// $attr = $clsDesc->saveNameIndexAttr[$name];
+				// if (! empty($attr)) {
+				// $name = $attr->name;
+				// return $this->setAttribute($name, $value, true);
+				// }
+				// }
+				throw new NoPropertyException(
+						'Property:' . $name . ' not exists in class: ' . get_class($this) . ' or no set mutator defined.');
+			}
 		}
+		
+		$this->mDataObjectExistingStatus = self::DATA_OBJECT_EXISTING_STATUS_NEW == $this->mDataObjectExistingStatus ? self::DATA_OBJECT_EXISTING_STATUS_NEW : self::DATA_OBJECT_EXISTING_STATUS_DIRTY;
 		
 		return $this;
 	}
 
 	/**
 	 * 根据变量类型，对变量进行过滤
-	 * 因为考虑select会比update多，所以，把值的过滤放这个函数里。
 	 *
 	 * @param object $val        	
 	 * @param string $type        	
@@ -129,7 +159,13 @@ class DataClass {
 		if ('string' == substr($type, 0, 6)) {
 			$v = (string) $val;
 		} else if ('int' == substr($type, 0, 3)) {
-			$v = (int) $val;
+			// 由于float和double类型在向int型转换时，会有精度误差，比如如下代码：
+			// $val = 1.14 * 100; $a = (int)$val;那么，a的值为113，所以此处先转换成字符串再转换成int
+			if ('double' == gettype($val) || 'float' == gettype($val)) {
+				$v = (int) ((string) $val);
+			} else {
+				$v = (int) $val;
+			}
 		} else if ('float' == substr($type, 0, 5)) {
 			$v = (float) $val;
 		} else {
@@ -165,5 +201,75 @@ class DataClass {
 		}
 		return $v;
 	}
+
+	protected function setCreatedTime ($t) {
+		if (! property_exists($this, 'createdTime')) {
+			return;
+		}
+		
+		if (null == $t) {
+			$this->createdTime = new \DateTime();
+		} else {
+			if (is_string($t)) {
+				if ('0000-00-00 00:00:00' == $t) {
+					$this->createdTime = new \DateTime();
+				} else {
+					try {
+						$this->createdTime = \DateTime::createFromFormat('Y-m-d H:i:s', $t);
+					} catch (\Exception $e) {
+						throw new ParameterErrorException('DateTime format error.');
+					}
+				}
+			} else if ($t instanceof \DateTime) {
+				$this->createdTime = $t;
+			} else {
+				throw new ParameterErrorException('DateTime format error.');
+			}
+		}
+	}
+
+	public function getCreatedTime () {
+		if (! property_exists($this, 'createdTime')) {
+			return null;
+		}
+		
+		return $this->createdTime;
+	}
+
+	public function jsonSerialize () {
+		return $this->toArray();
+	}
+
+	public function __toString () {
+		$arr = $this->toArray();
+		
+		return json_encode($arr);
+	}
+
+	public function __sleep () {
+		return $this->toArray();
+	}
+
+	public function toArray () {
+		$arr = get_object_vars($this);
+		unset($arr['mFactory']);
+		unset($arr['mDataObjectExistingStatus']);
+		
+		return $arr;
+	}
+
+	public function assignByArray ($arr) {
+		$clsName = get_class($this);
+		$clsDesc = DescFactory::Instance()->getDesc($clsName);
+		foreach ($clsDesc->attribute as $key => $attr) {
+			if (! array_key_exists($key, $arr)) {
+				continue;
+			}
+			if ('mDataObjectExistingStatus' == $key || 'mFactory' == $key) {
+				continue;
+			}
+			
+			$this->setAttribute($key, $arr[$key]);
+		}
+	}
 }
-?>

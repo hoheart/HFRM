@@ -1,9 +1,9 @@
 <?php
 
-namespace hhp\exception;
+namespace Framework\Exception;
 
-class UserErrcode extends \hfc\exception\UserErrcode {
+class UserErrcode extends \HFC\Exception\UserErrcode {
 	const ErrorOK = 0;
 	const RequestError = 4100;
+	const NotFoundHttp = 4104;
 }
-?>
