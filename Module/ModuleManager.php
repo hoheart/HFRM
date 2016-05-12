@@ -64,6 +64,13 @@ class ModuleManager implements IService {
 		);
 	}
 
+	public function __destruct () {
+		while (! empty($this->mModuleMap)) {
+			$m = array_pop($this->mModuleMap);
+			$m->release();
+		}
+	}
+
 	static public function Instance () {
 		static $me = null;
 		if (null == $me) {
@@ -80,10 +87,6 @@ class ModuleManager implements IService {
 	}
 
 	public function stop ($normal = true) {
-		while (! empty($this->mModuleMap)) {
-			$m = array_pop($this->mModuleMap);
-			$m->release();
-		}
 	}
 
 	/**
