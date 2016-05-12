@@ -154,12 +154,12 @@ class ServiceAgent implements IModuleService {
 		}
 		curl_close($ch);
 		
-		$oResp = json_decode($resp);
-		if (0 != $oResp->errcode) {
-			throw new \Exception($oResp->errstr, $oResp->errcode);
+		$oResp = json_decode($resp, true);
+		if (0 != $oResp['errcode']) {
+			throw new \Exception($oResp['errstr'], $oResp['errcode']);
 		}
 		
-		return $oResp->data;
+		return $oResp['data'];
 	}
 
 	protected function choseRemoteServer ($urlArr) {

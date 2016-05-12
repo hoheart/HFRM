@@ -10,11 +10,11 @@ class RPCServiceController extends Controller {
 
 	public function serve (IRequest $req) {
 		$data = $req->get('d');
-		$req = json_decode($data);
-		$moduleAlias = $req->module;
-		$apiName = $req->api;
-		$methodName = $req->method;
-		$parameterArr = $req->parameters;
+		$req = json_decode($data, true);
+		$moduleAlias = $req['module'];
+		$apiName = $req['api'];
+		$methodName = $req['method'];
+		$parameterArr = $req['parameters'];
 		
 		$module = ModuleManager::Instance()->get($moduleAlias);
 		$service = $module->getService($apiName);
