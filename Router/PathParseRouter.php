@@ -68,7 +68,7 @@ class PathParseRouter implements IRouter {
 		if (! $mm->isModuleEnable($moduleAlias)) {
 			$moduleAlias = Config::Instance()->get('app.defaultModule');
 			if (! ModuleManager::Instance()->isModuleEnable($moduleAlias)) {
-				throw new ModuleNotAvailableException();
+				throw new NotFoundHttpException();
 			}
 		} else {
 			array_shift($arr);
