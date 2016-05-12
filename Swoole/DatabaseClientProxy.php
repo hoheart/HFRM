@@ -72,7 +72,7 @@ class DatabaseClientProxy extends DatabaseClient {
 	}
 
 	public function stop ($normal = true) {
-		$this->mOriginObj->stop();
+		$this->mOriginObj->stop($normal);
 		
 		$this->mPool->release($this->mOriginIndex);
 	}

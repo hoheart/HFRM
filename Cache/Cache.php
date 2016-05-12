@@ -16,6 +16,10 @@ class Cache implements IService {
 	public function __construct () {
 	}
 
+	public function __destruct () {
+		$this->redis->close();
+	}
+
 	/**
 	 *
 	 * @param string $host        	
@@ -33,7 +37,6 @@ class Cache implements IService {
 	}
 
 	public function stop ($normal = true) {
-		$this->redis->close();
 	}
 
 	/**

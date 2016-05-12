@@ -45,7 +45,7 @@ class ServiceManager implements IService {
 	public function stop ($normal = true) {
 		if (! $this->mStoped) {
 			foreach ($this->mServiceMap as $service) {
-				$service->stop();
+				$service->stop($normal);
 			}
 			
 			$this->mStoped = true;

@@ -164,11 +164,11 @@ namespace Framework {
 
 		public function stop ($normal = true) {
 			if (null != $this->mServiceManager) {
-				$this->mServiceManager->stop();
+				$this->mServiceManager->stop($normal);
 			}
 			
 			if (null != $this->mModuleManager) {
-				$this->mModuleManager->stop();
+				$this->mModuleManager->stop($normal);
 			}
 		}
 
@@ -219,8 +219,9 @@ namespace Framework {
 				
 				$this->stop();
 			} catch (\Exception $e) {
-				$this->mErrorHandler->handleException($e);
+				// 出错了，赶紧结束掉，该回滚的回滚，释放错误的资源占用。而且，handleException在debug模式下会退出。
 				$this->stop(false);
+				$this->mErrorHandler->handleException($e);
 			}
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);
