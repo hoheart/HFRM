@@ -171,17 +171,18 @@ class Server {
 			}
 			
 			// 不重复为多个相同配置建立重复连接
-			$existsConf = $existsService[$name]['conf'];
-			$existsNum = $existsService[$name]['num'];
 			$tmpConf = $conf;
 			unset($tmpConf['connections_num']);
-			if ($existsConf == $tmpConf && $existsNum > 0 && $existsNum >= $num) {
+			$key = json_encode($tmpConf);
+			$existsNum = $existsService[$key];
+			if ($existsNum === $num) {
 				continue;
 			} else {
-				$existsService[$name]['conf'] = $tmpConf;
-				$existsService[$name]['num'] = $num;
+				$existsService[$key] = $num;
 				
-				$num = $num - $existsNum;
+				if (! empty($existsNum)) {
+					$num = $num - $existsNum;
+				}
 			}
 			
 			$pool = new ObjectPool();
