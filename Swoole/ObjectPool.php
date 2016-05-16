@@ -71,10 +71,10 @@ class ObjectPool implements IService {
 		
 		if (null == $foundObj) {
 			// 如果所有循环都完了还没有拿到锁，根据当前时间取一个等待
-			$indx = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
-			$this->mLockerArray[$indx]->lock();
-			$foundObj = $this->mObjectArray[$indx];
-			$this->mLabelArray[$indx] = true;
+			$index = (microtime(true) * 1000000) % $this->mLockerArray->getSize();
+			$this->mLockerArray[$index]->lock();
+			$foundObj = $this->mObjectArray[$index];
+			$this->mLabelArray[$index] = true;
 		}
 		
 		return array(

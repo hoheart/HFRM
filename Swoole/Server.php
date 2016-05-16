@@ -57,9 +57,9 @@ class Server {
 	
 	/**
 	 *
-	 * @var int $mNeedExitErrorCode
+	 * @var int $mExitErrorCode
 	 */
-	protected $mNeedExitErrorCode = 0;
+	protected $mExitErrorCode = 0;
 	
 	/**
 	 * 对象池集合
@@ -139,14 +139,10 @@ class Server {
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
-		if (! $this->mApp->run(new HttpRequest($req))) {
-			foreach ($this->mPoolArr as $pool) {
-				$pool->releaseAll();
-			}
-		}
+		$this->mApp->run(new HttpRequest($req));
 		
-		if (0 !== $this->mNeedExitErrorCode) {
-			exit($this->mNeedExitErrorCode);
+		if (0 !== $this->mExitErrorCode) {
+			exit($this->mExitErrorCode);
 		}
 	}
 
@@ -229,7 +225,7 @@ class Server {
 	}
 
 	public function needExit ($errcode) {
-		$this->mNeedExitErrorCode = $errcode;
+		$this->mExitErrorCode = $errcode;
 	}
 
 	public function main () {
