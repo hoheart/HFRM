@@ -158,6 +158,7 @@ class Server {
 	}
 
 	protected function initOnePoolService ($name, $cls = '') {
+		$existsService = array();
 		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
 		foreach ($moduleAliasArr as $alias) {
 			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
@@ -169,13 +170,26 @@ class Server {
 				$num = self::DEFAULT_CONNECTIONS_NUM;
 			}
 			
+			// 不重复为多个相同配置建立重复连接
+			$existsConf = $existsService[$name]['conf'];
+			$existsNum = $existsService[$name]['num'];
+			$tmpConf = $conf;
+			unset($tmpConf['connections_num']);
+			if ($existsConf == $tmpConf && $existsNum > 0 && $existsNum >= $num) {
+				continue;
+			} else {
+				$existsService[$name]['conf'] = $tmpConf;
+				$existsService[$name]['num'] = $num;
+				
+				$num = $num - $existsNum;
+			}
+			
 			$pool = new ObjectPool();
 			$pool->init(array(
 				'num' => $num
 			));
-			
-			$sm = App::Instance()->getServiceManager();
 			$s = null;
+			$sm = App::Instance()->getServiceManager();
 			for ($i = 0; $i < $num; ++ $i) {
 				$s = $sm->createService($name, $alias);
 				$pool->addObject($i, $s);
