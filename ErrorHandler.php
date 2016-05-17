@@ -108,7 +108,7 @@ class ErrorHandler {
 		}
 		
 		if (Config::Instance()->get('app.debug')) {
-			exit();
+			exit(-1);
 		}
 	}
 

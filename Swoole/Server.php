@@ -130,16 +130,20 @@ class Server {
 	}
 
 	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
-		// 目前exit退出的错误码，在这儿拿不到。if (self::ERRCODE_DB_RECONNECT == $exit_code) {
+		// 退出码为0，是不会调用该函数的，所以直接用重连
 		$this->initPoolService();
-		// }
 	}
 
 	public function onRequest ($req, $resp) {
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
-		$this->mApp->run(new HttpRequest($req));
+		try {
+			$this->mApp->run(new HttpRequest($req));
+		} catch (\Exception $e) {
+			// 退出，保证资源回收。
+			$this->mExitErrorCode = - 1;
+		}
 		
 		if (0 !== $this->mExitErrorCode) {
 			exit($this->mExitErrorCode);

@@ -20,6 +20,8 @@ use Framework\IService;
  *
  * 默认会关闭自动提交，如果脚本结束，没有错误，就提交，否则回滚。
  *
+ * 在init时，就会建立好连接，以备使用。
+ *
  * @author Hoheart
  *        
  */
