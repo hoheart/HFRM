@@ -118,6 +118,10 @@ class HttpRequest implements IRequest {
 		return $this->mBody;
 	}
 
+	public function getAllCookie () {
+		return $_COOKIE;
+	}
+
 	public function getMethod () {
 		return $_SERVER['REQUEST_METHOD'];
 	}
