@@ -224,7 +224,8 @@ class Server {
 		if (file_exists(self::$PID_FILE_PATH)) {
 			$pid = file_get_contents(self::$PID_FILE_PATH);
 			@\swoole_process::kill($pid);
-			unlink(self::$PID_FILE_PATH);
+			// 因为pid文件是在onStart里生成，所以删除应该放onShutdown里。
+			// unlink(self::$PID_FILE_PATH);
 		}
 	}
 
