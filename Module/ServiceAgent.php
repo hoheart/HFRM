@@ -134,7 +134,8 @@ class ServiceAgent implements IModuleService {
 		
 		$httpBody = 'd=' . urlencode(json_encode($rpParam));
 		
-		$strCookies = http_build_query($_COOKIE, '', ';');
+		$cookieArr = App::Instance()->getRequest()->getAllCookie();
+		$strCookies = http_build_query($cookieArr, '', ';');
 		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);

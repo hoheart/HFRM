@@ -57,9 +57,9 @@ class Server {
 	
 	/**
 	 *
-	 * @var int $mNeedExitErrorCode
+	 * @var int $mExitErrorCode
 	 */
-	protected $mNeedExitErrorCode = 0;
+	protected $mExitErrorCode = 0;
 	
 	/**
 	 * 对象池集合
@@ -130,23 +130,23 @@ class Server {
 	}
 
 	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
-		// 目前exit退出的错误码，在这儿拿不到。if (self::ERRCODE_DB_RECONNECT == $exit_code) {
+		// 退出码为0，是不会调用该函数的，所以直接用重连
 		$this->initPoolService();
-		// }
 	}
 
 	public function onRequest ($req, $resp) {
 		$this->mOutputStream->setSwooleResponse($resp);
 		$this->mApp->setOutputStream($this->mOutputStream);
 		
-		if (! $this->mApp->run(new HttpRequest($req))) {
-			foreach ($this->mPoolArr as $pool) {
-				$pool->releaseAll();
-			}
+		try {
+			$this->mApp->run(new HttpRequest($req));
+		} catch (\Exception $e) {
+			// 退出，保证资源回收。
+			$this->mExitErrorCode = - 1;
 		}
 		
-		if (0 !== $this->mNeedExitErrorCode) {
-			exit($this->mNeedExitErrorCode);
+		if (0 !== $this->mExitErrorCode) {
+			exit($this->mExitErrorCode);
 		}
 	}
 
@@ -158,6 +158,7 @@ class Server {
 	}
 
 	protected function initOnePoolService ($name, $cls = '') {
+		$existsService = array();
 		$moduleAliasArr = ModuleManager::Instance()->getAllModuleAlias();
 		foreach ($moduleAliasArr as $alias) {
 			$conf = Config::Instance()->getModuleConfig($alias, 'service.' . $name);
@@ -169,13 +170,27 @@ class Server {
 				$num = self::DEFAULT_CONNECTIONS_NUM;
 			}
 			
+			// 不重复为多个相同配置建立重复连接
+			$tmpConf = $conf;
+			unset($tmpConf['connections_num']);
+			$key = json_encode($tmpConf);
+			$existsNum = $existsService[$key];
+			if ($existsNum === $num) {
+				continue;
+			} else {
+				$existsService[$key] = $num;
+				
+				if (! empty($existsNum)) {
+					$num = $num - $existsNum;
+				}
+			}
+			
 			$pool = new ObjectPool();
 			$pool->init(array(
 				'num' => $num
 			));
-			
-			$sm = App::Instance()->getServiceManager();
 			$s = null;
+			$sm = App::Instance()->getServiceManager();
 			for ($i = 0; $i < $num; ++ $i) {
 				$s = $sm->createService($name, $alias);
 				$pool->addObject($i, $s);
@@ -209,12 +224,13 @@ class Server {
 		if (file_exists(self::$PID_FILE_PATH)) {
 			$pid = file_get_contents(self::$PID_FILE_PATH);
 			@\swoole_process::kill($pid);
-			unlink(self::$PID_FILE_PATH);
+			// 因为pid文件是在onStart里生成，所以删除应该放onShutdown里。
+			// unlink(self::$PID_FILE_PATH);
 		}
 	}
 
 	public function needExit ($errcode) {
-		$this->mNeedExitErrorCode = $errcode;
+		$this->mExitErrorCode = $errcode;
 	}
 
 	public function main () {

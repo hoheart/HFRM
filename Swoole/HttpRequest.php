@@ -113,6 +113,15 @@ class HttpRequest implements IRequest {
 		return $this->mAllParam;
 	}
 
+	public function getAllCookie () {
+		$cookieArr = array();
+		if (is_array($this->mRequest->cookie)) {
+			$cookieArr = $this->mRequest->cookie;
+		}
+		
+		return $cookieArr;
+	}
+
 	public function getMethod () {
 		return $this->mRequest->server['request_method'];
 	}

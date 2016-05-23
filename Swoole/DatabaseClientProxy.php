@@ -25,6 +25,13 @@ class DatabaseClientProxy extends DatabaseClient {
 	 * @var ObjectPool
 	 */
 	protected $mPool = null;
+	
+	/**
+	 * 为防止事务被别的进程提交，当非select语句执行时，都是在一个事务中执行。
+	 *
+	 * @var bool $mIntransaction
+	 */
+	protected $mIntransaction = true;
 
 	public function __construct (ObjectPool $pool) {
 		$this->mPool = $pool;
@@ -37,44 +44,79 @@ class DatabaseClientProxy extends DatabaseClient {
 	}
 
 	public function __call ($name, $arguments) {
+		$obj = null;
+		$idx = - 1;
+		if (null == $this->mOriginObj) {
+			list ($obj, $idx) = $this->lock();
+		} else {
+			$obj = $this->mOriginObj;
+			$idx = $this->mOriginIndex;
+		}
+		
 		try {
 			$ret = call_user_func_array(array(
-				$this->mOriginObj,
+				$obj,
 				$name
 			), $arguments);
 		} catch (DatabaseQueryException $e) {
+			$this->unlock($idx);
+			
 			$se = $e->getSourceException();
 			if ($se->errorInfo[1] == 2006 || $se->errorInfo[1] == 70100) {
-				if ($this->mOriginObj->connect()) {
+				if ($obj->connect()) {
 					$ret = call_user_func_array(array(
-						$this->mOriginObj,
+						$obj,
 						$name
 					), $arguments);
 					
 					Server::Instance()->needExit(Server::ERRCODE_DB_RECONNECT);
 				}
+			} else {
+				throw $e;
 			}
+		}
+		
+		if (! $this->mIntransaction) {
+			$this->unlock($idx);
 		}
 		
 		return $ret;
 	}
 
 	public function start () {
-		list ($obj, $index) = $this->mPool->get();
-		$this->mOriginObj = $obj;
-		$this->mOriginIndex = $index;
+	}
+
+	protected function lock () {
+		$ret = $this->mPool->get();
 		
-		if (! $this->mOriginObj->isConnect()) {
-			$this->mOriginObj->connect();
-		}
+		list ($this->mOriginObj, $this->mOriginIndex) = $ret;
 		
 		$this->mOriginObj->start();
+		
+		return $ret;
+	}
+
+	protected function unlock ($idx = -1) {
+		if (- 1 == $idx) {
+			if (- 1 == $this->mOriginIndex) {
+				return;
+			} else {
+				$idx = $this->mOriginIndex;
+			}
+		}
+		
+		$this->mPool->release($idx);
+		
+		$this->mOriginObj = null;
+		$this->mOriginIndex = - 1;
 	}
 
 	public function stop ($normal = true) {
-		$this->mOriginObj->stop($normal);
-		
-		$this->mPool->release($this->mOriginIndex);
+		if (null != $this->mOriginObj) {
+			$this->mOriginObj->stop($normal);
+			
+			$this->unlock();
+		}
 	}
 
 	public function connect () {
@@ -91,6 +133,10 @@ class DatabaseClientProxy extends DatabaseClient {
 	}
 
 	public function select ($sql, $inputParams = array(), $start = 0, $size = self::MAX_ROW_COUNT, $isOrm = false) {
+		if (null == $this->mOriginObj) {
+			$this->mIntransaction = false;
+		}
+		
 		return $this->__call(__FUNCTION__, func_get_args());
 	}
 
