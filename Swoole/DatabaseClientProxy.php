@@ -78,6 +78,9 @@ class DatabaseClientProxy extends DatabaseClient {
 		
 		if (! $this->mIntransaction) {
 			$this->unlock($idx);
+			
+			// 用完一次赶紧还原这个变量，要不后面的语句就会没法提交.
+			$this->mIntransaction = true;
 		}
 		
 		return $ret;
