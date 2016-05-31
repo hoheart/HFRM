@@ -135,7 +135,7 @@ class Server {
 			$this->mApp->run(new HttpRequest($req));
 		} catch (\Exception $e) {
 			// 退出，保证资源回收。
-			$this->mExitErrorCode = - 1;
+			$this->mExitErrorCode = - 2;
 		}
 		
 		if (0 !== $this->mExitErrorCode) {
