@@ -60,13 +60,6 @@ class Server {
 	 * @var int $mExitErrorCode
 	 */
 	protected $mExitErrorCode = 0;
-	
-	/**
-	 * 对象池集合
-	 *
-	 * @var array $mPoolArr
-	 */
-	protected $mPoolArr = array();
 
 	protected function __construct () {
 		$this->mApp = App::Instance();
@@ -151,8 +144,6 @@ class Server {
 	}
 
 	protected function initPoolService () {
-		$this->mPoolArr = array();
-		
 		$serviceArr = Config::get('server.poolService');
 		foreach ($serviceArr as $name => $cls) {
 			$this->initOnePoolService($name, $cls);
@@ -205,8 +196,6 @@ class Server {
 			
 			$keyName = $sm->getKeyName($name, $alias);
 			$sm->addService($proxy, $keyName);
-			
-			$this->mPoolArr[] = $pool;
 		}
 	}
 
