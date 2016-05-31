@@ -151,6 +151,8 @@ class Server {
 	}
 
 	protected function initPoolService () {
+		$this->mPoolArr = array();
+		
 		$serviceArr = Config::get('server.poolService');
 		foreach ($serviceArr as $name => $cls) {
 			$this->initOnePoolService($name, $cls);
