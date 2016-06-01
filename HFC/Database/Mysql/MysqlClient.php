@@ -44,7 +44,9 @@ class MysqlClient extends PDOClient {
 		} else {
 			switch ($type) {
 				case 'date':
-					$v = $val->format('Y-m-d');
+					if ($val instanceof \DateTime) {
+						$v = $val->format('Y-m-d');
+					}
 					break;
 				case 'time':
 				case 'datetime':
