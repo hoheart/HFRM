@@ -226,6 +226,8 @@ namespace Framework {
 			
 			$this->operationLog($moduleAlias, $ctrlClassName, $actionMethodName, $this->mCurrentController, $e);
 			
+			ob_clean();
+			
 			return null === $e ? true : false;
 		}
 
