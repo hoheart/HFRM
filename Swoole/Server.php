@@ -60,13 +60,6 @@ class Server {
 	 * @var int $mExitErrorCode
 	 */
 	protected $mExitErrorCode = 0;
-	
-	/**
-	 * 对象池集合
-	 *
-	 * @var array $mPoolArr
-	 */
-	protected $mPoolArr = array();
 
 	protected function __construct () {
 		$this->mApp = App::Instance();
@@ -142,7 +135,7 @@ class Server {
 			$this->mApp->run(new HttpRequest($req));
 		} catch (\Exception $e) {
 			// 退出，保证资源回收。
-			$this->mExitErrorCode = - 1;
+			$this->mExitErrorCode = - 2;
 		}
 		
 		if (0 !== $this->mExitErrorCode) {
@@ -203,8 +196,6 @@ class Server {
 			
 			$keyName = $sm->getKeyName($name, $alias);
 			$sm->addService($proxy, $keyName);
-			
-			$this->mPoolArr[] = $pool;
 		}
 	}
 

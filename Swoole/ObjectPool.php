@@ -30,7 +30,6 @@ class ObjectPool implements IService {
 	}
 
 	public function __destruct () {
-		$this->releaseAll();
 	}
 
 	public function init (array $conf) {
@@ -88,14 +87,6 @@ class ObjectPool implements IService {
 			$this->mLabelArray[$index] = false;
 			
 			$this->mLockerArray[$index]->unlock();
-		}
-	}
-
-	public function releaseAll () {
-		foreach ($this->mLabelArray as $index => $val) {
-			if ($val) {
-				$this->release($index);
-			}
 		}
 	}
 }

@@ -79,16 +79,7 @@ abstract class DatabaseClient implements IService {
 	}
 
 	public function __destruct () {
-		// 没有正确执行stop，应该回滚，但数据库一般都会自己回滚，所以数据库自己回滚，效率更高。
-		// 因为现在用连接池了，所以，在对象消失时，要回滚。否则连接建立时，会提交。
-		if (! $this->mStoped) {
-			if (! $this->mAutocommit) {
-				try {
-					$this->exec('ROLLBACK;');
-				} catch (\Exception $e) {
-				}
-			}
-		}
+		// 数据库连接断掉后，没提交的数据会自动回滚。
 	}
 
 	public function init (array $conf) {
