@@ -82,10 +82,6 @@ class Server {
 		$this->mServerName = Config::get('server.serverName');
 		\swoole_set_process_name($this->mServerName);
 		
-		$this->initPoolService();
-		
-		$this->mOutputStream = new SwooleHttpOutputStream();
-		
 		$host = Config::get('server.host');
 		$port = Config::get('server.port');
 		
@@ -120,19 +116,16 @@ class Server {
 			$this,
 			'onWorkerError'
 		));
-	}
-
-	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
-		// 退出码为0，是不会调用该函数的，所以直接用重连
+		
 		$this->initPoolService();
 	}
 
 	public function onRequest ($req, $resp) {
-		$this->mOutputStream->setSwooleResponse($resp);
-		$this->mApp->setOutputStream($this->mOutputStream);
+		$os = new SwooleHttpOutputStream();
+		$os->setSwooleResponse($resp);
 		
 		try {
-			$this->mApp->run(new HttpRequest($req));
+			$this->mApp->run(new HttpRequest($req), $os);
 		} catch (\Exception $e) {
 			// 退出，保证资源回收。
 			$this->mExitErrorCode = - 2;
@@ -199,8 +192,9 @@ class Server {
 		}
 	}
 
-	public function start () {
-		$this->mServer->start();
+	public function onWorkerError ($serv, $worker_id, $worker_pid, $exit_code) {
+		// 退出码为0，是不会调用该函数的，所以直接用重连
+		$this->initPoolService();
 	}
 
 	public function onStart () {
@@ -222,6 +216,10 @@ class Server {
 
 	public function needExit ($errcode) {
 		$this->mExitErrorCode = $errcode;
+	}
+
+	public function start () {
+		$this->mServer->start();
 	}
 
 	public function main () {
