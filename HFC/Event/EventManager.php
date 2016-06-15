@@ -1,9 +1,9 @@
 <?php
 
-namespace HFC\Event;
+namespace Framework\HFC\Event;
 
-use HFC\Event\IEvent;
-use HFC\Exception\ParameterErrorException;
+use Framework\HFC\Event\IEvent;
+use Framework\HFC\Exception\ParameterErrorException;
 use Framework\IService;
 
 /**

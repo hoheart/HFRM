@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\Database\Mysql;
+namespace Framework\HFC\Database\Mysql;
 
-use HFC\Database\PDOStatement;
+use Framework\HFC\Database\PDOStatement;
 
 class MysqlStatement extends PDOStatement {
 }

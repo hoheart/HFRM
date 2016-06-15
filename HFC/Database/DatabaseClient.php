@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Database;
+namespace Framework\HFC\Database;
 
 use Framework\IService;
 

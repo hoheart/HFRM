@@ -10,8 +10,6 @@ namespace Framework {
 	use Framework\Config;
 	use Framework\Output\StandardOutputStream;
 	use Framework\Output\IOutputStream;
-	use Framework\Response\IResponse;
-	use Framework\Response\HttpResponse;
 	use Framework\Exception\EndAppException;
 	use Framework\Controller\RPCServiceController;
 
@@ -69,12 +67,6 @@ namespace Framework {
 		 * @var IOutputStream
 		 */
 		protected $mOutputStream = null;
-		
-		/**
-		 *
-		 * @var IResponse
-		 */
-		protected $mResponse = null;
 
 		/**
 		 * 构造函数，创建ClassLoader，并调用其register2System。
@@ -146,54 +138,30 @@ namespace Framework {
 			if (null == $request) {
 				$request = $this->getRequest();
 			}
+			if (null == $output) {
+				$output = $this->getOutputStream();
+			}
 			
 			try {
 				$this->start();
 				
-				//去掉了路由，直接访问固定controller。对于要访问哪个模块的哪个接口，直接由controller决定。
-				//去掉了pre_executor，没用，如果以后需要注入（AOP），再想办法解决。
-				//还是保留了controller层，目的是框架就是框架，只完成service、module等框架该完成的功能。
+				// 去掉了路由，直接访问固定controller。对于要访问哪个模块的哪个接口，直接由controller决定。
+				// 去掉了pre_executor，没用，如果以后需要注入（AOP），再想办法解决。
+				// 还是保留了controller层，目的是框架就是框架，只完成service、dependency等框架该完成的功能。
 				$ctrl = new RPCServiceController();
 				$this->mCurrentController = $ctrl;
 				$response = $ctrl->serve($request, $output);
-				if (null == $response) {
-					// 说明serve方法内部已经返回了（异步）
-					return true;
-				}
 				
-				//不需要视图渲染了，直接由controller解包组包协议。
-				
-				// 输出剩余内容,放在stop前，让浏览器更快看到页面。
-				$this->respond($response, $output);
-				
-				$this->stop();
+				// 在serve中stop
 			} catch (\Exception $e) {
 				// 出错了，赶紧结束掉，该回滚的回滚，释放错误的资源占用。而且，handleException在debug模式下会退出。
 				$this->stop(false);
 				$this->mErrorHandler->handleException($e);
 			}
 			
-			//不需要记录日志，由controller完成。
-			
-			ob_end_clean();
+			// 不需要记录日志，由controller完成。
 			
 			return null === $e ? true : false;
-		}
-
-		public function respond (IResponse $resp = null, IOutputStream $output = null) {
-			if (null == $resp) {
-				$resp = $this->getResponse();
-			}
-			if (null == $output) {
-				$output = $this->getOutputStream();
-			}
-			
-			$output->output($resp);
-			// 当此输出完后，清空，以备下次输出。
-			$resp->clear();
-			
-			$output->flush();
-			$output->close();
 		}
 
 		public function getRequest () {
@@ -210,17 +178,6 @@ namespace Framework {
 			}
 			
 			return $req;
-		}
-
-		public function getResponse () {
-			if (null == $this->mResponse) {
-				$this->mResponse = new HttpResponse();
-				
-				$stream = $this->getOutputStream();
-				$this->mResponse->setOutputStream($stream);
-			}
-			
-			return $this->mResponse;
 		}
 
 		public function getVersion () {
@@ -285,7 +242,7 @@ namespace Framework\App {
 	 *        
 	 */
 	class ClassLoader {
-		
+
 		public function __construct () {
 		}
 
@@ -311,11 +268,11 @@ namespace Framework\App {
 		 * @param string $className        	
 		 */
 		public function autoload ($className) {
-		    if( DIRECTORY_SEPARATOR == '\\'){
-		        $path = $className . '.php';
-		    }else{
-		        $path = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-		    }
+			if (DIRECTORY_SEPARATOR == '\\') {
+				$path = $className . '.php';
+			} else {
+				$path = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+			}
 			
 			include_once App::$ROOT_DIR . $path; // 如果用require，就会产生一个系统错误，而用户自定义错误就截取不到了。
 		}

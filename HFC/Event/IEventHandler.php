@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Event;
+namespace Framework\HFC\Event;
 
 interface IEventHandler {
 

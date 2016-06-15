@@ -3,7 +3,7 @@
 namespace Framework\ORM;
 
 use Framework\ORM\Exception\NoPropertyException;
-use HFC\Exception\ParameterErrorException;
+use Framework\HFC\Exception\ParameterErrorException;
 
 /**
  * 数据类。对于私有的属性，调用__get和__set魔术方法获取和设置值，并构建对象属性的对象。

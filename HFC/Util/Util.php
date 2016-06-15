@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Util;
+namespace Framework\HFC\Util;
 
 use Framework\Facade\Out;
 

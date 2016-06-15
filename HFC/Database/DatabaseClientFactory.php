@@ -1,9 +1,9 @@
 <?php
 
-namespace HFC\Database;
+namespace Framework\HFC\Database;
 
-use HFC\Database\Mysql\MysqlClient;
-use HFC\Exception\NotImplementedException;
+use Framework\HFC\Database\Mysql\MysqlClient;
+use Framework\HFC\Exception\NotImplementedException;
 use Framework\Config;
 
 class DatabaseClientFactory {

@@ -2,8 +2,8 @@
 
 namespace Framework\ORM;
 
-use HFC\Exception\MethodCallErrorException;
-use HFC\Database\DatabaseClient;
+use Framework\HFC\Exception\MethodCallErrorException;
+use Framework\HFC\Database\DatabaseClient;
 
 /**
  * 从数据库中取出各种数据类的工厂类。

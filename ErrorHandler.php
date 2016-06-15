@@ -4,7 +4,7 @@ namespace Framework;
 
 use Framework\View\View;
 use Framework\Facade\Service;
-use HFC\Log\Logger;
+use Framework\HFC\Log\Logger;
 use Framework\Facade\Redirect;
 use Framework\Response\HttpResponse;
 
@@ -106,7 +106,7 @@ class ErrorHandler {
 					$out->close();
 				}
 			} else {
-				Redirect::to('/error');
+// 				Redirect::to('/error');
 			}
 		}
 		
@@ -136,7 +136,7 @@ class ErrorHandler {
 	}
 
 	static public function GetErrorJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
-		$view = new View('', '', View::VIEW_TYPE_JSON);
+		$view = null;//new View('', '', View::VIEW_TYPE_JSON);
 		if (Config::Instance()->get('app.debug')) {
 			return self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		} else {

@@ -2,7 +2,7 @@
 
 namespace Framework\Exception;
 
-use HFC\Exception\SystemErrcode;
+use Framework\HFC\Exception\SystemErrcode;
 
 class NotImplementedException extends \Exception {
 

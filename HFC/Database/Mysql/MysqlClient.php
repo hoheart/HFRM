@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\Database\Mysql;
+namespace Framework\HFC\Database\Mysql;
 
-use HFC\Database\PDOClient;
+use Framework\HFC\Database\PDOClient;
 
 class MysqlClient extends PDOClient {
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Util;
+namespace Framework\HFC\Util;
 
 /**
  * 数组相关的操作

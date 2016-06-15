@@ -2,7 +2,7 @@
 
 namespace Framework\Exception;
 
-class SystemErrcode extends \HFC\Exception\SystemErrcode {
+class SystemErrcode extends \Framework\HFC\Exception\SystemErrcode {
 	const ModuleNotEnable = 5101;
 	const ConfigError = 5102;
 	const APINotAvailable = 5103;

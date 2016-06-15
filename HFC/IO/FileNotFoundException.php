@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\IO;
+namespace Framework\HFC\IO;
 
-use HFC\Exception\SystemErrcode;
+use Framework\HFC\Exception\SystemErrcode;
 
 class FileNotFoundException extends \Exception {
 

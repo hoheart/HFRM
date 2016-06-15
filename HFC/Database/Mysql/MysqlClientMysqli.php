@@ -1,11 +1,11 @@
 <?php
 
-namespace HFC\Database\Mysql;
+namespace Framework\HFC\Database\Mysql;
 
-use HFC\Database\DatabaseClient;
-use HFC\Database\DatabaseConnectException;
-use HFC\Database\DatabaseQueryException;
-use HFC\Exception\SQLInjectionRiskException;
+use Framework\HFC\Database\DatabaseClient;
+use Framework\HFC\Database\DatabaseConnectException;
+use Framework\HFC\Database\DatabaseQueryException;
+use Framework\HFC\Exception\SQLInjectionRiskException;
 
 /**
  * 用mysqli实现的mysql客户端

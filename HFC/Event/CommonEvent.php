@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Event;
+namespace Framework\HFC\Event;
 
 /**
  * 用名字标志的普通事件。为方便使用，系统需要一个以名字标志的普通事件，不需要再写别的类，这样，减少了依赖。

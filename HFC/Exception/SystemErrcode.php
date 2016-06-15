@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Exception;
+namespace Framework\HFC\Exception;
 
 class SystemErrcode {
 	const SystemAPIError = 5000;
