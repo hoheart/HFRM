@@ -1,10 +1,10 @@
 <?php
 
-namespace HFC\IO;
+namespace Framework\HFC\IO;
 
-use HFC\IO\Directory;
-use HFC\IO\File;
-use HFC\IO\FileNotFoundException;
+use Framework\HFC\IO\Directory;
+use Framework\HFC\IO\File;
+use Framework\HFC\IO\FileNotFoundException;
 
 abstract class Path {
 	

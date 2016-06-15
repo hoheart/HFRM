@@ -4,7 +4,7 @@ namespace Framework;
 
 use Framework\View\View;
 use Framework\Facade\Service;
-use HFC\Log\Logger;
+use Framework\HFC\Log\Logger;
 use Framework\Facade\Redirect;
 use Framework\Response\HttpResponse;
 

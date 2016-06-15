@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\Database;
+namespace Framework\HFC\Database;
 
-use HFC\Exception\SQLInjectionRiskException;
+use Framework\HFC\Exception\SQLInjectionRiskException;
 
 /**
  *

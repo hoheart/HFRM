@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\IO;
+namespace Framework\HFC\IO;
 
-use HFC\Exception\SystemAPIErrorException;
+use Framework\HFC\Exception\SystemAPIErrorException;
 
 class File extends Path {
 	

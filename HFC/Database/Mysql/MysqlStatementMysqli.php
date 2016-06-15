@@ -1,9 +1,9 @@
 <?php
 
-namespace HFC\Database\Mysql;
+namespace Framework\HFC\Database\Mysql;
 
-use HFC\Database\DatabaseStatement;
-use HFC\Database\DatabaseClient;
+use Framework\HFC\Database\DatabaseStatement;
+use Framework\HFC\Database\DatabaseClient;
 
 class MysqlStatementMysqli extends DatabaseStatement {
 	

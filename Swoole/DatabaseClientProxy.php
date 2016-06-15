@@ -2,9 +2,9 @@
 
 namespace Framework\Swoole;
 
-use HFC\Database\DatabaseClient;
+use Framework\HFC\Database\DatabaseClient;
 use Framework\Exception\NotImplementedException;
-use HFC\Database\DatabaseQueryException;
+use Framework\HFC\Database\DatabaseQueryException;
 
 class DatabaseClientProxy extends DatabaseClient {
 	

@@ -2,7 +2,7 @@
 
 namespace Framework\ORM;
 
-use HFC\Database\DatabaseClient;
+use Framework\HFC\Database\DatabaseClient;
 
 /**
  * 抽象的持久化类

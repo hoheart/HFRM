@@ -3,7 +3,7 @@
 namespace Framework\ORM;
 
 use Framework\App;
-use HFC\Database\DatabaseTransaction;
+use Framework\HFC\Database\DatabaseTransaction;
 use Framework\IService;
 
 class ORMService implements IService {

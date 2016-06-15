@@ -3,7 +3,7 @@
 namespace Framework;
 
 use Framework\View\View;
-use HFC\Exception\ParameterErrorException;
+use Framework\HFC\Exception\ParameterErrorException;
 
 abstract class Controller {
 	

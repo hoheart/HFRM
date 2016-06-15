@@ -1,8 +1,8 @@
 <?php
 
-namespace HFC\Util;
+namespace Framework\HFC\Util;
 
-use HFC\Exception\ParameterErrorException;
+use Framework\HFC\Exception\ParameterErrorException;
 
 /**
  * 用php的文件锁实现的序列。

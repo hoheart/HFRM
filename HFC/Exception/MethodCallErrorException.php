@@ -1,6 +1,6 @@
 <?php
 
-namespace HFC\Exception;
+namespace Framework\HFC\Exception;
 
 class MethodCallErrorException extends \Exception {
 

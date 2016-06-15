@@ -109,7 +109,8 @@ class ServiceManager implements IService {
 		}
 		
 		$s = null;
-		ModuleManager::Instance()->preloadModule($conf['module']);
+		// TODO
+		// ModuleManager::Instance()->preloadModule($conf['module']);
 		if (! empty($method)) {
 			$factory = new $clsName();
 			$s = $factory->$method($serviceConf);
