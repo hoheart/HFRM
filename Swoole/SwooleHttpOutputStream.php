@@ -1,8 +1,8 @@
 <?php
 
-namespace Framework\Output;
+namespace Framework\Swoole;
 
-use Framework\Response\IResponse;
+use Framework\Output\IOutputStream;
 
 class SwooleHttpOutputStream implements IOutputStream {
 	
@@ -30,30 +30,6 @@ class SwooleHttpOutputStream implements IOutputStream {
 		}
 		if (strlen($content) > 0) {
 			$this->mResponse->write($content);
-		}
-	}
-
-	public function output (IResponse $resp) {
-		$this->mResponse->status($resp->getStatus());
-		
-		foreach ($resp->getAllHeader() as $key => $val) {
-			if (is_array($val)) {
-				foreach ($val as $one) {
-					$this->mResponse->header($key, $one);
-				}
-			} else {
-				$this->mResponse->header($key, $val);
-			}
-		}
-		
-		foreach ($resp->getAllCookie() as $key => $cookie) {
-			$this->mResponse->cookie($key, $cookie['value'], $cookie['expire'], $cookie['path'], $cookie['domain'], 
-					$cookie['secure'], $cookie['httponly']);
-		}
-		
-		$body = $resp->getBody();
-		if ('' !== $body) {
-			$this->mResponse->write($resp->getBody());
 		}
 	}
 

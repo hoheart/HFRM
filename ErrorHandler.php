@@ -2,18 +2,15 @@
 
 namespace Framework;
 
-use Framework\View\View;
 use Framework\Facade\Service;
 use Framework\HFC\Log\Logger;
-use Framework\Facade\Redirect;
-use Framework\Response\HttpResponse;
 
 class ErrorHandler {
 
 	public function register2System () {
 		// 关闭所有错误输出
-		ini_set('display_errors', 'Off');
-		error_reporting(0);
+		ini_set('display_errors', 'on');
+		error_reporting(- 1);
 		
 		set_error_handler(array(
 			$this,
@@ -36,24 +33,24 @@ class ErrorHandler {
 		}
 	}
 
-	public function handleException (\Exception $e) {
-		$this->handle(0, '', '', - 1, $e);
+	public function handleException (\Exception $e, RequestContext $context) {
+		$this->handle(0, '', '', - 1, $e, array(), $context);
 	}
 
 	public function processError ($errno, $errstr, $errfile, $errline, array $errcontext) {
 		$this->handle($errno, $errstr, $errfile, $errline, null, $errcontext);
 	}
 
-	public function handle ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+	public function handle ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array(), RequestContext $context = null) {
 		if (null != $e) {
 			$errno = $e->getCode();
 		}
-		// 永远不处理这两个错误，这是php好用的地方。
+		// 永远不处理这两个错误，因为这才是php好用的地方。
 		if (E_STRICT === $errno || E_NOTICE === $errno) {
 			return;
 		}
 		
-		$jsonDetail = self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
+		$jsonDetail = self::GetErrorAsJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		
 		// 记录日志
 		$log = Service::get('log');
@@ -63,59 +60,38 @@ class ErrorHandler {
 		$errConf = Config::Instance()->get('app.error_processor');
 		if (! empty($errConf)) {
 			$p = new $errConf();
-			$p->handle($errno, $errstr, $errfile, $errline, $e, $errcontext);
+			$p->handle($errno, $errstr, $errfile, $errline, $e, $errcontext, $context);
 			
 			return;
 		}
 		
-		$req = App::Instance()->getRequest();
-		if ($req && $req->isAjaxRequest()) {
-			if (Config::Instance()->get('app.debug')) {
-				$json = $jsonDetail;
+		if (Config::Instance()->get('app.debug')) {
+			$json = $jsonDetail;
+			
+			// 输出到控制台，以方便调试
+			echo ("Error:$errno:$errstr.");
+			echo ('<br>');
+			echo ("In file:$errfile:$errline.");
+			echo ('<br>');
+			echo ('<br>');
+			echo ('<pre>');
+			
+			if (null === $e) {
+				// 当调用栈太大时，会导致内存达到配置的最大内存限制
+				debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
 			} else {
-				$json = self::GetErrorJsonByDebug($errno, $errstr, $errfile, $errline, $e, $errcontext);
+				print_r($e);
 			}
-			$resp = new HttpResponse($json);
-			App::Instance()->respond($resp);
+			
+			echo ('</pre>');
 		} else {
-			if (Config::Instance()->get('app.debug')) {
-				if (null != $e) {
-					$errstr = $e->getMessage();
-					$errfile = $e->getFile();
-					$errline = $e->getLine();
-				}
-				$out = App::Instance()->getOutputStream();
-				if (null != $out) {
-					$out->write("Error:$errno:$errstr.");
-					$out->write('<br>');
-					$out->write("In file:$errfile:$errline.");
-					$out->write('<br>');
-					$out->write('<pre>');
-					
-					ob_start();
-					if (null === $e) {
-						// 当调用栈太大时，会导致内存达到配置的最大内存限制
-						debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
-					} else {
-						print_r($e);
-					}
-					$out->write(ob_get_contents());
-					ob_clean();
-					
-					$out->write('</pre>');
-					$out->close();
-				}
-			} else {
-				Redirect::to('/error');
-			}
+			$json = self::GetErrorAsJsonByDebug($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		}
 		
-		if (Config::Instance()->get('app.debug')) {
-			exit(- 3);
-		}
+		App::Respond($context, $json);
 	}
 
-	static public function GetErrorJsonDetail ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+	static public function GetErrorAsJsonDetail ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
 		$node = array(
 			'errcode' => $errno,
 			'errstr' => $errstr,
@@ -123,8 +99,7 @@ class ErrorHandler {
 				'errfile' => $errfile,
 				'errline' => $errline,
 				'errcontext' => $errcontext
-			),
-			'data' => null
+			)
 		);
 		if (null != $e) {
 			$node['errcode'] = $e->getCode();
@@ -135,10 +110,19 @@ class ErrorHandler {
 		return json_encode($node);
 	}
 
-	static public function GetErrorJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
-		$view = new View('', '', View::VIEW_TYPE_JSON);
+	/**
+	 * 根据是否是debug输出error
+	 *
+	 * @param unknown $errno        	
+	 * @param unknown $errstr        	
+	 * @param unknown $errfile        	
+	 * @param unknown $errline        	
+	 * @param unknown $e        	
+	 * @param array $errcontext        	
+	 */
+	static public function GetErrorAsJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
 		if (Config::Instance()->get('app.debug')) {
-			return self::GetErrorJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
+			return self::GetErrorAsJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		} else {
 			$node = array(
 				'errcode' => $errno,

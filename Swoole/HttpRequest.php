@@ -2,10 +2,9 @@
 
 namespace Framework\Swoole;
 
-use Framework\Request\IRequest;
-use Framework\Exception\NotImplementedException;
+use Framework\IHttpRequest;
 
-class HttpRequest implements IRequest {
+class HttpRequest implements IHttpRequest {
 	
 	/**
 	 *
@@ -38,21 +37,17 @@ class HttpRequest implements IRequest {
 		return null;
 	}
 
-	public function setBody ($content) {
-		throw new NotImplementedException();
+	public function getMethod () {
+		return $this->mRequest->server['request_method'];
 	}
 
 	public function getURI () {
-		return $this->getResource();
+		return $this->getRequestURI();
 	}
 
-	public function getResource () {
+	public function getRequestURI () {
 		$uri = urldecode($this->mRequest->server['request_uri']);
 		return $uri;
-	}
-
-	public function getScriptName () {
-		throw new NotImplementedException();
 	}
 
 	public function isAjaxRequest () {
@@ -65,33 +60,15 @@ class HttpRequest implements IRequest {
 		return $this->mRequest->header[$fieldName];
 	}
 
-	public function isHttp () {
-		return true;
-	}
-
-	public function isCli () {
-		return false;
-	}
-
 	public function getClientIP () {
 		$IPaddress = '';
 		
-		if (isset($this->mRequest->header)) {
-			if (isset($this->mRequest->header["http_x_forwarded_for"])) {
-				$IPaddress = $this->mRequest->header["http_x_forwarded_for"];
-			} else if (isset($this->mRequest->header["http_client_ip"])) {
-				$IPaddress = $this->mRequest->header["http_client_ip"];
-			} else if (isset($this->mRequest->server['remote_addr'])) {
-				$IPaddress = $this->mRequest->server["remote_addr"];
-			}
-		} else {
-			if (getenv("HTTP_X_FORWARDED_FOR")) {
-				$IPaddress = getenv("HTTP_X_FORWARDED_FOR");
-			} else if (getenv("HTTP_CLIENT_IP")) {
-				$IPaddress = getenv("HTTP_CLIENT_IP");
-			} else {
-				$IPaddress = getenv("REMOTE_ADDR");
-			}
+		if (isset($this->mRequest->header["http_x_forwarded_for"])) {
+			$IPaddress = $this->mRequest->header["http_x_forwarded_for"];
+		} else if (isset($this->mRequest->header["http_client_ip"])) {
+			$IPaddress = $this->mRequest->header["http_client_ip"];
+		} else if (isset($this->mRequest->server['remote_addr'])) {
+			$IPaddress = $this->mRequest->server["remote_addr"];
 		}
 		
 		return $IPaddress;
@@ -113,6 +90,15 @@ class HttpRequest implements IRequest {
 		return $this->mAllParam;
 	}
 
+	public function getCookie ($name) {
+		$val = '';
+		if (is_array($this->mRequest->cookie)) {
+			$val = $this->mRequest->cookie[$name];
+		}
+		
+		return $val;
+	}
+
 	public function getAllCookie () {
 		$cookieArr = array();
 		if (is_array($this->mRequest->cookie)) {
@@ -120,13 +106,5 @@ class HttpRequest implements IRequest {
 		}
 		
 		return $cookieArr;
-	}
-
-	public function getMethod () {
-		return $this->mRequest->server['request_method'];
-	}
-
-	public function getHost () {
-		return $this->mRequest->header['host'];
 	}
 }

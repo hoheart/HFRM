@@ -2,7 +2,6 @@
 
 namespace Framework;
 
-use Framework\Module\ModuleManager;
 use Framework\IService;
 use Framework\Exception\ConfigErrorException;
 
@@ -60,19 +59,15 @@ class ServiceManager implements IService {
 		return $this->getService($name, $caller);
 	}
 
-	public function getService ($name, $caller = null) {
-		if (null == $caller) {
-			list ($caller, $callerModuleName) = App::GetCallerModule();
-		}
-		
-		$keyName = $this->getKeyName($name, $caller);
+	public function getService ($name) {
+		$keyName = $this->getKeyName($name);
 		if (array_key_exists($keyName, $this->mServiceMap)) {
 			$s = $this->mServiceMap[$keyName];
 			
 			return $s;
 		}
 		
-		$s = $this->createService($name, $caller);
+		$s = $this->createService($name);
 		if (empty($s)) {
 			return $s;
 		}
@@ -82,8 +77,8 @@ class ServiceManager implements IService {
 		return $s;
 	}
 
-	public function getKeyName ($name, $caller) {
-		return $caller . '.' . $name;
+	public function getKeyName ($name) {
+		return $name;
 	}
 
 	public function addService (IService $s, $keyName) {
@@ -91,8 +86,8 @@ class ServiceManager implements IService {
 		$this->mServiceMap[$keyName] = $s;
 	}
 
-	public function createService ($name, $caller) {
-		$conf = Config::Instance()->getModuleConfig($caller, 'service.' . $name);
+	public function createService ($name) {
+		$conf = Config::Instance()->get('service.' . $name);
 		if (empty($conf)) {
 			return null;
 		}
@@ -109,8 +104,6 @@ class ServiceManager implements IService {
 		}
 		
 		$s = null;
-		// TODO
-		// ModuleManager::Instance()->preloadModule($conf['module']);
 		if (! empty($method)) {
 			$factory = new $clsName();
 			$s = $factory->$method($serviceConf);

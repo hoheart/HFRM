@@ -2,14 +2,13 @@
 
 namespace Framework\Controller;
 
-use Framework\Controller;
-use Framework\Request\IRequest;
-use Framework\Output\IOutputStream;
 use Framework\Config;
 use Framework\Exception\NotFoundHttpException;
 use Framework\App;
+use Framework\RequestContext;
+use Framework\IHttpRequest;
 
-class RPCServiceController extends Controller {
+class RPCServiceController {
 	
 	/**
 	 * 已经实例化的服务的列表
@@ -18,30 +17,27 @@ class RPCServiceController extends Controller {
 	 */
 	protected $mServiceMap = array();
 
-	public function serve (IRequest $req, IOutputStream $out) {
-		$binArgs = $req->get('a');
-		$arguments = $this->parseFlatbuffers($binArgs);
+	public function serve (RequestContext $context) {
+		$data = '';
 		
-		$callback = $this->getService($req);
+		list ($apiName, $clsName, $interfaceName, $methodName, $service) = $this->getService($context->request);
+		if (null === $service) {
+			throw new NotFoundHttpException();
+		}
 		
-		$ret = call_user_func_array($callback, $arguments);
-		if (null != $ret) {
-			$data = $this->packFlatbuffers($ret);
-			
-			$out->write($data);
-			$out->close();
-			
-			App::Instance()->stop();
+		$binArgs = $context->request->get('a');
+		$rpcp = App::Instance()->getRpcProtocol();
+		$arguments = $rpcp->parseArgs($binArgs, $apiName, $methodName);
+		$ret = call_user_func_array(array(
+			$service,
+			$methodName
+		), $arguments);
+		if (! $context->get('hasResponded')) {
+			App::Respond($context, $ret);
 		}
 	}
 
-	protected function parseFlatbuffers ($binArgs) {
-	}
-
-	protected function packFlatbuffers ($ret) {
-	}
-
-	protected function getService (IRequest $req) {
+	protected function getService (IHttpRequest $req) {
 		$apiName = '';
 		$methodName = '';
 		$uri = $req->getUri($req);
@@ -52,18 +48,27 @@ class RPCServiceController extends Controller {
 		}
 		list ($apiName, $methodName) = $arr;
 		if (empty($apiName) || empty($methodName)) {
-			throw new NotFoundHttpException();
+			return array();
 		}
 		
 		$clsName = Config::Instance()->get('moduleService.' . $apiName);
+		// 判断有没有配置apiName对应的类名
 		if (empty($clsName)) {
-			throw new NotFoundHttpException();
+			return array();
 		}
+		// 判断类名存不存在
 		if (! class_exists($clsName)) {
-			throw new NotFoundHttpException();
+			return array();
 		}
 		if (! method_exists($clsName, $methodName)) {
-			throw new NotFoundHttpException();
+			return array();
+		}
+		
+		// 判断类实现的接口是否有该方法，避免出现访问没有公开的接口
+		$arr = class_implements($clsName);
+		$interfaceName = current($arr);
+		if (! method_exists($interfaceName, $methodName)) {
+			return array();
 		}
 		
 		$s = null;
@@ -75,8 +80,11 @@ class RPCServiceController extends Controller {
 		}
 		
 		return array(
-			$s,
-			$methodName
+			$apiName,
+			$clsName,
+			$interfaceName,
+			$methodName,
+			$s
 		);
 	}
 }

@@ -2,8 +2,6 @@
 
 namespace Framework\Output;
 
-use Framework\Response\IResponse;
-
 interface IOutputStream {
 
 	/**
@@ -24,11 +22,4 @@ interface IOutputStream {
 	 * 只是表示输出流断掉了，链接并不一定断
 	 */
 	public function close ();
-
-	/**
-	 * 直接输出一个对象
-	 *
-	 * @param IResponse $resp        	
-	 */
-	public function output (IResponse $resp);
 }

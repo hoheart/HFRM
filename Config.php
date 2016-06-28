@@ -80,7 +80,7 @@ class Config {
 			
 			$conf = array_replace_recursive($globalConf, $moduleConf);
 			
-			$this->replaceLocalenv($conf, $fileName);
+			$conf = $this->replaceLocalenv($conf, $fileName);
 			
 			$this->mConfMap[$fileName] = $conf;
 		}
@@ -103,6 +103,9 @@ class Config {
 		}
 		
 		$conf = array_replace_recursive($confApp, $confAppModule);
+		
+		$conf = $this->replaceLocalenv($conf, 'app');
+		
 		$this->mConfMap['app'] = $conf;
 	}
 

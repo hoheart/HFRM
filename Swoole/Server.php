@@ -2,7 +2,6 @@
 
 namespace Framework\Swoole;
 
-use Framework\Output\SwooleHttpOutputStream;
 use Framework\Swoole\HttpRequest;
 use Framework\App;
 use Framework\Module\ModuleManager;

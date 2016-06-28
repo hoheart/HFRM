@@ -6,11 +6,7 @@ use Framework\App;
 
 class Service {
 
-	public static function get ($name, $caller = null) {
-		if (null == $caller) {
-			list ($caller, $callerModuleName) = App::GetCallerModule();
-		}
-		
-		return App::Instance()->getService($name, $caller);
+	public static function get ($name) {
+		return App::Instance()->getService($name);
 	}
 }
