@@ -6,7 +6,8 @@ use Framework\Facade\Module;
 use Framework\HFC\Log\Logger;
 use Framework\IService;
 use Framework\App;
-use Framework\Module\ModuleManager;
+use Framework\Config;
+use Framework\RequestContext;
 
 class LoggerClient implements IService {
 	
@@ -64,40 +65,17 @@ class LoggerClient implements IService {
 		$this->mConnection->disconnect();
 	}
 
-	public function operationLog ($moduleName, $controllerName, $actionName, $operationName, $result, $desc) {
-		$operatorId = - 1;
-// 		if (ModuleManager::Instance()->isModuleEnable('user')) {
-// 			$operatorId = Module::getService('user', 'User\API\ILogin')->getLoginedUserId();
-// 		}
+	public function log ($str, $type = Logger::LOG_TYPE_RUN, $level = Logger::LOG_LEVEL_FATAL, RequestContext $context = null) {
+		$module = Config::Instance()->get('app.moduleDir');
+		$moduleName = basename($module);
 		
-		$data = array(
-			'type' => Logger::LOG_TYPE_OPERATION,
-			'operatorId' => $operatorId,
-			'moduleName' => $moduleName,
-			'controllerName' => $controllerName,
-			'actionName' => $actionName,
-			'operationName' => $operationName,
-			'result' => $result,
-			'sessionId' => session_id(),
-			'desc' => $desc,
-			'clientIp' => App::Instance()->getRequest()->getClientIP(),
-			'machineName' => $this->mConf['localMachineName'],
-			'platformId' => $this->mConf['platformId'],
-			'createdTime' => date('Y-m-d H:i:s')
-		);
-		
-		$this->mExchange->publish(json_encode($data), '');
-	}
-
-	public function log ($str, $type = Logger::LOG_TYPE_RUN, $modulePath = '', $level = Logger::LOG_LEVEL_FATAL) {
 		$clientIp = '';
-		$req = App::Instance()->getRequest();
-		if( null != $req ){
-			$clientIp = $req->getClientIP();
+		if (null != $context) {
+			$clientIp = $context->request->getClientIP();
 		}
 		$data = array(
 			'type' => $type,
-			'moduleName' => $modulePath,
+			'moduleName' => $moduleName,
 			'desc' => $str,
 			'level' => $level,
 			'clientIp' => $clientIp,

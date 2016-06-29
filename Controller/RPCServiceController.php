@@ -28,6 +28,9 @@ class RPCServiceController {
 		$binArgs = $context->request->get('a');
 		$rpcp = App::Instance()->getRpcProtocol();
 		$arguments = $rpcp->parseArgs($binArgs, $apiName, $methodName);
+		if (null === $arguments) {
+			$arguments = array();
+		}
 		$ret = call_user_func_array(array(
 			$service,
 			$methodName

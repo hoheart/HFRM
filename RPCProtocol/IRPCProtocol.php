@@ -17,6 +17,7 @@ interface IRPCProtocol {
 	 * 打包远程调用的返回结果
 	 *
 	 * @param object $obj        	
+	 * @param map $err        	
 	 */
-	public function packRet ($obj);
+	public function packRet ($obj, $err = array());
 }

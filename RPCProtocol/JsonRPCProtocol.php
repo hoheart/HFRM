@@ -18,12 +18,18 @@ class JsonRPCProtocol implements IRPCProtocol {
 		return json_decode($str);
 	}
 
-	public function packRet ($obj) {
+	public function packRet ($obj, $err = array()) {
 		$node = array(
 			'errcode' => 0,
 			'errstr' => '',
 			'data' => $obj
 		);
+		if (! empty($err)) {
+			$node['errcode'] = $err['errcode'];
+			$node['errstr'] = $err['errstr'];
+			$errdetail = $err['errDetail'];
+			$node['errDetail'] = $errdetail;
+		}
 		return json_encode($node);
 	}
 }

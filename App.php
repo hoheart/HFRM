@@ -87,11 +87,9 @@ namespace Framework {
 			return null === $e ? true : false;
 		}
 
-		static public function Respond (RequestContext $context, $obj) {
-			if (null != $obj) {
-				$rpcp = $this->getRpcProtocol();
-				$data = $rpcp->packRet($obj);
-			}
+		static public function Respond (RequestContext $context, $obj, $err = array()) {
+			$rpcp = App::Instance()->getRpcProtocol();
+			$data = $rpcp->packRet($obj, $err);
 			
 			$context->output->write($data);
 			$context->output->close();

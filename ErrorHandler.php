@@ -44,6 +44,9 @@ class ErrorHandler {
 	public function handle ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array(), RequestContext $context = null) {
 		if (null != $e) {
 			$errno = $e->getCode();
+			$errstr = $e->getMessage();
+			$errfile = $e->getFile();
+			$errline = $e->getLine();
 		}
 		// 永远不处理这两个错误，因为这才是php好用的地方。
 		if (E_STRICT === $errno || E_NOTICE === $errno) {
@@ -54,7 +57,7 @@ class ErrorHandler {
 		
 		// 记录日志
 		$log = Service::get('log');
-		$log->log($jsonDetail, Logger::LOG_TYPE_ERROR, '', Logger::LOG_LEVEL_FATAL);
+		$log->log($jsonDetail, Logger::LOG_TYPE_ERROR, Logger::LOG_LEVEL_FATAL, $context);
 		
 		// 调用用户配置的错误处理
 		$errConf = Config::Instance()->get('app.error_processor');
@@ -66,16 +69,9 @@ class ErrorHandler {
 		}
 		
 		if (Config::Instance()->get('app.debug')) {
-			$json = $jsonDetail;
-			
 			// 输出到控制台，以方便调试
-			echo ("Error:$errno:$errstr.");
-			echo ('<br>');
-			echo ("In file:$errfile:$errline.");
-			echo ('<br>');
-			echo ('<br>');
-			echo ('<pre>');
-			
+			echo ("Error:$errno:$errstr.\n");
+			echo ("In file:$errfile:$errline.\n\n");
 			if (null === $e) {
 				// 当调用栈太大时，会导致内存达到配置的最大内存限制
 				debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -83,12 +79,13 @@ class ErrorHandler {
 				print_r($e);
 			}
 			
-			echo ('</pre>');
-		} else {
-			$json = self::GetErrorAsJsonByDebug($errno, $errstr, $errfile, $errline, $e, $errcontext);
+			echo "\n\n\n";
 		}
 		
-		App::Respond($context, $json);
+		if (null != $context) {
+			$err = $this->GetErrorDebug($errno, $errstr, $errfile, $errline);
+			App::Respond($context, null, $err);
+		}
 	}
 
 	static public function GetErrorAsJsonDetail ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
@@ -113,33 +110,40 @@ class ErrorHandler {
 	/**
 	 * 根据是否是debug输出error
 	 *
-	 * @param unknown $errno        	
-	 * @param unknown $errstr        	
-	 * @param unknown $errfile        	
-	 * @param unknown $errline        	
-	 * @param unknown $e        	
+	 * @param int $errno        	
+	 * @param string $errstr        	
+	 * @param string $errfile        	
+	 * @param int $errline        	
+	 * @param \Exception $e        	
 	 * @param array $errcontext        	
 	 */
-	static public function GetErrorAsJsonByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+	static public function GetErrorDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+		$node = array(
+			'errcode' => $errno,
+			'errstr' => $errstr
+		);
+		if (null != $e) {
+			$node['errcode'] = $e->getCode();
+			$node['errstr'] = $e->getMessage();
+		}
+		
 		if (Config::Instance()->get('app.debug')) {
-			return self::GetErrorAsJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
-		} else {
-			$node = array(
-				'errcode' => $errno,
-				'errstr' => $errstr,
-				'data' => null
-			);
-			if (null != $e) {
-				$node['errcode'] = $e->getCode();
-				$node['errstr'] = $e->getMessage();
+			if (null == $e) {
+				$node['errDetail'] = array(
+					'errfile' => $errfile,
+					'errline' => $errline,
+					'errcontext' => $errcontext
+				);
+			} else {
+				$node['errDetail'] = $e->__toString();
 			}
+		} else {
 			if ($node['errcode'] < 400000 || $node['errcode'] >= 500000) {
 				$node['errcode'] = 500000;
 				$node['errstr'] = 'system error.';
-				$node['data'] = null;
 			}
-			
-			return json_encode($node);
 		}
+		
+		return $node;
 	}
 }

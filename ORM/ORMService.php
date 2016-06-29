@@ -44,16 +44,14 @@ class ORMService implements IService {
 	}
 
 	public function save (DataClass $dataObj) {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mPersistence->setDatabaseClient($dbClient);
 		
 		return $this->mPersistence->save($dataObj, null);
 	}
 
 	public function delete ($className, Condition $condition = null) {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mPersistence->setDatabaseClient($dbClient);
 		
 		return $this->mPersistence->delete($className, $condition);
@@ -71,40 +69,35 @@ class ORMService implements IService {
 			$dbClient = $this->mPersistence->getDatabaseClient();
 		}
 		if (null == $dbClient) {
-			list ($caller, $callerModuleName) = App::GetCallerModule();
-			$dbClient = App::Instance()->getService('db', $caller);
+			$dbClient = App::Instance()->getService('db');
 		}
 		
 		return new DatabaseTransaction($dbClient);
 	}
 
 	public function get ($clsName, $id) {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mFactory->setDatabaseClient($dbClient);
 		
 		return $this->mFactory->get($clsName, $id);
 	}
 
 	public function getOne ($clsName, Condition $cond) {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mFactory->setDatabaseClient($dbClient);
 		
 		return $this->mFactory->getOne($clsName, $cond);
 	}
 
 	public function count ($clsName, Condition $cond = null) {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mFactory->setDatabaseClient($dbClient);
 		
 		return $this->mFactory->count($clsName, $cond);
 	}
 
 	public function where ($clsName, Condition $cond = null, $start = 0, $num = DatabaseFactory::MAX_AMOUNT, $order = '', $orderType = 'DESC') {
-		list ($caller, $callerModuleName) = App::GetCallerModule();
-		$dbClient = App::Instance()->getService('db', $caller);
+		$dbClient = App::Instance()->getService('db');
 		$this->mFactory->setDatabaseClient($dbClient);
 		
 		return $this->mFactory->where($clsName, $cond, $start, $num, null, $order, $orderType);
