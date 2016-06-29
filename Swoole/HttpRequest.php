@@ -8,6 +8,12 @@ class HttpRequest implements IHttpRequest {
 	
 	/**
 	 *
+	 * @var string
+	 */
+	const COOKIE_NAME_REQUESTID = 'RequestId';
+	
+	/**
+	 *
 	 * @var swoole_http_request
 	 */
 	protected $mRequest = null;
@@ -20,6 +26,17 @@ class HttpRequest implements IHttpRequest {
 
 	public function __construct ($req) {
 		$this->mRequest = $req;
+	}
+
+	public function getRequestId () {
+		$id = $this->getCookie(self::COOKIE_NAME_REQUESTID);
+		if (empty($id)) {
+			$id = uuid_create();
+			
+			$this->mRequest->cookie[self::COOKIE_NAME_REQUESTID];
+		}
+		
+		return $id;
 	}
 
 	public function get ($name) {

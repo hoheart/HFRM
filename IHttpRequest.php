@@ -5,6 +5,11 @@ namespace Framework;
 interface IHttpRequest {
 
 	/**
+	 * 因为集群分，每个请求可能会被分派到不同机器，每个机器的日志核对是个问题，所以为每个请求分配一个唯一id，方便核对。
+	 */
+	public function getRequestId ();
+
+	/**
 	 * 取得通过?name=value方式传递的值
 	 *
 	 * @param string $name        	

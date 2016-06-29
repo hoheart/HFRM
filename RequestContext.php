@@ -2,7 +2,6 @@
 
 namespace Framework;
 
-use Framework\Request\HttpRequest;
 use Framework\Output\IOutputStream;
 use Framework\HFC\Exception\ParameterErrorException;
 
@@ -16,7 +15,7 @@ class RequestContext {
 	
 	/**
 	 *
-	 * @var HttpRequest
+	 * @var IHttpRequest
 	 */
 	public $request = null;
 	
