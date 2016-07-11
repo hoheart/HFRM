@@ -25,7 +25,7 @@ class ORMService implements IService {
 	public function __construct () {
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$fConf = $conf['factory'];
 		$fcls = $fConf['class'];
 		$fobj = new $fcls();

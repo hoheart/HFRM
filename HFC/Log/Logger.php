@@ -156,7 +156,7 @@ class Logger implements IService {
 	public function __construct () {
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->mConf = $conf;
 	}
 

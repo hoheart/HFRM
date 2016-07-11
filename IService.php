@@ -15,7 +15,7 @@ interface IService {
 	 *
 	 * @param array $conf        	
 	 */
-	public function init (array $conf);
+	public function init (array $conf = array());
 
 	/**
 	 * 启动服务。
@@ -24,7 +24,7 @@ interface IService {
 
 	/**
 	 * 停止服务，比如：提交事务，但不断开连接。
-	 * 
+	 *
 	 * @param bool $normal
 	 *        	是否正常结束，比如数据库对象，如果不是正常结束，应该回滚。
 	 */

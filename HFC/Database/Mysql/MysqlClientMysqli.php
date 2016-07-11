@@ -35,7 +35,7 @@ class MysqlClientMysqli extends DatabaseClient {
 	 */
 	protected $mIntransaction = false;
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->mMysqli = new \mysqli();
 		
 		$this->mMysqli->autocommit($this->mAutocommit);

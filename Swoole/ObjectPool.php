@@ -32,7 +32,7 @@ class ObjectPool implements IService {
 	public function __destruct () {
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$num = $conf['num'];
 		$this->mObjectArray = new \SplFixedArray($num);
 		$this->mLockerArray = new \SplFixedArray($num);

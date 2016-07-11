@@ -32,7 +32,7 @@ class LoggerClient implements IService {
 	public function __construct () {
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->mConf = $conf;
 		
 		$this->mConnection = new \AMQPConnection($conf);

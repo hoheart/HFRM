@@ -82,7 +82,7 @@ abstract class DatabaseClient implements IService {
 		// 数据库连接断掉后，没提交的数据会自动回滚。
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->mConf = $conf;
 		
 		if (array_key_exists('autocommit', $this->mConf)) {

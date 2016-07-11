@@ -119,7 +119,7 @@ class ValidatorService implements IService {
 	 *
 	 * @param array $conf
 	 */
-	public function init(array $conf) {
+	public function init(array $conf = array()) {
 
 	}
 

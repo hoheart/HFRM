@@ -33,6 +33,14 @@ class ServiceAgent {
 
 	protected function makeRemoteCall ($apiName, $methodName, $arguments) {
 		$serverUrl = $this->choseRemoteServer($this->mModulePath);
+		if ('http://' !== substr($serverUrl, 0, 7)) {
+			$serverUrl .= 'http://' . $serverUrl;
+		}
+		
+		$lastArg = end($args);
+		if ($lastArg instanceof \Closure) {
+			$lastArg('asdfasdfasdf' . "\n");
+		}
 		
 		$httpBody = 'a=' . urlencode(json_encode($arguments));
 		

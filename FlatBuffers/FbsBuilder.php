@@ -8,7 +8,7 @@ use Framework\Exception\NotImplementedException;
 
 class FbsBuilder implements IService {
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 	}
 
 	public function start () {

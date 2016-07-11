@@ -80,6 +80,8 @@ class RPCServiceController {
 		} else {
 			$s = new $clsName();
 			$this->mServiceMap[$apiName] = $s;
+			
+			$s->init([]);
 		}
 		
 		return array(

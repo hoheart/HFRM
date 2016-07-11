@@ -71,4 +71,7 @@ class ModuleManager {
 		
 		return $s;
 	}
+
+	public function waitAllResponse (array $httpClientList) {
+	}
 }

@@ -34,7 +34,7 @@ class ObjectProxy implements IService {
 		}
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 	}
 
 	public function start () {

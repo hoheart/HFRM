@@ -25,7 +25,7 @@ class Cache implements IService {
 	 * @param string $host        	
 	 * @param int $post        	
 	 */
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->redis = new \Redis();
 		$redis = Config::get('cache.redis');
 		

@@ -50,7 +50,7 @@ class RemoteService implements IService {
 		$cls = $weapon_one = $builder->createString("Sword");
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 	}
 
 	public function start () {
