@@ -120,11 +120,10 @@ class Server {
 	}
 
 	public function onRequest ($req, $resp) {
-		$os = new SwooleHttpOutputStream();
-		$os->setSwooleResponse($resp);
+		$resp = new HttpResponse($resp);
 		
 		try {
-			$this->mApp->run(new HttpRequest($req), $os);
+			$this->mApp->run(new HttpRequest($req), $resp);
 		} catch (\Exception $e) {
 			// 退出，保证资源回收。
 			$this->mExitErrorCode = - 2;

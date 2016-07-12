@@ -64,10 +64,10 @@ namespace Framework {
 		 *
 		 * @param IRequest $request
 		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
-		 * @param IOutputStream $out        	
+		 * @param IHttpResponse $resp        	
 		 */
-		public function run (IHttpRequest $request = null, IOutputStream $output = null) {
-			$context = new RequestContext($request, $output);
+		public function run (IHttpRequest $request = null, IHttpResponse $resp = null) {
+			$context = new RequestContext($request, $resp);
 			
 			try {
 				$this->start();
@@ -91,9 +91,11 @@ namespace Framework {
 		static public function Respond (RequestContext $context, $obj, $err = array()) {
 			$rpcp = App::Instance()->getRpcProtocol();
 			$data = $rpcp->packRet($obj, $err);
+			$contentType = $rpcp->getContentType();
 			
-			$context->output->write($data);
-			$context->output->close();
+			$context->response->setHeader('Content-Type', $contentType);
+			$context->response->setBody($data);
+			$context->response->respond();
 			
 			$req = $context->request;
 			// 记录服务调用开始，服务调用结束在App::Respond里，因为有可能异步调用。

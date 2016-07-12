@@ -68,23 +68,17 @@ class ErrorHandler {
 			return;
 		}
 		
-		if (Config::Instance()->get('app.debug')) {
-			// 输出到控制台，以方便调试
+		if (null != $context) {
+			$err = $this->GetErrorByDebug($errno, $errstr, $errfile, $errline, $e);
+			
+			// 一旦出错，有可能服务器主动设置成了500
+			$context->response->setStatusCode(200);
+			
+			App::Respond($context, null, $err);
+		} else {
+			// 直接输出到控制台，swoole会记录到日志。
 			echo ("Error:$errno:$errstr.\n");
 			echo ("In file:$errfile:$errline.\n\n");
-			if (null === $e) {
-				// 当调用栈太大时，会导致内存达到配置的最大内存限制
-				debug_print_backtrace(~ DEBUG_BACKTRACE_IGNORE_ARGS);
-			} else {
-				print_r($e);
-			}
-			
-			echo "\n\n\n";
-		}
-		
-		if (null != $context) {
-			$err = $this->GetErrorDebug($errno, $errstr, $errfile, $errline);
-			App::Respond($context, null, $err);
 		}
 	}
 
@@ -101,7 +95,7 @@ class ErrorHandler {
 		if (null != $e) {
 			$node['errcode'] = $e->getCode();
 			$node['errstr'] = $e->getMessage();
-			$node['errDetail'] = $e->__toString();
+			$node['backtrace'] = $e->getTrace();
 		}
 		
 		return json_encode($node);
@@ -117,7 +111,7 @@ class ErrorHandler {
 	 * @param \Exception $e        	
 	 * @param array $errcontext        	
 	 */
-	static public function GetErrorDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
+	static public function GetErrorByDebug ($errno, $errstr, $errfile, $errline, $e = null, $errcontext = array()) {
 		$node = array(
 			'errcode' => $errno,
 			'errstr' => $errstr
@@ -135,7 +129,7 @@ class ErrorHandler {
 					'errcontext' => $errcontext
 				);
 			} else {
-				$node['errDetail'] = $e->__toString();
+				$node['backtrace'] = $e->getTrace();
 			}
 		} else {
 			if ($node['errcode'] < 400000 || $node['errcode'] >= 500000) {

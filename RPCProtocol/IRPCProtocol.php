@@ -20,4 +20,9 @@ interface IRPCProtocol {
 	 * @param map $err        	
 	 */
 	public function packRet ($obj, $err = array());
+
+	/**
+	 * 取得内容的类型
+	 */
+	public function getContentType ();
 }

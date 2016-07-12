@@ -25,11 +25,12 @@ class JsonRPCProtocol implements IRPCProtocol {
 			'data' => $obj
 		);
 		if (! empty($err)) {
-			$node['errcode'] = $err['errcode'];
-			$node['errstr'] = $err['errstr'];
-			$errdetail = $err['errDetail'];
-			$node['errDetail'] = $errdetail;
+			$node = $err;
 		}
 		return json_encode($node);
+	}
+
+	public function getContentType () {
+		return 'application/json; charset=utf-8';
 	}
 }

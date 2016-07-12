@@ -2,7 +2,6 @@
 
 namespace Framework;
 
-use Framework\Output\IOutputStream;
 use Framework\HFC\Exception\ParameterErrorException;
 
 /**
@@ -21,9 +20,9 @@ class RequestContext {
 	
 	/**
 	 *
-	 * @var IOutputStream
+	 * @var IHttpResponse
 	 */
-	public $output = null;
+	public $response = null;
 	
 	/**
 	 *
@@ -31,9 +30,9 @@ class RequestContext {
 	 */
 	protected $mObjectMap = array();
 
-	public function __construct (IHttpRequest $req, IOutputStream $out) {
+	public function __construct (IHttpRequest $req, IHttpResponse $resp) {
 		$this->request = $req;
-		$this->output = $out;
+		$this->response = $resp;
 	}
 
 	public function add ($key, $obj) {
