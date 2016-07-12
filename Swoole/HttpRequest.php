@@ -28,12 +28,12 @@ class HttpRequest implements IHttpRequest {
 		$this->mRequest = $req;
 	}
 
-	public function getRequestId () {
+	public function getId () {
 		$id = $this->getCookie(self::COOKIE_NAME_REQUESTID);
 		if (empty($id)) {
 			$id = uuid_create();
 			
-			$this->mRequest->cookie[self::COOKIE_NAME_REQUESTID];
+			$this->mRequest->cookie[self::COOKIE_NAME_REQUESTID] = $id;
 		}
 		
 		return $id;

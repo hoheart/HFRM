@@ -8,6 +8,7 @@ namespace Framework {
 	use Framework\Output\IOutputStream;
 	use Framework\Exception\EndAppException;
 	use Framework\Controller\RPCServiceController;
+	use Framework\Facade\Log;
 
 	/**
 	 * 目前的设计为每次请求都start然后stop。
@@ -93,6 +94,10 @@ namespace Framework {
 			
 			$context->output->write($data);
 			$context->output->close();
+			
+			$req = $context->request;
+			// 记录服务调用开始，服务调用结束在App::Respond里，因为有可能异步调用。
+			Log::r($req->getId() . ', service call end, data length:' . strlen($data), 'framework', $context);
 			
 			App::Instance()->stop();
 			

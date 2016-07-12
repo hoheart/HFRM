@@ -116,7 +116,7 @@ class Server {
 			'onWorkerError'
 		));
 		
-		$this->initPoolService();
+		// $this->initPoolService();
 	}
 
 	public function onRequest ($req, $resp) {

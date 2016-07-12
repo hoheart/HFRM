@@ -7,6 +7,7 @@ use Framework\Exception\NotFoundHttpException;
 use Framework\App;
 use Framework\RequestContext;
 use Framework\IHttpRequest;
+use Framework\Facade\Log;
 
 class RPCServiceController {
 	
@@ -19,13 +20,18 @@ class RPCServiceController {
 
 	public function serve (RequestContext $context) {
 		$data = '';
+		$binArgs = $context->request->get('a');
+		
+		$req = $context->request;
+		// 记录服务调用开始，服务调用结束在App::Respond里，因为有可能异步调用。
+		Log::r($req->getId() . ', service call start: ' . $req->getRequestURI() . ', Data: ' . $binArgs, 'framework', 
+				$context);
 		
 		list ($apiName, $clsName, $interfaceName, $methodName, $service) = $this->getService($context->request);
 		if (null === $service) {
 			throw new NotFoundHttpException();
 		}
 		
-		$binArgs = $context->request->get('a');
 		$rpcp = App::Instance()->getRpcProtocol();
 		$arguments = $rpcp->parseArgs($binArgs, $apiName, $methodName);
 		if (null === $arguments) {

@@ -57,7 +57,7 @@ class ErrorHandler {
 		
 		// 记录日志
 		$log = Service::get('log');
-		$log->log($jsonDetail, Logger::LOG_TYPE_ERROR, Logger::LOG_LEVEL_FATAL, $context);
+		$log->log($jsonDetail, 'framework', Logger::LOG_TYPE_ERROR, Logger::LOG_LEVEL_FATAL, $context);
 		
 		// 调用用户配置的错误处理
 		$errConf = Config::Instance()->get('app.error_processor');
