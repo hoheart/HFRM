@@ -35,6 +35,10 @@ class FlatBuffersRPCProtocol implements IRPCProtocol {
 	}
 
 	public function packRet ($obj) {
-		//TODO
+		// TODO
+	}
+
+	public function getContentType () {
+		// TODO
 	}
 }

@@ -5,7 +5,6 @@ namespace Framework {
 	use Framework\App\ClassLoader;
 	use Framework\Request\IRequest;
 	use Framework\Config;
-	use Framework\Output\IOutputStream;
 	use Framework\Exception\EndAppException;
 	use Framework\Controller\RPCServiceController;
 	use Framework\Facade\Log;
