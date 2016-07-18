@@ -6,7 +6,6 @@ use Framework\App;
 use Framework;
 use Framework\Exception\RPCServiceErrorException;
 use Framework\App\AsyncHttpClient;
-use Framework\Http\HttpRequest;
 
 class ServiceAgent {
 	
@@ -34,11 +33,11 @@ class ServiceAgent {
 	}
 
 	protected function asyncCall ($serverUrl, $methodName, $arguments, $callback) {
-		$r = new HttpRequest($serverUrl);
-		$r->setURI('/' . $this->mInterfaceName . '/' . $methodName);
-		$r->set('a', json_encode($arguments));
+		$data = array(
+			'a' => json_encode($arguments)
+		);
 		$c = new AsyncHttpClient();
-		$c->exec($r, $callback);
+		$c->post($serverUrl, $data, $callback);
 	}
 
 	protected function makeRemoteCall ($apiName, $methodName, $arguments) {
@@ -46,6 +45,7 @@ class ServiceAgent {
 		if ('http://' !== substr($serverUrl, 0, 7)) {
 			$serverUrl .= 'http://' . $serverUrl;
 		}
+		$serverUrl .= "/$apiName/$methodName";
 		
 		$lastArg = end($args);
 		if ($lastArg instanceof \Closure) {

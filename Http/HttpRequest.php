@@ -42,6 +42,16 @@ class HttpRequest implements IHttpRequest {
 	 * @var map $mCookie
 	 */
 	protected $mCookieMap = array();
+	
+	/**
+	 *
+	 * @var map $mBody
+	 */
+	protected $mBodyMap = '';
+
+	public function __construct ($url) {
+		$this->setURI($url);
+	}
 
 	public function setId ($id) {
 		$this->mId = $id;
@@ -68,10 +78,10 @@ class HttpRequest implements IHttpRequest {
 	}
 
 	public function setURI ($uri) {
-		$this->mUri = $uri;
 		$pos = strpos('?', $uri);
 		if (false !== $pos) {
-			$str = substr($uri, $pos);
+			$this->mUri = substr($uri, 0, $pos);
+			$str = substr($uri, $pos + 1);
 			$arr = explode('=', $str);
 			
 			foreach ($arr as $key => $val) {
@@ -88,7 +98,7 @@ class HttpRequest implements IHttpRequest {
 	}
 
 	public function setRequestURI ($uri) {
-		$this->mUri = $uri;
+		$this->setURI($uri);
 	}
 
 	public function getRequestURI () {
@@ -134,6 +144,10 @@ class HttpRequest implements IHttpRequest {
 
 	public function getAllCookie () {
 		return $this->mCookieMap;
+	}
+
+	public function setBodyMap ($map) {
+		$this->mBodyMap = $map;
 	}
 
 	public function pack () {
