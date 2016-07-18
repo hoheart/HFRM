@@ -64,4 +64,9 @@ interface IHttpRequest {
 	 * 取得所有getCookie防范能取得的键值对
 	 */
 	public function getAllCookie ();
+
+	/**
+	 * 打包成一个完整的http请求字符串
+	 */
+	public function pack ();
 }

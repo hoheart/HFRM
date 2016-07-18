@@ -3,6 +3,7 @@
 namespace Framework\Swoole;
 
 use Framework\IHttpRequest;
+use Framework\Exception\NotImplementedException;
 
 class HttpRequest implements IHttpRequest {
 	
@@ -123,5 +124,9 @@ class HttpRequest implements IHttpRequest {
 		}
 		
 		return $cookieArr;
+	}
+
+	public function pack () {
+		throw new NotImplementedException();
 	}
 }

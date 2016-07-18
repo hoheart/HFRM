@@ -5,6 +5,8 @@ namespace Framework\Module;
 use Framework\App;
 use Framework;
 use Framework\Exception\RPCServiceErrorException;
+use Framework\App\AsyncHttpClient;
+use Framework\Http\HttpRequest;
 
 class ServiceAgent {
 	
@@ -31,6 +33,14 @@ class ServiceAgent {
 		return $this->makeRemoteCall($this->mInterfaceName, $name, $arguments);
 	}
 
+	protected function asyncCall ($serverUrl, $methodName, $arguments, $callback) {
+		$r = new HttpRequest($serverUrl);
+		$r->setURI('/' . $this->mInterfaceName . '/' . $methodName);
+		$r->set('a', json_encode($arguments));
+		$c = new AsyncHttpClient();
+		$c->exec($r, $callback);
+	}
+
 	protected function makeRemoteCall ($apiName, $methodName, $arguments) {
 		$serverUrl = $this->choseRemoteServer($this->mModulePath);
 		if ('http://' !== substr($serverUrl, 0, 7)) {
@@ -39,23 +49,27 @@ class ServiceAgent {
 		
 		$lastArg = end($args);
 		if ($lastArg instanceof \Closure) {
-			$lastArg('asdfasdfasdf' . "\n");
+			$callback = array_pop($arguments);
+			$this->asyncCall($serverUrl, $methodName, $arguments, $callback);
+			
+			return;
 		}
-		
-		$httpBody = 'a=' . urlencode(json_encode($arguments));
-		
-		$cookieArr = App::Instance()->getRequest()->getAllCookie();
-		$strCookies = http_build_query($cookieArr, '', ';');
 		
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $serverUrl);
-		curl_setopt($ch, CURLOPT_COOKIE, $strCookies);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'HTTP_X_REQUESTED_WITH: xmlhttprequest'
 		));
+		
+		$cookieArr = App::Instance()->getRequest()->getAllCookie();
+		$strCookies = http_build_query($cookieArr, '', ';');
+		curl_setopt($ch, CURLOPT_COOKIE, $strCookies);
+		
+		$httpBody = 'a=' . urlencode(json_encode($arguments));
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $httpBody);
+		
 		$resp = curl_exec($ch);
 		
 		if (false === $resp) {
@@ -80,11 +94,15 @@ class ServiceAgent {
 			);
 		}
 		
-		$microTime = microtime(true) * 10000;
+		$microTime = explode(' ', microtime())[0] * 1000000;
 		$serverCount = count($urlArr);
 		
 		$targetUrl = $urlArr[$microTime % $serverCount];
 		
 		return $targetUrl;
+	}
+
+	static public function waitAll () {
+		AsyncHttpClient::wait();
 	}
 }
