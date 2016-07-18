@@ -1,9 +1,9 @@
 <?php
 
-namespace Framework\HFC\Log;
+namespace HFC\Log;
 
 use Framework\Exception\ConfigErrorException;
-use Framework\HFC\Exception\SystemAPIErrorException;
+use HFC\Exception\SystemAPIErrorException;
 use Framework\IService;
 
 class LogInfo {
@@ -156,14 +156,14 @@ class Logger implements IService {
 	public function __construct () {
 	}
 
-	public function init (array $conf = array()) {
+	public function init (array $conf) {
 		$this->mConf = $conf;
 	}
 
 	public function start () {
 	}
 
-	public function stop ($normal = true) {
+	public function stop () {
 		$this->writeBuffer2File(null);
 		$this->movePreviousTempFile();
 	}
@@ -190,7 +190,7 @@ class Logger implements IService {
 		
 		$suffix = '';
 		for ($i = 0; true; ++ $i) {
-			$newPath = $dateDir . basename($path, '.log') . date('YmdHis') . $suffix . '.' . self::LOG_FILE_EXTNAME;
+			$newPath = $dateDir . basename($path, '.log') . date('His') . $suffix . '.' . self::LOG_FILE_EXTNAME;
 			if (! rename($path, $newPath)) {
 				if (! file_exists($newPath)) {
 					throw new SystemAPIErrorException("can not rename $path to $newPath");
