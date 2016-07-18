@@ -1,9 +1,9 @@
 <?php
 
-namespace HFC\Log;
+namespace Framework\HFC\Log;
 
 use Framework\Exception\ConfigErrorException;
-use HFC\Exception\SystemAPIErrorException;
+use Framework\HFC\Exception\SystemAPIErrorException;
 use Framework\IService;
 
 class LogInfo {
