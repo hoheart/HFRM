@@ -3,7 +3,6 @@
 namespace Framework\HFC\Log;
 
 use Framework\Facade\Module;
-use Framework\HFC\Log\Logger;
 use Framework\IService;
 use Framework\App;
 use Framework\Config;

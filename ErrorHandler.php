@@ -2,7 +2,6 @@
 
 namespace Framework;
 
-use Framework\Facade\Service;
 use Framework\HFC\Log\Logger;
 use Framework\Facade\Log;
 
