@@ -65,7 +65,8 @@ class LoggerClient implements IService {
 		$this->mConnection->disconnect();
 	}
 
-	public function log ($str, $moduleName = '', $type = Logger::LOG_TYPE_RUN, $level = Logger::LOG_LEVEL_FATAL, RequestContext $context = null) {
+	public function log ($str, $moduleName = '', $type = self::LOG_TYPE_RUN, $level = self::LOG_LEVEL_ERROR, $platformName = 'local', $ip = '', 
+			RequestContext $context = null) {
 		if ('' == $moduleName) {
 			$module = Config::Instance()->get('app.moduleDir');
 			$moduleName = basename($module);

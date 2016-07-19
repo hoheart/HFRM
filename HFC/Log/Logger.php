@@ -288,6 +288,9 @@ class Logger implements IService {
 	 * @param integer $now        	
 	 */
 	protected function writeBuffer2File ($now) {
+		if (null == $now) {
+			$now = microtime(true);
+		}
 		while (count($this->mBuffer) > 0) {
 			$this->writeOneLog($this->mBuffer[0], $this->mConf, $this->mLastTime);
 			
@@ -312,6 +315,12 @@ class Logger implements IService {
 		$todayDate = date('Y-m-d');
 		flock($fp, LOCK_EX);
 		$lastMoveDate = fread($fp, 10);
+		if (empty($lastMoveDate)) {
+			$lastMoveDate = $todayDate;
+			ftruncate($fp, 0);
+			fseek($fp, 0, SEEK_SET);
+			fwrite($fp, $todayDate);
+		}
 		if ($lastMoveDate == $todayDate) { // 用这个方式保证一天只移动一次。
 			flock($fp, LOCK_UN);
 			fclose($fp);
@@ -383,7 +392,7 @@ class Logger implements IService {
 	 *        	如果路径是嵌套在另一个模块下，用子文件夹（'asdf/adsf'）的形式表示。
 	 * @param integer $level        	
 	 */
-	function log ($str, $type = self::LOG_TYPE_RUN, $modulePath = '', $level = self::LOG_LEVEL_ERROR, $platformName = '', $ip = '') {
+	function log ($str, $modulePath = '', $type = self::LOG_TYPE_RUN, $level = self::LOG_LEVEL_ERROR, $platformName = 'local', $ip = '') {
 		if (! $this->mConf['enable']) {
 			return;
 		}
@@ -394,8 +403,11 @@ class Logger implements IService {
 		}
 		
 		$now = microtime(true);
+		if (null === $this->mLastTime) {
+			$this->mLastTime = $now;
+		}
 		// 如果是前一天的日志还没写入，写入文件。
-		if (null === $this->mLastTime || $this->mLastTime < strtotime(date('Y-m-d', $now))) {
+		if ($this->mLastTime < strtotime(date('Y-m-d', $now))) {
 			$this->writeBuffer2File($now);
 			$this->movePreviousTempFile();
 		}

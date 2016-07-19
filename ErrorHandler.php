@@ -4,6 +4,7 @@ namespace Framework;
 
 use Framework\Facade\Service;
 use Framework\HFC\Log\Logger;
+use Framework\Facade\Log;
 
 class ErrorHandler {
 
@@ -56,8 +57,7 @@ class ErrorHandler {
 		$jsonDetail = self::GetErrorAsJsonDetail($errno, $errstr, $errfile, $errline, $e, $errcontext);
 		
 		// 记录日志
-		$log = Service::get('log');
-		$log->log($jsonDetail, 'framework', Logger::LOG_TYPE_ERROR, Logger::LOG_LEVEL_FATAL, $context);
+		Log::e($jsonDetail, 'framework', Logger::LOG_LEVEL_FATAL, $context);
 		
 		// 调用用户配置的错误处理
 		$errConf = Config::Instance()->get('app.error_processor');
