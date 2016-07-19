@@ -1,6 +1,6 @@
 <?php
 
-namespace Framework\App;
+namespace Framework\Http;
 
 use Framework\Http\HttpRequest;
 use Framework\Facade\Log;
@@ -16,6 +16,12 @@ class AsyncHttpClient {
 	protected $mConnection = false;
 	
 	/**
+	 *
+	 * @var \EvIo $mEv
+	 */
+	protected $mEv = null;
+	
+	/**
 	 * 等待响应的数量
 	 *
 	 * @var int
@@ -23,10 +29,7 @@ class AsyncHttpClient {
 	protected static $WaitedCount = 0;
 
 	static public function waitUntilAllResponded () {
-		while (0 !== self::WaitedCount) {
-			\Ev::wait(\Ev::RUN_ONCE);
-			-- self::$WaitedCount;
-		}
+		\Ev::run();
 	}
 
 	public function post ($url, $dataMap = array(), \Closure $srcfn) {
@@ -55,15 +58,34 @@ class AsyncHttpClient {
 		++ self::$WaitedCount;
 		
 		fwrite($this->mConnection, $reqStr);
-		$fn = function  ($w) use( $srcfn) {
+		$fn = function  ($w, $r) use( $srcfn) {
+			$resp = null;
 			$respStr = '';
 			while (! feof($this->mConnection)) {
 				$respStr .= fread($this->mConnection, 8192);
+				$pos = strpos($respStr, "\r\n\r\n");
+				if (false !== $pos) {
+					$resp = new HttpResponse($respStr, $pos);
+					$contentLen = $resp->getContentLength();
+					
+					$readLen = strlen($respStr) - $pos - 4;
+					$unreadLen = $contentLen - $readLen;
+					if ($unreadLen > 0) {
+						$str = fread($this->mConnection, $unreadLen);
+						$resp->addBody($str);
+						
+						break;
+					}
+				}
 			}
 			
-			$resp = new HttpResponse($respStr);
+			-- self::$WaitedCount;
+			if (0 === self::$WaitedCount) {
+				\Ev::stop();
+			}
+			
 			$srcfn($resp);
 		};
-		new \EvIo($this->mConnection, \Ev::READ, $fn);
+		$this->mEv = new \EvIo($this->mConnection, \Ev::READ, $fn);
 	}
 }

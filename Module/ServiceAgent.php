@@ -2,10 +2,9 @@
 
 namespace Framework\Module;
 
-use Framework\App;
-use Framework;
 use Framework\Exception\RPCServiceErrorException;
-use Framework\App\AsyncHttpClient;
+use Framework\Http\AsyncHttpClient;
+use Framework\App;
 
 class ServiceAgent {
 	
@@ -43,11 +42,11 @@ class ServiceAgent {
 	protected function makeRemoteCall ($apiName, $methodName, $arguments) {
 		$serverUrl = $this->choseRemoteServer($this->mModulePath);
 		if ('http://' !== substr($serverUrl, 0, 7)) {
-			$serverUrl .= 'http://' . $serverUrl;
+			$serverUrl = 'http://' . $serverUrl;
 		}
 		$serverUrl .= "/$apiName/$methodName";
 		
-		$lastArg = end($args);
+		$lastArg = end($arguments);
 		if ($lastArg instanceof \Closure) {
 			$callback = array_pop($arguments);
 			$this->asyncCall($serverUrl, $methodName, $arguments, $callback);

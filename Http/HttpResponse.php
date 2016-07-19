@@ -2,54 +2,83 @@
 
 namespace Framework\Http;
 
-use Framework\Exception\NotImplementedException;
 use Framework\IHttpResponse;
+use Framework\HFC\Exception\ParameterErrorException;
 
-class HttpResponse implements IHttpResponse {
+/**
+ * 目前支持http1.0，不支持chunked
+ *
+ * @author Hoheart
+ *        
+ */
+class HttpResponse extends HttpMessage implements IHttpResponse {
 	
 	/**
 	 *
-	 * @var \swoole_http_response
+	 * @var int $mStatusCode
 	 */
-	protected $mSwooleResponse = null;
+	protected $mStatusCode = 200;
 	
 	/**
 	 *
-	 * @var string $mBody
+	 * @var string $mReasonPhrase
 	 */
-	protected $mBody = '';
+	protected $mReasonPhrase = 'OK';
 
-	public function __construct ($resp) {
-		$this->mSwooleResponse = $resp;
+	/**
+	 *
+	 * @param string $respStr        	
+	 * @param int $endPos
+	 *        	两个回车的位置
+	 */
+	public function __construct ($respStr = '', $bodyPos = 0) {
+		if ('' !== $respStr) {
+			if (0 == $bodyPos) {
+				$bodyPos = strpos($respStr, "\r\n\r\n");
+			}
+			$pos = $this->parseCommandLine($respStr);
+			$this->parseHeaderMap($respStr, $pos, $bodyPos);
+			$this->mBody = substr($respStr, $bodyPos + 4);
+		}
+	}
+
+	protected function parseCommandLine ($str) {
+		$pos = strpos($str, "\r\n");
+		if (false === $pos) {
+			throw new ParameterErrorException();
+		}
+		
+		$cmdLine = substr($str, 0, $pos);
+		list ($version, $code, $phrase) = explode(' ', $cmdLine);
+		$this->mVersion = $version;
+		$this->mStatusCode = $code;
+		$this->mReasonPhrase = $phrase;
+		
+		return $pos + 2;
+	}
+
+	protected function parseHeaderMap ($str, $pos, $bodyPos) {
+		$strLen = strlen($str);
+		$endPos = 0;
+		do {
+			$endPos = strpos($str, "\r\n", $pos);
+			if (false === $endPos) {
+				$endPos = $strLen;
+			}
+			
+			$line = substr($str, $pos, $endPos - $pos);
+			list ($key, $val) = explode(':', $line);
+			$this->mHeader[$key] = ltrim($val);
+			
+			$pos = $endPos + 2;
+		} while ($endPos < $bodyPos);
 	}
 
 	public function setStatusCode ($code) {
-		$this->mSwooleResponse->status($code);
+		$this->mStatusCode = $code;
 	}
 
 	public function setReasonPhrase ($reason) {
-		throw new NotImplementedException();
-	}
-
-	public function setHeader ($fieldName, $value, $replace = true) {
-		$this->mSwooleResponse->header($fieldName, $value);
-	}
-
-	public function setCookie ($key, $value = '', $expire = 0, $path = '/', $domain = '', $secure = false, 
-			$httponly = false) {
-		$this->mSwooleResponse->cookie($key, $value, $expire, $path, $domain, $secure, $httponly);
-	}
-
-	/**
-	 * 设置响应内容
-	 *
-	 * @param string $body        	
-	 */
-	public function setBody ($body) {
-		$this->mBody = $body;
-	}
-
-	public function respond () {
-		$this->mSwooleResponse->end($this->mBody);
+		$this->mReasonPhrase = $reason;
 	}
 }
