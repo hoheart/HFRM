@@ -14,9 +14,19 @@ class AsyncHttpClient {
 	 * @var resource $mConnection
 	 */
 	protected $mConnection = false;
+	
+	/**
+	 * 等待响应的数量
+	 *
+	 * @var int
+	 */
+	protected static $WaitedCount = 0;
 
-	static public function waitUntilAllResponsed () {
-		
+	static public function waitUntilAllResponded () {
+		while (0 !== self::WaitedCount) {
+			\Ev::wait(\Ev::RUN_ONCE);
+			-- self::$WaitedCount;
+		}
 	}
 
 	public function post ($url, $dataMap = array(), \Closure $srcfn) {
@@ -41,6 +51,9 @@ class AsyncHttpClient {
 		}
 		
 		$reqStr = $req->pack();
+		
+		++ self::$WaitedCount;
+		
 		fwrite($this->mConnection, $reqStr);
 		$fn = function  ($w) use( $srcfn) {
 			$respStr = '';

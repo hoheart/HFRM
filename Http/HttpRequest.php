@@ -39,6 +39,12 @@ class HttpRequest implements IHttpRequest {
 	
 	/**
 	 *
+	 * @var string $mHost
+	 */
+	protected $mHost = '';
+	
+	/**
+	 *
 	 * @var map $mCookie
 	 */
 	protected $mCookieMap = array();
@@ -78,6 +84,8 @@ class HttpRequest implements IHttpRequest {
 	}
 
 	public function setURI ($uri) {
+		$this->mHost = parse_url($uri, PHP_URL_HOST);
+		
 		$pos = strpos('?', $uri);
 		if (false !== $pos) {
 			$this->mUri = substr($uri, 0, $pos);
@@ -110,7 +118,13 @@ class HttpRequest implements IHttpRequest {
 	}
 
 	public function setHeader ($fieldName, $value) {
-		$this->mHeader[$fieldName] = $value;
+		if ('Host' == $fieldName) {
+			$this->mHost = $value;
+		} else if ('Cookie' == $fieldName) {
+			$this->mCookieMap[$fieldName] = $value;
+		} else {
+			$this->mHeader[$fieldName] = $value;
+		}
 	}
 
 	public function getHeader ($fieldName) {
@@ -138,8 +152,32 @@ class HttpRequest implements IHttpRequest {
 		return $this->mQueryParamMap;
 	}
 
+	public function setCookie ($name, $value = "", $expire = 0, $path = "", $domain = "", $secure = false, $httponly = false) {
+		$map = array();
+		if (0 != $expire) {
+			$map['expire'] = $expire;
+		}
+		if ('' !== $path) {
+			$map['path'] = $path;
+		}
+		if ('' !== $domain) {
+			$map['domain'] = $domain;
+		}
+		if (true === $secure) {
+			$map['secure'] = $secure;
+		}
+		if (true === $httponly) {
+			$map['httponly'] = $httponly;
+		}
+		if (empty($map)) {
+			$this->mCookieMap[$name] = $value;
+		} else {
+			$this->mCookieMap[$name] = $map;
+		}
+	}
+
 	public function getCookie ($name) {
-		$this->mCookieMap[$name];
+		return $this->mCookieMap[$name];
 	}
 
 	public function getAllCookie () {
@@ -152,5 +190,50 @@ class HttpRequest implements IHttpRequest {
 
 	public function pack () {
 		$s = $this->mMethod . ' ' . $this->mUri . " HTTP/1.1\r\n";
+		
+		$s .= 'Host: ' . $this->mHost . "\r\n";
+		
+		foreach ($this->mHeader as $key => $val) {
+			$s .= "$key: $val\r\n";
+		}
+		
+		$s .= 'Content-Length: ' . strlen($this->mBodyMap) . "\r\n";
+		
+		foreach ($this->mCookieMap as $key => $val) {
+			$s .= $this->packOneCookie($key, $val);
+		}
+		
+		$s .= "\r\n";
+		
+		$s .= $this->mBodyMap;
+		
+		return $s;
+	}
+
+	protected function packOneCookie ($key, $cookie) {
+		$s = '';
+		
+		if (is_string($cookie)) {
+			$s = "Set-Cookie: $key=" . urlencode($cookie) . "\r\n";
+		} else {
+			$s = "Set-Cookie: $key=" . urlencode($cookie['value']) . "; ";
+			if (0 != $cookie['expire']) {
+				$s .= date('D, d-M-Y H:i:s e', cookie['expire']);
+			}
+			if ('' !== $cookie['path']) {
+				$s .= $cookie['path'];
+			}
+			if ('' !== $cookie['domain']) {
+				$s .= $cookie['domain'];
+			}
+			if (true === $cookie['secure']) {
+				$s .= 'secure';
+			}
+			if (true === $cookie['httponly']) {
+				$s .= 'httponly';
+			}
+			
+			$s .= "\r\n";
+		}
 	}
 }

@@ -103,6 +103,6 @@ class ServiceAgent {
 	}
 
 	static public function waitAll () {
-		AsyncHttpClient::wait();
+		AsyncHttpClient::waitUntilAllResponded();
 	}
 }
