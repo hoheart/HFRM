@@ -156,14 +156,14 @@ class Logger implements IService {
 	public function __construct () {
 	}
 
-	public function init (array $conf) {
+	public function init (array $conf = array()) {
 		$this->mConf = $conf;
 	}
 
 	public function start () {
 	}
 
-	public function stop () {
+	public function stop ($normal = true) {
 		$this->writeBuffer2File(null);
 		$this->movePreviousTempFile();
 	}
@@ -324,8 +324,11 @@ class Logger implements IService {
 			if ('..' == $platformName || '.' == $platformName || self::TEMP_FILE_MOVE_LOCK == $platformName) {
 				continue;
 			}
-			
 			$fileDir = $rootDir . $platformName . DIRECTORY_SEPARATOR;
+			if (! is_dir($fileDir)) {
+				continue;
+			}
+			
 			$platformDP = opendir($fileDir);
 			while (false !== ($fileName = readdir($platformDP))) {
 				if ('..' == $fileName || '.' == $fileName) {
