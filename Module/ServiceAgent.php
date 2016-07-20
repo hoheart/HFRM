@@ -36,7 +36,12 @@ class ServiceAgent {
 			'a' => json_encode($arguments)
 		);
 		$c = new AsyncHttpClient();
-		$c->post($serverUrl, $data, $callback);
+		$c->post($serverUrl, $data, 
+				function  ($resp, $errstr = '') use( $callback) {
+					$obj = $this->procRetData($resp, $errstr);
+					
+					$callback($obj);
+				});
 	}
 
 	protected function makeRemoteCall ($apiName, $methodName, $arguments) {
@@ -70,15 +75,21 @@ class ServiceAgent {
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $httpBody);
 		
 		$resp = curl_exec($ch);
-		
+		$errstr = '';
 		if (false === $resp) {
-			$e = new RPCServiceErrorException(curl_error($ch));
-			curl_close($ch);
-			throw $e;
+			$errstr = curl_error($ch);
 		}
 		curl_close($ch);
 		
-		$oResp = json_decode($resp, true);
+		return $this->procRetData($resp, $errstr);
+	}
+
+	protected function procRetData ($data, $errstr = '') {
+		if (empty($data)) {
+			throw new RPCServiceErrorException($errstr);
+		}
+		
+		$oResp = json_decode($data, true);
 		if (0 != $oResp['errcode']) {
 			throw new \Exception($oResp['errstr'], $oResp['errcode']);
 		}

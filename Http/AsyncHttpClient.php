@@ -32,11 +32,45 @@ class AsyncHttpClient {
 		\Ev::run();
 	}
 
-	public function post ($url, $dataMap = array(), \Closure $srcfn) {
-		$req = new HttpRequest($url);
-		$req->setMethod('POST');
-		$req->setBodyMap($dataMap);
+	public function onRead ($ew, $events) {
+		$resp = null;
+		$respStr = '';
+		while (true) {
+			$ret = stream_get_meta_data($this->mConnection);
+			$ret = fread($this->mConnection, 8192);
+			if (false === $ret || '' === $ret) {
+				// 什么也没读到，说明连接已经关闭
+				$this->mConnection = false;
+				break;
+			}
+			
+			if (null != $resp) {
+				$resp->addBody($ret);
+				
+				if (strlen($resp->getBody()) >= $resp->getContentLength()) {
+					break;
+				}
+			} else {
+				$respStr .= $ret;
+				$pos = strpos($respStr, "\r\n\r\n");
+				if (false === $pos) {
+					continue;
+				} else {
+					$resp = new HttpResponse($respStr, $pos);
+				}
+			}
+		}
 		
+		-- self::$WaitedCount;
+		if (0 === self::$WaitedCount) {
+			\Ev::stop();
+		}
+		
+		$srcfn = $ew->data;
+		$srcfn($resp);
+	}
+
+	protected function connect ($req, $srcFn, $url = '') {
 		if (false === $this->mConnection) {
 			list ($host, $port) = explode(':', $req->getHeader('Host'));
 			if (empty($port)) {
@@ -51,41 +85,24 @@ class AsyncHttpClient {
 			}
 			
 			stream_set_blocking($this->mConnection, false);
+			
+			$this->mEv = new \EvIo($this->mConnection, \Ev::READ, array(
+				$this,
+				'onRead'
+			), $srcFn);
 		}
+	}
+
+	public function post ($url, $dataMap = array(), \Closure $srcfn) {
+		$req = new HttpRequest($url);
+		$req->setMethod('POST');
+		$req->setBodyMap($dataMap);
+		
+		$this->connect($req, $srcfn, $url);
 		
 		$reqStr = $req->pack();
 		
 		++ self::$WaitedCount;
-		
 		fwrite($this->mConnection, $reqStr);
-		$fn = function  ($w, $r) use( $srcfn) {
-			$resp = null;
-			$respStr = '';
-			while (! feof($this->mConnection)) {
-				$respStr .= fread($this->mConnection, 8192);
-				$pos = strpos($respStr, "\r\n\r\n");
-				if (false !== $pos) {
-					$resp = new HttpResponse($respStr, $pos);
-					$contentLen = $resp->getContentLength();
-					
-					$readLen = strlen($respStr) - $pos - 4;
-					$unreadLen = $contentLen - $readLen;
-					if ($unreadLen > 0) {
-						$str = fread($this->mConnection, $unreadLen);
-						$resp->addBody($str);
-						
-						break;
-					}
-				}
-			}
-			
-			-- self::$WaitedCount;
-			if (0 === self::$WaitedCount) {
-				\Ev::stop();
-			}
-			
-			$srcfn($resp);
-		};
-		$this->mEv = new \EvIo($this->mConnection, \Ev::READ, $fn);
 	}
 }
