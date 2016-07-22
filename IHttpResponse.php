@@ -40,4 +40,6 @@ interface IHttpResponse {
 	 * @param string $body        	
 	 */
 	public function setBody ($body);
+
+	public function getBody ();
 }

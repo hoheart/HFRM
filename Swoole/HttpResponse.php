@@ -48,7 +48,7 @@ class HttpResponse implements IHttpResponse {
 		$this->mBody = $body;
 	}
 
-	public function respond () {
-		$this->mSwooleResponse->end($this->mBody);
+	public function getBody () {
+		return $this->mBody;
 	}
 }

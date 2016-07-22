@@ -65,8 +65,8 @@ namespace Framework {
 		 *        	主要给swoole用的。如果是swoole，考虑到重入问题，不能用全局变量，在外面创建号request传进来
 		 * @param IHttpResponse $resp        	
 		 */
-		public function run (IHttpRequest $request = null, IHttpResponse $resp = null) {
-			$context = new RequestContext($request, $resp);
+		public function run (IHttpRequest $request = null, IHttpResponse $resp = null, $output = null) {
+			$context = new RequestContext($request, $resp, $output);
 			
 			try {
 				$this->start();
@@ -94,7 +94,7 @@ namespace Framework {
 			
 			$context->response->setHeader('Content-Type', $contentType);
 			$context->response->setBody($data);
-			$context->response->respond();
+			$context->output->end($context->response->getBody());
 			
 			$req = $context->request;
 			// 记录服务调用开始，服务调用结束在App::Respond里，因为有可能异步调用。
@@ -103,6 +103,10 @@ namespace Framework {
 			App::Instance()->stop();
 			
 			$context->add('hasResponded', true);
+		}
+
+		static public function RespondRaw (RequestContext $context, $str) {
+			$context->output->end($str);
 		}
 
 		public function getRpcProtocol () {

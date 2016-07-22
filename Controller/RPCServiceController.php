@@ -37,6 +37,8 @@ class RPCServiceController {
 		if (null === $arguments) {
 			$arguments = array();
 		}
+		// 把context放入最后,可供service选择调用
+		$arguments[] = $context;
 		$ret = call_user_func_array(array(
 			$service,
 			$methodName

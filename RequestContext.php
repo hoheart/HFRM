@@ -26,13 +26,20 @@ class RequestContext {
 	
 	/**
 	 *
+	 * @var \swoole_http_response
+	 */
+	public $output = null;
+	
+	/**
+	 *
 	 * @var map
 	 */
 	protected $mObjectMap = array();
 
-	public function __construct (IHttpRequest $req, IHttpResponse $resp) {
+	public function __construct (IHttpRequest $req, IHttpResponse $resp, $output = null) {
 		$this->request = $req;
 		$this->response = $resp;
+		$this->output = $output;
 	}
 
 	public function add ($key, $obj) {
@@ -45,9 +52,5 @@ class RequestContext {
 
 	public function get ($key) {
 		return $this->mObjectMap[$key];
-	}
-
-	public function respond ($obj) {
-		App::respond($this, $obj);
 	}
 }
