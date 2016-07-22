@@ -31,15 +31,21 @@ class HttpResponse extends HttpMessage implements IHttpResponse {
 	 * @param int $endPos
 	 *        	两个回车的位置
 	 */
-	public function __construct ($respStr = '', $bodyPos = 0) {
-		if ('' !== $respStr) {
-			if (0 == $bodyPos) {
-				$bodyPos = strpos($respStr, "\r\n\r\n");
-			}
-			$pos = $this->parseCommandLine($respStr);
-			$this->parseHeaderMap($respStr, $pos, $bodyPos);
-			$this->mBody = substr($respStr, $bodyPos + 4);
+	public function __construct ($respStr = '') {
+		$this->continueParse($respStr);
+	}
+
+	public function continueParse ($str) {
+		if (! is_string($str) || '' === $str) {
+			throw new ParameterErrorException();
 		}
+		
+		if (0 == $bodyPos) {
+			$bodyPos = strpos($respStr, "\r\n\r\n");
+		}
+		$pos = $this->parseCommandLine($respStr);
+		$this->parseHeaderMap($respStr, $pos, $bodyPos);
+		$this->mBody = substr($respStr, $bodyPos + 4);
 	}
 
 	protected function parseCommandLine ($str) {

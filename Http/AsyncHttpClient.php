@@ -27,12 +27,90 @@ class AsyncHttpClient {
 	 * @var int
 	 */
 	protected static $WaitedCount = 0;
+	
+	/**
+	 *
+	 * @var string $mReadBuf
+	 */
+	protected $mReadBuf = '';
+	
+	/**
+	 *
+	 * @var string
+	 */
+	protected $mWriteBuf = '';
+	
+	/**
+	 *
+	 * @var int $mWritePos
+	 */
+	protected $mWritePos = 0;
+	
+	/**
+	 *
+	 * @var HttpResponse $mResp
+	 */
+	protected $mResponse = null;
 
 	static public function waitUntilAllResponded () {
 		\Ev::run();
 	}
 
+	public function onWrite ($ew, $events) {
+		if ($this->mWritePos != strlen($this->mWriteBuf)) {
+			// 没有新的数据需要写入。
+			return;
+		}
+		
+		$remain = substr($this->mWriteBuf, $this->mWritePos);
+		$ret = fwrite($this->mConnection, $remain);
+		if (false === $ret) {
+			fclose($this->mConnection);
+			$this->mConnection = false;
+			
+			Log::r('connection error.', 'framework');
+			
+			return;
+		}
+		
+		$this->mWritePos = $ret;
+		
+		if ($this->mWritePos != strlen($this->mWriteBuf)) {
+			// 一个请求发送完毕，应该等待接收新的响应
+			$this->mResponse = null;
+			
+			++ self::$WaitedCount;
+		}
+	}
+
 	public function onRead ($ew, $events) {
+		$srcfn = $ew->data;
+		
+		$ret = fread($this->mConnection, 8192);
+		if ('' === $ret || false === $ret) {
+			fclose($this->mConnection);
+			$this->mConnection = false;
+			
+			$srcfn($resp);
+			
+			if ('' === $ret) {
+				Log::r('connection closed by server', 'framework');
+			} else if (false === $ret) {
+				Log::r('connection error.', 'framework');
+			}
+			
+			return;
+		}
+		
+		if (null == $this->mResponse) {
+			// 说明还没有接收完头
+			$pos = strpos($ret, "\r\n\r\n");
+			if (false === $pos) {
+				$this->mReadBuf .= $ret;
+			} else {
+			}
+		}
+		
 		$resp = null;
 		$respStr = '';
 		while (true) {
@@ -70,7 +148,7 @@ class AsyncHttpClient {
 		$srcfn($resp);
 	}
 
-	protected function connect ($req, $srcFn, $url = '') {
+	protected function connect (HttpRequest $req, $srcFn) {
 		if (false === $this->mConnection) {
 			list ($host, $port) = explode(':', $req->getHeader('Host'));
 			if (empty($port)) {
@@ -79,7 +157,7 @@ class AsyncHttpClient {
 			
 			$this->mConnection = fsockopen($host, $port, $errno, $errstr, 1);
 			if (false === $this->mConnection) {
-				Log::r('can not connect ' . $url, 'rpc');
+				Log::r('can not connect ' . $req->getHeader('Host'), 'rpc');
 				
 				throw new RPCServiceErrorException();
 			}
@@ -90,19 +168,28 @@ class AsyncHttpClient {
 				$this,
 				'onRead'
 			), $srcFn);
+			
+			$this->mEv = new \EvIo($this->mConnection, \Ev::WRITE, array(
+				$this,
+				'onWrite'
+			));
 		}
 	}
 
-	public function post ($url, $dataMap = array(), \Closure $srcfn) {
+	public function post ($url, $dataMap = array(), \Closure $srcFn) {
 		$req = new HttpRequest($url);
 		$req->setMethod('POST');
 		$req->setBodyMap($dataMap);
 		
-		$this->connect($req, $srcfn, $url);
+		$this->request($req, $srcFn);
+	}
+
+	public function request (HttpRequest $req, \Closure $srcFn) {
+		$this->connect($req, $srcFn);
 		
-		$reqStr = $req->pack();
+		$this->mWriteBuf = $req->pack();
+		$this->mWritePos = 0;
 		
-		++ self::$WaitedCount;
-		fwrite($this->mConnection, $reqStr);
+		$this->onWrite(null, null);
 	}
 }
