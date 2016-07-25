@@ -3,10 +3,8 @@
 namespace Framework\Http;
 
 use Framework\Http\HttpRequest;
-use Framework\Facade\Log;
-use Framework\Exception\RPCServiceErrorException;
+use Framework\Exception\NetworkErrorException;
 use Framework\Http\HttpResponse;
-use Framework\HFC\Exception\SystemAPIErrorException;
 
 class AsyncHttpClient {
 	
@@ -59,6 +57,13 @@ class AsyncHttpClient {
 	 * @var int $mChunkSize
 	 */
 	protected $mChunkSize = - 1;
+	
+	/**
+	 * 发出的请求数
+	 *
+	 * @var int $mRequestCount
+	 */
+	protected $mRequestCount = 0;
 
 	static public function waitUntilAllResponded () {
 		\Ev::run();
@@ -74,6 +79,7 @@ class AsyncHttpClient {
 
 	protected function clearForNewWrite () {
 		$this->mWriteBuf = '';
+		$this->mWroteLen = 0;
 	}
 
 	public function onWrite ($ew, $events) {
@@ -91,16 +97,16 @@ class AsyncHttpClient {
 			$ret = stream_get_meta_data($this->mConnection);
 			$uri = $ret['uri'];
 			
-			Log::r('connection closed or error. uri:' . $uri, 'framework');
-			
-			throw new SystemAPIErrorException($uri);
+			throw new NetworkErrorException('connection closed or error. uri:' . $uri);
 		}
 		
-		$this->mWroteLen = $ret;
+		$this->mWroteLen += $ret;
 		
 		if ($this->mWroteLen != strlen($this->mWriteBuf)) {
 			// 一个请求发送完毕，应该等待接收新的响应
 			$this->clearForNewRead();
+			
+			++ $this->mRequestCount;
 			
 			++ self::$WaitedCount;
 		}
@@ -116,46 +122,48 @@ class AsyncHttpClient {
 		// false表示网络出错了，空表示连接已经关闭，这个时候都调用close释放资源
 		$ret = fread($this->mConnection, 8192);
 		if (false === $ret || '' === $ret) {
-			Log::r('connection closed or error. uri:' . $uri, 'framework');
+			throw new NetworkErrorException('connection closed or error. uri:' . $uri, 'framework');
 			
 			fclose($this->mConnection);
 			$this->mConnection = false;
 		} else {
 			$this->mReadBuf .= $ret;
 			
-			$pos = strpos($ret, "\r\n\r\n");
-			if (false !== $pos) {
-				try {
-					$this->mResponse = HttpResponse::parse(substr($this->mReadBuf, 0, $pos));
-				} catch (\Exception $e) {
-					// 响应是错误的。
-					$this->mResponse = null;
-					$readComplete = true;
-					
-					Log::r('http header error : ' . $e->getMessage() . '. uri:' . $uri, 'framework');
-				}
-				
-				$this->mReadBuf = '';
-			}
-			
-			$ret = substr($ret, $pos + 4);
-			if (null != $this->mResponse) {
-				if ('chunked' == $this->mResponse->getHeader('Transfer-Encoding')) {
-					$this->parseChunked($ret);
-				} else {
-					$this->mReadBuf .= $ret;
-					
-					$bodyLen = strlen($this->mReadBuf);
-					if ($this->mResponse->getHeader(HttpRequest::HEADER_CONTENT_LENGTH) == $bodyLen) {
-						$this->mResponse->setBody($this->mBodyBuf);
-						
-						$readComplete = true;
+			if (null == $this->mResponse) {
+				// 如果mReadBuf里之前有两个回车换行，肯定就有mResponse对象了。如果没有，就只从当前的ret里找就ok了
+				$pos = strpos($ret, "\r\n\r\n");
+				if (false !== $pos) {
+					try {
+						$this->mResponse = HttpResponse::parse(substr($this->mReadBuf, 0, $pos));
+					} catch (\Exception $e) {
+						// 响应是错误的。
+						throw new NetworkErrorException(
+								'http header error : ' . $e->getMessage() . '. uri:');
 					}
+					
+					// 头信息解析完毕，缓存用于接受body信息
+					$this->mReadBuf = substr($ret, $pos + 4);
+				}
+			} else {
+				if ('chunked' == $this->mResponse->getHeader('Transfer-Encoding')) {
+					$this->parseChunked();
+				} else {
+					$bodyLen = strlen($this->mReadBuf);
+					$contentLen = $this->mResponse->getHeader(HttpRequest::HEADER_CONTENT_LENGTH);
+					$body = $this->mReadBuf;
+					if ($contentLen < $bodyLen) {
+						$body = substr($this->mReadBuf, 0, $contentLen);
+						
+						$this->mReadBuf = substr($this->mReadBuf, $contentLen);
+					}
+					$this->mResponse->setBody($this->mBodyBuf);
+					
+					$readComplete = true;
 				}
 			}
 		}
 		
-		// 读完了整个响应包，就该调用回调函数了
+		// 读完了整个响应包，就该调用回调函数了。注意不要清空mReadBuf，因为可能已经读取下一个响应了。
 		if ($readComplete) {
 			$srcfn = $ew->data;
 			$srcfn($this->mResponse);
@@ -215,9 +223,7 @@ class AsyncHttpClient {
 			
 			$this->mConnection = fsockopen($host, $port, $errno, $errstr, 1);
 			if (false === $this->mConnection) {
-				Log::r('can not connect ' . $req->getHeader('Host'), 'rpc');
-				
-				throw new RPCServiceErrorException();
+				throw new NetworkErrorException('can not connect ' . $req->getHeader('Host'));
 			}
 			
 			stream_set_blocking($this->mConnection, false);
@@ -225,22 +231,24 @@ class AsyncHttpClient {
 			$this->clearForNewRead();
 			$this->clearForNewWrite();
 			
-			$this->mEv = new \EvIo($this->mConnection, \Ev::READ, array(
-				$this,
-				'onRead'
-			), $srcFn);
+			$this->mEv = new \EvIo($this->mConnection, \Ev::READ, 
+					array(
+						$this,
+						'onRead'
+					), $srcFn);
 			
-			$this->mEv = new \EvIo($this->mConnection, \Ev::WRITE, array(
-				$this,
-				'onWrite'
-			));
+			$this->mEv = new \EvIo($this->mConnection, \Ev::WRITE, 
+					array(
+						$this,
+						'onWrite'
+					));
 		}
 	}
 
-	public function post ($url, $dataMap = array(), \Closure $srcFn) {
+	public function post ($url, $data = '', \Closure $srcFn) {
 		$req = new HttpRequest($url);
 		$req->setMethod('POST');
-		$req->setBodyMap($dataMap);
+		$req->setBody($data);
 		
 		$this->request($req, $srcFn);
 	}
