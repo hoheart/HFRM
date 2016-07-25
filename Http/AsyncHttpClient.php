@@ -6,6 +6,7 @@ use Framework\Http\HttpRequest;
 use Framework\Facade\Log;
 use Framework\Exception\RPCServiceErrorException;
 use Framework\Http\HttpResponse;
+use Framework\HFC\Exception\SystemAPIErrorException;
 
 class AsyncHttpClient {
 	
@@ -42,113 +43,170 @@ class AsyncHttpClient {
 	
 	/**
 	 *
-	 * @var int $mWritePos
+	 * @var int $mWroteLen
 	 */
-	protected $mWritePos = 0;
+	protected $mWroteLen = 0;
 	
 	/**
 	 *
 	 * @var HttpResponse $mResp
 	 */
 	protected $mResponse = null;
+	
+	/**
+	 * 当前解析的chunk大小
+	 *
+	 * @var int $mChunkSize
+	 */
+	protected $mChunkSize = - 1;
 
 	static public function waitUntilAllResponded () {
 		\Ev::run();
 	}
 
+	protected function clearForNewRead () {
+		$this->mResponse = null;
+		$this->mHeadBuf = '';
+		$this->mBodyBuf = '';
+		$this->mChunkSize = - 1;
+		$this->mChunkHeaderBuf = '';
+	}
+
+	protected function clearForNewWrite () {
+		$this->mWriteBuf = '';
+	}
+
 	public function onWrite ($ew, $events) {
-		if ($this->mWritePos != strlen($this->mWriteBuf)) {
-			// 没有新的数据需要写入。
+		// 没有新的数据需要写入。
+		if ($this->mWroteLen == strlen($this->mWriteBuf)) {
 			return;
 		}
 		
-		$remain = substr($this->mWriteBuf, $this->mWritePos);
+		$remain = substr($this->mWriteBuf, $this->mWroteLen);
 		$ret = fwrite($this->mConnection, $remain);
-		if (false === $ret) {
+		if (false === $ret || 0 === $ret) {
 			fclose($this->mConnection);
 			$this->mConnection = false;
 			
-			Log::r('connection error.', 'framework');
+			$ret = stream_get_meta_data($this->mConnection);
+			$uri = $ret['uri'];
 			
-			return;
+			Log::r('connection closed or error. uri:' . $uri, 'framework');
+			
+			throw new SystemAPIErrorException($uri);
 		}
 		
-		$this->mWritePos = $ret;
+		$this->mWroteLen = $ret;
 		
-		if ($this->mWritePos != strlen($this->mWriteBuf)) {
+		if ($this->mWroteLen != strlen($this->mWriteBuf)) {
 			// 一个请求发送完毕，应该等待接收新的响应
-			$this->mResponse = null;
+			$this->clearForNewRead();
 			
 			++ self::$WaitedCount;
 		}
 	}
 
 	public function onRead ($ew, $events) {
-		$srcfn = $ew->data;
+		$readComplete = false;
 		
+		$ret = stream_get_meta_data($this->mConnection);
+		$uri = $ret['uri'];
+		
+		// 8192一般是一个tcp包的大小
+		// false表示网络出错了，空表示连接已经关闭，这个时候都调用close释放资源
 		$ret = fread($this->mConnection, 8192);
-		if ('' === $ret || false === $ret) {
+		if (false === $ret || '' === $ret) {
+			Log::r('connection closed or error. uri:' . $uri, 'framework');
+			
 			fclose($this->mConnection);
 			$this->mConnection = false;
+		} else {
+			$this->mReadBuf .= $ret;
 			
-			$srcfn($resp);
-			
-			if ('' === $ret) {
-				Log::r('connection closed by server', 'framework');
-			} else if (false === $ret) {
-				Log::r('connection error.', 'framework');
+			$pos = strpos($ret, "\r\n\r\n");
+			if (false !== $pos) {
+				try {
+					$this->mResponse = HttpResponse::parse(substr($this->mReadBuf, 0, $pos));
+				} catch (\Exception $e) {
+					// 响应是错误的。
+					$this->mResponse = null;
+					$readComplete = true;
+					
+					Log::r('http header error : ' . $e->getMessage() . '. uri:' . $uri, 'framework');
+				}
+				
+				$this->mReadBuf = '';
 			}
 			
+			$ret = substr($ret, $pos + 4);
+			if (null != $this->mResponse) {
+				if ('chunked' == $this->mResponse->getHeader('Transfer-Encoding')) {
+					$this->parseChunked($ret);
+				} else {
+					$this->mReadBuf .= $ret;
+					
+					$bodyLen = strlen($this->mReadBuf);
+					if ($this->mResponse->getHeader(HttpRequest::HEADER_CONTENT_LENGTH) == $bodyLen) {
+						$this->mResponse->setBody($this->mBodyBuf);
+						
+						$readComplete = true;
+					}
+				}
+			}
+		}
+		
+		// 读完了整个响应包，就该调用回调函数了
+		if ($readComplete) {
+			$srcfn = $ew->data;
+			$srcfn($this->mResponse);
+			
+			-- self::$WaitedCount;
+			
+			if (0 === self::$WaitedCount) {
+				\Ev::stop();
+			}
+		}
+	}
+
+	/**
+	 * 解析chunk信息，次函数为递归，每次只解析头或体
+	 *
+	 * @param string $str        	
+	 */
+	protected function parseChunked ($str) {
+		if ('' === $str) {
 			return;
 		}
 		
-		if (null == $this->mResponse) {
-			// 说明还没有接收完头
-			$pos = strpos($ret, "\r\n\r\n");
-			if (false === $pos) {
-				$this->mReadBuf .= $ret;
+		// 如果还没有解析到chunk头
+		if (- 1 == $this->mChunkSize) {
+			$pos = strpos($str, "\r\n");
+			if (false !== $pos) {
+				$this->mChunkSize = (integer) hexdec(substr($str, 0, $pos));
+				
+				$this->mReadBuf = '';
+				
+				$this->parseChunked(substr($str, $pos + 2));
 			} else {
+				$this->mReadBuf .= $str;
 			}
-		}
-		
-		$resp = null;
-		$respStr = '';
-		while (true) {
-			$ret = stream_get_meta_data($this->mConnection);
-			$ret = fread($this->mConnection, 8192);
-			if (false === $ret || '' === $ret) {
-				// 什么也没读到，说明连接已经关闭
-				$this->mConnection = false;
-				break;
+		} else {
+			// 解析chunk体
+			$chunk = substr($str, 0, $this->mChunkSize);
+			$this->mReadBuf .= $chunk;
+			
+			$pos = strlen($chunk);
+			if ($pos >= $this->mChunkSize) {
+				// 一个chunk解析完毕，变量置-1，以解析下一个
+				$this->mChunkSize = - 1;
+				$this->mReadBuf = '';
 			}
 			
-			if (null != $resp) {
-				$resp->addBody($ret);
-				
-				if (strlen($resp->getBody()) >= $resp->getContentLength()) {
-					break;
-				}
-			} else {
-				$respStr .= $ret;
-				$pos = strpos($respStr, "\r\n\r\n");
-				if (false === $pos) {
-					continue;
-				} else {
-					$resp = new HttpResponse($respStr, $pos);
-				}
-			}
+			$this->parseChunked(substr($str, $pos));
 		}
-		
-		-- self::$WaitedCount;
-		if (0 === self::$WaitedCount) {
-			\Ev::stop();
-		}
-		
-		$srcfn = $ew->data;
-		$srcfn($resp);
 	}
 
-	protected function connect (HttpRequest $req, $srcFn) {
+	function connect (HttpRequest $req, $srcFn) {
 		if (false === $this->mConnection) {
 			list ($host, $port) = explode(':', $req->getHeader('Host'));
 			if (empty($port)) {
@@ -163,6 +221,9 @@ class AsyncHttpClient {
 			}
 			
 			stream_set_blocking($this->mConnection, false);
+			
+			$this->clearForNewRead();
+			$this->clearForNewWrite();
 			
 			$this->mEv = new \EvIo($this->mConnection, \Ev::READ, array(
 				$this,
@@ -187,8 +248,9 @@ class AsyncHttpClient {
 	public function request (HttpRequest $req, \Closure $srcFn) {
 		$this->connect($req, $srcFn);
 		
+		$this->clearForNewWrite();
+		
 		$this->mWriteBuf = $req->pack();
-		$this->mWritePos = 0;
 		
 		$this->onWrite(null, null);
 	}

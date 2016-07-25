@@ -9,6 +9,12 @@ abstract class HttpMessage {
 	 * @var string
 	 */
 	const CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded';
+
+	/**
+	* header
+	*/
+	const HEADER_CONTENT_LENGTH = 'Content-Length';
+	const HEADER_Transfer-Encoding
 	
 	/**
 	 *
