@@ -119,11 +119,11 @@ class Server {
 		$this->initPoolService();
 	}
 
-	public function onRequest ($req, $resp) {
-		$resp = new HttpResponse($resp);
+	public function onRequest ($req, $swooleResp) {
+		$resp = new HttpResponse($swooleResp);
 		
 		try {
-			$this->mApp->run(new HttpRequest($req), $resp);
+			$this->mApp->run(new HttpRequest($req), $resp, $swooleResp);
 		} catch (\Exception $e) {
 			// 退出，保证资源回收。
 			$this->mExitErrorCode = - 2;
