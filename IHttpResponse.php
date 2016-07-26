@@ -41,5 +41,7 @@ interface IHttpResponse {
 	 */
 	public function setBody ($body);
 
+	public function addBody ($str);
+
 	public function getBody ();
 }

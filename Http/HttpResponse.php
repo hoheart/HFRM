@@ -87,4 +87,8 @@ class HttpResponse extends HttpMessage implements IHttpResponse {
 	public function setReasonPhrase ($reason) {
 		$this->mReasonPhrase = $reason;
 	}
+
+	public function addBody ($str) {
+		$this->mBody .= $str;
+	}
 }
