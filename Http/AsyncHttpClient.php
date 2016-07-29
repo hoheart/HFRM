@@ -12,7 +12,7 @@ class AsyncHttpClient {
 	 *
 	 * @var int
 	 */
-	const RESPONSE_TIMEOUT = 30; // 秒
+	const RESPONSE_TIMEOUT = 30; // 单位：秒
 	
 	/**
 	 *
@@ -125,7 +125,7 @@ class AsyncHttpClient {
 		
 		$this->mWroteLen += $ret;
 		
-		if ($this->mWroteLen != strlen($this->mWriteBuf)) {
+		if ($this->mWroteLen == strlen($this->mWriteBuf)) {
 			// 一个请求发送完毕，应该等待接收新的响应
 			$this->clearForNewRead();
 			
@@ -200,14 +200,12 @@ class AsyncHttpClient {
 			}
 		}
 		
-		// 上面解析了头，如果还剩内容，就是body了
-		if ('' !== $str) {
-			$transferEncoding = $this->mResponse->getHeader(HttpResponse::HEADER_TRANSFER_ENCODING);
-			if (HttpResponse::TRANSFER_ENCODING_CHUNKED != $transferEncoding) {
-				$readComplete = $this->parseUnchunked($str);
-			} else {
-				$readComplete = $this->parseChunked($str);
-			}
+		// 上面解析了头，下面就是body了
+		$transferEncoding = $this->mResponse->getHeader(HttpResponse::HEADER_TRANSFER_ENCODING);
+		if (HttpResponse::TRANSFER_ENCODING_CHUNKED != $transferEncoding) {
+			$readComplete = $this->parseUnchunked($str);
+		} else {
+			$readComplete = $this->parseChunked($str);
 		}
 		
 		// 读完了整个响应包，就该调用回调函数了。
@@ -257,7 +255,7 @@ class AsyncHttpClient {
 	 */
 	protected function parseChunked ($str) {
 		if ('' === $str) {
-			return;
+			return false;
 		}
 		
 		// 如果还没有解析到chunk头
@@ -282,14 +280,21 @@ class AsyncHttpClient {
 				$chunk = substr($this->mReadBuf, 0, $this->mChunkSize);
 				$this->mResponse->addBody($chunk);
 				
+				$str = substr($this->mReadBuf, $this->mChunkSize);
+				
 				// 一个chunk解析完毕，变量置-1，以解析下一个
 				$this->mChunkSize = - 1;
 				$this->mReadBuf = '';
 				
-				$str = substr($this->mReadBuf, $this->mChunkSize);
-				$this->parseChunked(substr($str, $pos));
+				$this->parseChunked($str);
 			} // else {//等着读该chunk的后续内容}
+		} else {
+			if (0 === $this->mChunkSize) {
+				return true;
+			}
 		}
+		
+		return false;
 	}
 
 	public function connect (HttpRequest $req, $srcFn) {
