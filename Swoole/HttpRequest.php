@@ -94,13 +94,11 @@ class HttpRequest implements IHttpRequest
         
         if (isset($this->mRequest->header["http_x_forwarded_for"])) {
             $IPaddress = $this->mRequest->header["http_x_forwarded_for"];
-        } else 
-            if (isset($this->mRequest->header["http_client_ip"])) {
-                $IPaddress = $this->mRequest->header["http_client_ip"];
-            } else 
-                if (isset($this->mRequest->server['remote_addr'])) {
-                    $IPaddress = $this->mRequest->server["remote_addr"];
-                }
+        } elseif (isset($this->mRequest->header["http_client_ip"])) {
+            $IPaddress = $this->mRequest->header["http_client_ip"];
+        } elseif (isset($this->mRequest->server['remote_addr'])) {
+            $IPaddress = $this->mRequest->server["remote_addr"];
+        }
         
         return $IPaddress;
     }
