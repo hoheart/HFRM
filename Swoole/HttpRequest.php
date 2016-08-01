@@ -47,7 +47,7 @@ class HttpRequest implements IHttpRequest
         $post = $this->mRequest->post;
         $get = $this->mRequest->get;
         $cookie = $this->mRequest->cookie;
-        $files = $this->files;
+        $files = $this->mRequest->files;
         if (is_array($post) && array_key_exists($name, $post)) {
             return $post[$name];
         } elseif (is_array($get) && array_key_exists($name, $get)) {
