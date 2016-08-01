@@ -50,16 +50,13 @@ class HttpRequest implements IHttpRequest
         $files = $this->files;
         if (is_array($post) && array_key_exists($name, $post)) {
             return $post[$name];
-        } else 
-            if (is_array($get) && array_key_exists($name, $get)) {
-                return $get[$name];
-            } else 
-                if (is_array($cookie) && array_key_exists($name, $cookie)) {
-                    return $cookie[$name];
-                } else 
-                    if (is_array($files) && array_key_exists($name, $files)) {
-                        return $files[$name];
-                    }
+        } elseif (is_array($get) && array_key_exists($name, $get)) {
+            return $get[$name];
+        } elseif (is_array($cookie) && array_key_exists($name, $cookie)) {
+            return $cookie[$name];
+        } elseif (is_array($files) && array_key_exists($name, $files)) {
+            return $files[$name];
+        }
         
         return null;
     }
