@@ -12,7 +12,8 @@ interface IService
     /**
      * 对服务进行初始化。比如：建立连接以用于发送请求数据包。
      *
-     * @param array $conf            
+     * @param array $conf
+     *            该服务的配置
      */
     public function init(array $conf = array());
 
