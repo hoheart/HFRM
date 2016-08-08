@@ -6,7 +6,8 @@ namespace Framework;
  *
  * @author Hoheart
  */
-interface IService{
+interface IService
+{
 
     /**
      * 对服务进行初始化。比如：建立连接以用于发送请求数据包。
