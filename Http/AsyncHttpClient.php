@@ -9,12 +9,12 @@ class AsyncHttpClient
 {
 
     /**
+     * 单位：秒
      *
      * @var int
      */
     const RESPONSE_TIMEOUT = 30;
-    // 单位：秒
-    
+
     /**
      *
      * @var resource $mConnection
