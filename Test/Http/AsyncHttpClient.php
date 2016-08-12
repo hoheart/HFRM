@@ -8,7 +8,5 @@ class AsyncHttpClient extends \PHPUnit_Framework_TestCase
     {
         $sock = socket_create(AF_INET, SOCK_STREAM, TCP);
         stream_set_blocking($sock, false);
-        
-        
     }
 }
