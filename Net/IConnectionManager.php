@@ -3,5 +3,6 @@ namespace Framework\Net;
 
 interface IConnectionManager
 {
-    public function onConnect($sock);
+
+    public function onConnect(Connection $conn);
 }

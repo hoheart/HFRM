@@ -1,7 +1,8 @@
 <?php
-namespace Framework\Test\Http;
+namespace Framework\Net;
 
 use Framework\HFC\Exception\SystemAPIErrorException;
+use Framework\HFC\Exception\ParameterErrorException;
 
 class TCPServer
 {
@@ -11,8 +12,10 @@ class TCPServer
     protected $mPort = 0;
 
     protected $mSock = null;
-    
+
     protected $mConnectionManager = null;
+
+    protected $mReadEv = null;
 
     public function __construct($ip, $port)
     {
@@ -24,6 +27,11 @@ class TCPServer
     {
         switch ($event) {
             case 'connection':
+                $this->mConnectionManager = $cm;
+                
+                break;
+            default:
+                throw new ParameterErrorException();
                 
                 break;
         }
@@ -38,5 +46,19 @@ class TCPServer
         }
         
         stream_set_blocking($sock, false);
+        
+        $this->mReadEv = new \EvIo($this->mSock, Ev::READ, array(
+            $this,
+            'onAccept'
+        ));
+    }
+
+    public function onAccept($watcher = null, $revents = null)
+    {
+        $sock = stream_socket_accept($this->mSock, 1);
+        
+        $conn = new Connection($sock);
+        
+        $this->mConnectionManager->onConnect($conn);
     }
 }
