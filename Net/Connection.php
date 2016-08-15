@@ -18,7 +18,10 @@ class Connection
         
         $this->mReadEv = new \EvIo($this->mSock, Ev::READ, array(
             $this,
-            'onAccept'
+            'onRead'
         ));
     }
+
+    public function onRead($ew, $events)
+    {}
 }
