@@ -28,6 +28,8 @@ class TestAsyncHttpClient extends \PHPUnit_Framework_TestCase implements IConnec
         
         // 先测试短点的数据
         $client = new AsyncHttpClient();
-        $client->post('http://127.0.0.1/abc', '01234', function () {});
+        $client->post('http://127.0.0.1/abc', '01234', function () {
+            //
+        });
     }
 }
