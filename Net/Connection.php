@@ -23,5 +23,7 @@ class Connection
     }
 
     public function onRead($ew, $events)
-    {}
+    {
+        //
+    }
 }
