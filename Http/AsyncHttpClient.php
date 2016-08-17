@@ -5,7 +5,8 @@ use Framework\Http\HttpRequest;
 use Framework\Exception\NetworkErrorException;
 use Framework\Http\HttpResponse;
 
-class AsyncHttpClient{
+class AsyncHttpClient
+{
 
     /**
      * 单位：秒
