@@ -23,7 +23,7 @@ class AsyncHttpClient
 
     /**
      *
-     * @var \EvIo $mReadEv
+     * @var \EvIo $mReadEv 读事件
      */
     protected $mReadEv = null;
 
