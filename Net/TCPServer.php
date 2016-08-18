@@ -26,7 +26,7 @@ class TCPServer
     public function on($event, IConnectionManager $cm)
     {
         switch ($event) {
-            case 'connection':
+            case 'connect':
                 $this->mConnectionManager = $cm;
                 
                 break;
@@ -44,10 +44,11 @@ class TCPServer
         if (false === $sock) {
             throw new SystemAPIErrorException($errstr);
         }
+        $this->mSock = $sock;
         
-        stream_set_blocking($sock, false);
+        stream_set_blocking($this->mSock, false);
         
-        $this->mReadEv = new \EvIo($this->mSock, Ev::READ, array(
+        $this->mReadEv = new \EvIo($this->mSock, \Ev::READ, array(
             $this,
             'onAccept'
         ));

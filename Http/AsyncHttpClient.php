@@ -90,6 +90,12 @@ class AsyncHttpClient
      */
     protected $mCallback = null;
 
+    /**
+     *
+     * @var int
+     */
+    protected $mRespondTimeout = 30;
+
     public static function waitUntilAllResponded()
     {
         \Ev::run();
@@ -144,7 +150,7 @@ class AsyncHttpClient
             $this->clearForNewRead();
             
             if (null == $this->mTimeoutEv) {
-                $this->mTimeoutEv = new \EvTimer(30, 1, array(
+                $this->mTimeoutEv = new \EvTimer($this->mRespondTimeout, 0, array(
                     $this,
                     'onTimeout'
                 ));
@@ -169,7 +175,7 @@ class AsyncHttpClient
     public function onTimeout($ew, $events)
     {
         $fn = $this->mCallback;
-        $fn($this->mResponse);
+        $this->respondComplete($fn);
         
         $this->clearForNewRead();
     }
@@ -200,7 +206,36 @@ class AsyncHttpClient
         
         $fn = $ew->data;
         
-        $this->parseResponseData($ret, $fn);
+        $readComplete = $this->parseResponseData($ret, $fn);
+        
+        // 读完了整个响应包，就该调用回调函数了。
+        if ($readComplete) {
+            $this->respondComplete($fn);
+        }
+    }
+
+    protected function respondComplete(\Closure $fn)
+    {
+        // 读完了整个响应包，就该调用回调函数了。
+        $fn($this->mResponse);
+
+        echo "12355\n\n\n\n";
+        exit();
+        -- self::$WaitedCount;
+        echo self::$WaitedCount;
+        
+        if (0 === self::$WaitedCount) {
+            \Ev::stop();
+        }
+        
+        -- $this->mRequestedCount;
+        
+        // 一次解析完毕后，如果还有请求，接着解析收到的数据，否则丢弃数据
+        $str = $this->mReadBuf;
+        $this->mReadBuf = '';
+        if ($this->mRequestedCount > 0) {
+            $this->parseResponseData($str, $fn);
+        }
     }
 
     protected function parseResponseData($str, $fn)
@@ -242,25 +277,7 @@ class AsyncHttpClient
             $readComplete = $this->parseChunked($str);
         }
         
-        // 读完了整个响应包，就该调用回调函数了。
-        if ($readComplete) {
-            $fn($this->mResponse);
-            
-            -- self::$WaitedCount;
-            
-            if (0 === self::$WaitedCount) {
-                \Ev::stop();
-            }
-            
-            -- $this->mRequestedCount;
-            
-            // 一次解析完毕后，如果还有请求，接着解析收到的数据，否则丢弃数据
-            $str = $this->mReadBuf;
-            $this->mReadBuf = '';
-            if ($this->mRequestedCount > 0) {
-                $this->parseResponseData($str, $fn);
-            }
-        }
+        return $readComplete;
     }
 
     protected function parseUnchunked($str)
@@ -337,7 +354,7 @@ class AsyncHttpClient
      *            回调函数
      * @throws NetworkErrorException
      */
-    public function connect(HttpRequest $req, $srcFn)
+    public function connect(HttpRequest $req, $srcFn, $timeout = 30)
     {
         if (false === $this->mConnection) {
             list ($host, $port) = explode(':', $req->getHeader('Host'));
@@ -345,7 +362,7 @@ class AsyncHttpClient
                 $port = 80;
             }
             
-            $this->mConnection = fsockopen($host, $port, $errno, $errstr, 1);
+            $this->mConnection = fsockopen($host, $port, $errno, $errstr, $timeout);
             if (false === $this->mConnection) {
                 throw new NetworkErrorException('can not connect ' . $req->getHeader('Host'));
             }
@@ -387,13 +404,13 @@ class AsyncHttpClient
      * @param \Closure $srcFn
      *            回调函数
      */
-    public function post($url, $data = '', \Closure $srcFn = null)
+    public function post($url, $data = '', \Closure $srcFn = null, $connectTimeout = 30, $respondTimeout = 30)
     {
         $req = new HttpRequest($url);
         $req->setMethod('POST');
         $req->setBody($data);
         
-        $this->request($req, $srcFn);
+        $this->request($req, $srcFn, $connectTimeout, $respondTimeout);
     }
 
     /**
@@ -404,11 +421,13 @@ class AsyncHttpClient
      * @param \Closure $srcFn
      *            回调函数
      */
-    public function request(HttpRequest $req, \Closure $srcFn = null)
+    public function request(HttpRequest $req, \Closure $srcFn = null, $connectTimeout = 30, $respondTimeout = 30)
     {
-        $this->connect($req, $srcFn);
+        $this->connect($req, $srcFn, $connectTimeout);
         
         $this->clearForNewWrite();
+        
+        $this->mRespondTimeout = $respondTimeout;
         
         $this->mWriteBuf = $req->pack();
         

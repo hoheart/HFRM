@@ -16,3 +16,6 @@ function __autoload($class)
 }
 
 spl_autoload_register('__autoload');
+
+$a = new PHPUnit_Framework_TestSuite();
+$a->tests();
