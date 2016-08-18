@@ -1,4 +1,5 @@
 <?php
+use Test\Http\HttpTestSuite;
 
 function __autoload($class)
 {
@@ -18,6 +19,6 @@ function __autoload($class)
 spl_autoload_register('__autoload');
 
 $s = new PHPUnit_Framework_TestSuite();
-$s->addTestFile('Http/TestAsyncHttpClient.php');
+$s->addTestSuite(new HttpTestSuite());
 PHPUnit_TextUI_TestRunner::run($s);  
 
