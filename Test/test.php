@@ -17,5 +17,7 @@ function __autoload($class)
 
 spl_autoload_register('__autoload');
 
-$a = new PHPUnit_Framework_TestSuite();
-$a->tests();
+$s = new PHPUnit_Framework_TestSuite();
+$s->addTestFile('Http/TestAsyncHttpClient.php');
+PHPUnit_TextUI_TestRunner::run($s);  
+

@@ -26,7 +26,8 @@ class TestAsyncHttpClient extends \PHPUnit_Framework_TestCase
         $body = '01234';
         $resp = null;
         $client->post("http://$host:$port/abc", $body, function (HttpResponse $r) use($resp) {
-            echo 6666;exit;
+            echo 6666;
+            exit();
             $resp = $r;
         }, 1, 1);
         
