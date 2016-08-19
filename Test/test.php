@@ -1,7 +1,9 @@
 <?php
 use Test\Http\HttpTestSuite;
 
-function __autoload($class)
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+
+function autoloadFramework($class)
 {
     if (DIRECTORY_SEPARATOR == '\\') {
         $path = $class . '.php';
@@ -12,11 +14,12 @@ function __autoload($class)
     $path = str_replace('Framework', '', $path);
     
     $path = dirname(__DIR__) . DIRECTORY_SEPARATOR . $path;
-    
-    include_once $path;
+    if (file_exists($path)) {
+        include_once $path;
+    }
 }
 
-spl_autoload_register('__autoload');
+spl_autoload_register('autoloadFramework');
 
 $s = new PHPUnit_Framework_TestSuite();
 $s->addTestSuite(new HttpTestSuite());

@@ -6,6 +6,7 @@ class HttpTestSuite extends \PHPUnit_Framework_TestSuite
 
     public function __construct()
     {
-        $this->addTestSuite(TestAsyncHttpClient::class);
+        $this->addTestSuite('Test\Http\TestAsyncHttpClient');
+        $this->addTestSuite('Test\Http\TestHttpRequest');
     }
 }

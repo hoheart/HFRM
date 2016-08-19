@@ -3,3 +3,4 @@
 .project
 .settings
 .localenv.php
+vendor

@@ -217,12 +217,13 @@ class AsyncHttpClient
     protected function respondComplete(\Closure $fn)
     {
         // 读完了整个响应包，就该调用回调函数了。
-        $fn($this->mResponse);
-
-        echo "12355\n\n\n\n";
-        exit();
+        try {
+            $fn($this->mResponse);
+        } catch (\Exception $e) {
+            throw $e;
+        }
+        
         -- self::$WaitedCount;
-        echo self::$WaitedCount;
         
         if (0 === self::$WaitedCount) {
             \Ev::stop();

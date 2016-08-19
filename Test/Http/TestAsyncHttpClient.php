@@ -2,7 +2,7 @@
 namespace Test\Http;
 
 use Framework\Http\AsyncHttpClient;
-use Framework\Http\HttpResponse;
+use Framework\Http\HttpRequest;
 
 /**
  * 对异步HttpClient进行测试，需要搭建一个http服务器，把收到的所有数据（包括http command line , header）原样发回(以http协议)。
@@ -21,13 +21,16 @@ class TestAsyncHttpClient extends \PHPUnit_Framework_TestCase
     {
         $host = '172.16.20.58';
         $port = 50000;
+        
+        $req = new HttpRequest("http://$host:$port/abc");
+        $req->setMethod('POST');
+        $body = '01234';
+        $req->addBody($body);
+        
         // 先测试短点的数据
         $client = new AsyncHttpClient();
-        $body = '01234';
         $resp = null;
-        $client->post("http://$host:$port/abc", $body, function (HttpResponse $r) use($resp) {
-            echo 6666;
-            exit();
+        $client->request($req, function ($r) use($resp) {
             $resp = $r;
         }, 1, 1);
         
@@ -37,7 +40,7 @@ class TestAsyncHttpClient extends \PHPUnit_Framework_TestCase
         $reqStr .= 'Host: 127.0.0.1' . "$port\r\n";
         $reqStr .= 'Content-Length: ' . strlen($body) . "\r\n";
         $reqStr .= "\r\n";
-        if ($reqStr != $resp->getBody()) {
+        if (null == $resp || $reqStr != $resp->getBody()) {
             throw new \PHPUnit_Framework_AssertionFailedError();
         }
     }
