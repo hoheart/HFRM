@@ -69,10 +69,11 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
             throw new \PHPUnit_Framework_AssertionFailedError();
         }
     }
-    
-    public function testGetClientIp(){
+
+    public function testGetClientIp()
+    {
         $req = new HttpRequest();
-        $req->setHeader('', $value)
+        $req->setHeader('', $value);
     }
 
     public function testPack()
