@@ -2,9 +2,12 @@
 namespace Framework\Http;
 
 use Framework\IHttpRequest;
+use Framework\HFC\Exception\ParameterErrorException;
 
 class HttpRequest extends HttpMessage implements IHttpRequest
 {
+
+    const HEADER_HOST = 'Host';
 
     /**
      *
@@ -25,11 +28,22 @@ class HttpRequest extends HttpMessage implements IHttpRequest
      */
     protected $mQueryParamMap = array();
 
-    public function __construct($url)
+    protected $mId = '';
+
+    public function __construct($url = '')
     {
-        $this->setURI($url);
+        $this->mId = uuid_create();
+        
+        if (! empty($url)) {
+            $this->setURI($url);
+        }
         
         parent::__construct();
+    }
+
+    public function getId()
+    {
+        return $this->mId;
     }
 
     public function set($name, $value)
@@ -54,24 +68,24 @@ class HttpRequest extends HttpMessage implements IHttpRequest
 
     public function setURI($uri)
     {
-        $this->mUri = $uri;
-        
         $urlArr = parse_url($uri);
-        $host = $urlArr['host'];
-        if (! empty($urlArr['port'])) {
-            $host .= ':' . $urlArr['port'];
+        if (false === $urlArr) {
+            throw new ParameterErrorException();
         }
-        $this->setHeader('Host', $host);
         
-        $pos = strpos('?', $uri);
-        if (false !== $pos) {
-            $str = substr($uri, $pos + 1);
-            $arr = explode('=', $str);
-            
-            foreach ($arr as $key => $val) {
-                $this->mQueryParamMap[$key] = urldecode($val);
+        $host = $urlArr['host'];
+        if (! empty($host)) {
+            if (! empty($urlArr['port'])) {
+                $host .= ':' . $urlArr['port'];
             }
+            $this->setHeader('Host', $host);
         }
+        
+        $query = '';
+        if (! empty($urlArr['query'])) {
+            $query = '?' . $urlArr['query'];
+        }
+        $this->mUri = $urlArr['path'] . $query;
     }
 
     public function getURI()

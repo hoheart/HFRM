@@ -22,12 +22,6 @@ abstract class HttpMessage
 
     /**
      *
-     * @var string $mId
-     */
-    protected $mId = '';
-
-    /**
-     *
      * @var string
      */
     protected $mVersion = 'HTTP/1.1';
@@ -52,17 +46,7 @@ abstract class HttpMessage
 
     public function __construct()
     {
-        $this->mId = uuid_create();
-    }
-
-    public function setId($id)
-    {
-        $this->mId = $id;
-    }
-
-    public function getId()
-    {
-        return $this->mId;
+        // nothing
     }
 
     public function setHeader($fieldName, $value)
