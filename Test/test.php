@@ -23,5 +23,4 @@ spl_autoload_register('autoloadFramework');
 
 $s = new PHPUnit_Framework_TestSuite();
 $s->addTestSuite(new HttpTestSuite());
-PHPUnit_TextUI_TestRunner::run($s);  
-
+PHPUnit_TextUI_TestRunner::run($s);
