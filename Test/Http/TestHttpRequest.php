@@ -76,6 +76,24 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         $req->setHeader('', $value);
     }
 
+    public function testGetAllParams()
+    {
+        $req = new HttpRequest();
+        
+        $all = array(
+            'a' => 'b',
+            'ab' => 'cd',
+            '34' => 45
+        );
+        foreach ($all as $key => $one) {
+            $req->set($key, $one);
+        }
+        
+        if ($all !== $req->getAllParams()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+    }
+
     public function testPack()
     {
         $host = '127.0.0.1';
