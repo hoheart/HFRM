@@ -3,6 +3,7 @@ namespace Test\Http;
 
 use Framework\Http\HttpRequest;
 use Framework\HFC\Exception\ParameterErrorException;
+use Framework\Http\HttpMessage;
 
 class TestHttpRequest extends \PHPUnit_Framework_TestCase
 {
@@ -138,16 +139,33 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         $req->setCookie('id', '/', 30, '/a/b', '.che001.com', true, true);
         $req->setCookie('name', 'n', 30, '/a/b', '.che001.com', true, true);
         $body = '01234';
-        $req->addBody($body);
+        $req->setBody($body);
+        $req->set('a', 'b');
+        $req->set('c', 'd');
         
         $packedData = $req->pack();
         
+        $packedBody = '01234&a=b&c=d';
         $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
         $reqStr .= 'Host: 127.0.0.1:' . "$port\r\n";
-        $reqStr .= 'Content-Length: ' . strlen($body) . "\r\n";
+        $reqStr .= 'Content-Type: ' . HttpMessage::CONTENT_TYPE_URLENCODED . "\r\n";
+        $reqStr .= 'Content-Length: ' . strlen($packedBody) . "\r\n";
         $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
         $reqStr .= "\r\n";
-        $reqStr .= $body;
+        $reqStr .= $packedBody;
+        if ($packedData !== $reqStr) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+        
+        $req->setBody('');
+        $packedBody = 'a=b&c=d';
+        $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
+        $reqStr .= 'Host: 127.0.0.1:' . "$port\r\n";
+        $reqStr .= 'Content-Type: ' . HttpMessage::CONTENT_TYPE_URLENCODED . "\r\n";
+        $reqStr .= 'Content-Length: ' . strlen($packedBody) . "\r\n";
+        $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
+        $reqStr .= "\r\n";
+        $reqStr .= $packedBody;
         if ($packedData !== $reqStr) {
             throw new \PHPUnit_Framework_AssertionFailedError();
         }

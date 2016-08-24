@@ -62,6 +62,14 @@ class HttpRequest extends HttpMessage implements IHttpRequest
         return $this->mId;
     }
 
+    /**
+     *
+     * @see self::pack()
+     * @param string $name
+     *            键名
+     * @param string $value
+     *            键值
+     */
     public function set($name, $value)
     {
         $this->mQueryParamMap[$name] = $value;
@@ -86,6 +94,13 @@ class HttpRequest extends HttpMessage implements IHttpRequest
         return $this->mMethod;
     }
 
+    /**
+     * 如果uri中含有查询参数，不会把查询参数解析到QueryParamsMap里。pack时，除了get请求外，其他请求，会原样pack此函数设置的uri。
+     *
+     * @param string $uri
+     *            uri
+     * @throws ParameterErrorException 参数错误
+     */
     public function setURI($uri)
     {
         $urlArr = parse_url($uri);
@@ -151,7 +166,7 @@ class HttpRequest extends HttpMessage implements IHttpRequest
         return $this->mQueryParamMap;
     }
 
-    protected function packUri()
+    protected function packQueryMap()
     {
         $str = '';
         foreach ($this->mQueryParamMap as $key => $val) {
@@ -162,19 +177,31 @@ class HttpRequest extends HttpMessage implements IHttpRequest
             $str .= $key . '=' . urlencode($val);
         }
         
-        $uri = '';
+        return $str;
+    }
+
+    protected function packUri()
+    {
+        $uri = $this->mUri;
+        
         if (self::METHOD_GET == $this->mMethod) {
-            if (false !== strpos($this->mUri, '?')) {
-                // 如果已经有?，表示有query字符了
-                $uri = $this->mUri . '&' . $str;
-            } else {
-                $uri = $this->mUri . '?' . $str;
+            $str = $this->packQueryMap();
+            if (! empty($str)) {
+                if (false !== strpos($this->mUri, '?')) {
+                    // 如果已经有?，表示有query字符了
+                    $uri = $this->mUri . '&' . $str;
+                } else {
+                    $uri = $this->mUri . '?' . $str;
+                }
             }
         }
         
         return $uri;
     }
 
+    /**
+     * 会对set的key-value键值对进行pack（放入body），但只pack Content-Type为application/x-www-form-urlencoded;charset=utf-8的非get请求，其他情况，将丢弃。
+     */
     public function pack()
     {
         $s = $this->mMethod . ' ' . $this->packUri() . ' ' . $this->mVersion . "\r\n";
@@ -198,10 +225,17 @@ class HttpRequest extends HttpMessage implements IHttpRequest
         }
         $s .= self::HEADER_COOKIE . $cookieStr . "\r\n";
         
-        $s .= self::HEADER_CONTENT_LENGTH . ' ' . strlen($this->mBody) . "\r\n";
-        
+        $body = $this->mBody;
+        $str = $this->packQueryMap();
+        if (! empty($str)) {
+            if (! empty($body)) {
+                $body .= '&' . $str;
+            } else {
+                $body = $str;
+            }
+        }
+        $s .= self::HEADER_CONTENT_LENGTH . ' ' . strlen($body) . "\r\n";
         $s .= "\r\n";
-        
         $s .= $this->mBody;
         
         return $s;
