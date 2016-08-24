@@ -4,12 +4,14 @@ namespace Framework\Http;
 abstract class HttpMessage
 {
 
+    const VERSION = 'HTTP/1.1';
+
     /**
      * 内容类型
      *
      * @var string
      */
-    const CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded';
+    const CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded;charset=utf-8';
 
     const TRANSFER_ENCODING_CHUNKED = 'chunked';
 
@@ -18,13 +20,15 @@ abstract class HttpMessage
      */
     const HEADER_CONTENT_LENGTH = 'Content-Length';
 
+    const HEADER_CONTENT_TYPE = 'Content-Type';
+
     const HEADER_TRANSFER_ENCODING = 'Transfer-Encoding';
 
     /**
      *
      * @var string
      */
-    protected $mVersion = 'HTTP/1.1';
+    protected $mVersion = self::VERSION;
 
     /**
      *
@@ -69,7 +73,10 @@ abstract class HttpMessage
 
     public function setCookie($name, $value = "", $expire = 0, $path = "", $domain = "", $secure = false, $httponly = false)
     {
-        $map = array();
+        $map = array(
+            'value' => $value
+        );
+        
         if (0 != $expire) {
             $map['expire'] = $expire;
         }
@@ -94,12 +101,12 @@ abstract class HttpMessage
 
     public function setContentType($type)
     {
-        $this->mHeader['Content-Type'] = $type;
+        $this->mHeader[self::HEADER_CONTENT_TYPE] = $type;
     }
 
     public function getContentType()
     {
-        return $this->mHeader['Content-Type'];
+        return $this->mHeader[self::HEADER_CONTENT_TYPE];
     }
 
     public function getCookie($name)
@@ -129,34 +136,6 @@ abstract class HttpMessage
 
     public function getContentLength()
     {
-        return $this->mHeader['Content-Length'];
-    }
-
-    protected function packOneCookie($key, $cookie)
-    {
-        $s = '';
-        
-        if (is_string($cookie)) {
-            $s = "Set-Cookie: $key=" . urlencode($cookie) . "\r\n";
-        } else {
-            $s = "Set-Cookie: $key=" . urlencode($cookie['value']) . "; ";
-            if (0 != $cookie['expire']) {
-                $s .= date('D, d-M-Y H:i:s e', $cookie['expire']);
-            }
-            if ('' !== $cookie['path']) {
-                $s .= $cookie['path'];
-            }
-            if ('' !== $cookie['domain']) {
-                $s .= $cookie['domain'];
-            }
-            if (true === $cookie['secure']) {
-                $s .= 'secure';
-            }
-            if (true === $cookie['httponly']) {
-                $s .= 'httponly';
-            }
-            
-            $s .= "\r\n";
-        }
+        return $this->mHeader[self::HEADER_CONTENT_LENGTH];
     }
 }

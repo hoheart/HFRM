@@ -7,13 +7,29 @@ use Framework\HFC\Exception\ParameterErrorException;
 class HttpRequest extends HttpMessage implements IHttpRequest
 {
 
+    /**
+     * header
+     *
+     * @var string
+     */
     const HEADER_HOST = 'Host';
+
+    const HEADER_COOKIE = 'Cookie';
+
+    /**
+     * method
+     *
+     * @var string
+     */
+    const METHOD_GET = 'GET';
+
+    const METHOD_POST = 'POST';
 
     /**
      *
      * @var string $mMethod
      */
-    protected $mMethod = 'GET';
+    protected $mMethod = self::METHOD_GET;
 
     /**
      *
@@ -58,6 +74,10 @@ class HttpRequest extends HttpMessage implements IHttpRequest
 
     public function setMethod($method)
     {
+        if (self::METHOD_POST == $method) {
+            $this->setHeader(self::HEADER_CONTENT_TYPE, self::CONTENT_TYPE_URLENCODED);
+        }
+        
         $this->mMethod = $method;
     }
 
@@ -78,7 +98,7 @@ class HttpRequest extends HttpMessage implements IHttpRequest
             if (! empty($urlArr['port'])) {
                 $host .= ':' . $urlArr['port'];
             }
-            $this->setHeader('Host', $host);
+            $this->setHeader(self::HEADER_HOST, $host);
         }
         
         $query = '';
@@ -131,19 +151,54 @@ class HttpRequest extends HttpMessage implements IHttpRequest
         return $this->mQueryParamMap;
     }
 
+    protected function packUri()
+    {
+        $str = '';
+        foreach ($this->mQueryParamMap as $key => $val) {
+            if ('' !== $str) {
+                $str .= '&';
+            }
+            
+            $str .= $key . '=' . urlencode($val);
+        }
+        
+        $uri = '';
+        if (self::METHOD_GET == $this->mMethod) {
+            if (false !== strpos($this->mUri, '?')) {
+                // 如果已经有?，表示有query字符了
+                $uri = $this->mUri . '&' . $str;
+            } else {
+                $uri = $this->mUri . '?' . $str;
+            }
+        }
+        
+        return $uri;
+    }
+
     public function pack()
     {
-        $s = $this->mMethod . ' ' . $this->mUri . ' ' . $this->mVersion . "\r\n";
+        $s = $this->mMethod . ' ' . $this->packUri() . ' ' . $this->mVersion . "\r\n";
         
         foreach ($this->mHeader as $key => $val) {
             $s .= "$key: $val\r\n";
         }
         
-        $s .= 'Content-Length: ' . strlen($this->mBody) . "\r\n";
-        
+        $cookieStr = '';
         foreach ($this->mCookieMap as $key => $val) {
-            $s .= $this->packOneCookie($key, $val);
+            if ('' !== $cookieStr) {
+                $cookieStr .= '; ';
+            }
+            
+            $cookieStr .= $key . '=';
+            if (is_string($val)) {
+                $cookieStr .= urlencode($val);
+            } else {
+                $cookieStr .= urlencode($val['value']);
+            }
         }
+        $s .= self::HEADER_COOKIE . $cookieStr . "\r\n";
+        
+        $s .= self::HEADER_CONTENT_LENGTH . ' ' . strlen($this->mBody) . "\r\n";
         
         $s .= "\r\n";
         
