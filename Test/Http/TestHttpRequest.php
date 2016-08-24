@@ -73,7 +73,33 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
     public function testGetClientIp()
     {
         $req = new HttpRequest();
-        $req->setHeader('', $value);
+        $req->setHeader('HTTP_X_FORWARDED_FOR', '12');
+        if ('12' != $req->getClientIP()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+        
+        $req = new HttpRequest();
+        $req->setHeader('HTTP_CLIENT_IP', '1');
+        if ('1' != $req->getClientIP()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+        
+        $req = new HttpRequest();
+        $req->setHeader('REMOTE_ADDR', '2');
+        if ('2' != $req->getClientIP()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+        
+        // 测试优先顺序
+        $req->setHeader('HTTP_CLIENT_IP', '1');
+        if ('1' != $req->getClientIP()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+        
+        $req->setHeader('HTTP_X_FORWARDED_FOR', '12');
+        if ('12' != $req->getClientIP()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
     }
 
     public function testPack()
