@@ -1,5 +1,4 @@
 <?php
-
 namespace Framework\Http;
 
 use Framework\IHttpResponse;
@@ -9,86 +8,122 @@ use Framework\HFC\Exception\ParameterErrorException;
  * 目前支持http1.0，不支持chunked
  *
  * @author Hoheart
- *        
  */
-class HttpResponse extends HttpMessage implements IHttpResponse {
-	
-	/**
-	 *
-	 * @var int $mStatusCode
-	 */
-	protected $mStatusCode = 200;
-	
-	/**
-	 *
-	 * @var string $mReasonPhrase
-	 */
-	protected $mReasonPhrase = 'OK';
+class HttpResponse extends HttpMessage implements IHttpResponse
+{
 
-	/**
-	 *
-	 * @param string $respStr        	
-	 * @param int $endPos
-	 *        	两个回车的位置
-	 */
-	public function __construct ($respStr = '') {
-		$this->continueParse($respStr);
-	}
+    /**
+     *
+     * @var int $mStatusCode
+     */
+    protected $mStatusCode = 200;
 
-	public function continueParse ($str) {
-		if (! is_string($str) || '' === $str) {
-			throw new ParameterErrorException();
-		}
-		
-		if (0 == $bodyPos) {
-			$bodyPos = strpos($respStr, "\r\n\r\n");
-		}
-		$pos = $this->parseCommandLine($respStr);
-		$this->parseHeaderMap($respStr, $pos, $bodyPos);
-		$this->mBody = substr($respStr, $bodyPos + 4);
-	}
+    /**
+     *
+     * @var string $mReasonPhrase
+     */
+    protected $mReasonPhrase = 'OK';
 
-	protected function parseCommandLine ($str) {
-		$pos = strpos($str, "\r\n");
-		if (false === $pos) {
-			throw new ParameterErrorException();
-		}
-		
-		$cmdLine = substr($str, 0, $pos);
-		list ($version, $code, $phrase) = explode(' ', $cmdLine);
-		$this->mVersion = $version;
-		$this->mStatusCode = $code;
-		$this->mReasonPhrase = $phrase;
-		
-		return $pos + 2;
-	}
+    /**
+     *
+     * @param string $respStr
+     *            整个响应包
+     * @param int $endPos
+     *            两个回车的位置
+     */
+    public function __construct($respStr = '')
+    {
+        $this->continueParse($respStr);
+    }
 
-	protected function parseHeaderMap ($str, $pos, $bodyPos) {
-		$strLen = strlen($str);
-		$endPos = 0;
-		do {
-			$endPos = strpos($str, "\r\n", $pos);
-			if (false === $endPos) {
-				$endPos = $strLen;
-			}
-			
-			$line = substr($str, $pos, $endPos - $pos);
-			list ($key, $val) = explode(':', $line);
-			$this->mHeader[$key] = ltrim($val);
-			
-			$pos = $endPos + 2;
-		} while ($endPos < $bodyPos);
-	}
+    public function continueParse($str)
+    {
+        if (! is_string($str) || '' === $str) {
+            throw new ParameterErrorException();
+        }
+        
+        if (0 == $bodyPos) {
+            $bodyPos = strpos($respStr, "\r\n\r\n");
+        }
+        $pos = $this->parseCommandLine($respStr);
+        $this->parseHeaderMap($respStr, $pos, $bodyPos);
+        $this->mBody = substr($respStr, $bodyPos + 4);
+    }
 
-	public function setStatusCode ($code) {
-		$this->mStatusCode = $code;
-	}
+    protected function parseCommandLine($str)
+    {
+        $pos = strpos($str, "\r\n");
+        if (false === $pos) {
+            throw new ParameterErrorException();
+        }
+        
+        $cmdLine = substr($str, 0, $pos);
+        list ($version, $code, $phrase) = explode(' ', $cmdLine);
+        $this->mVersion = $version;
+        $this->mStatusCode = $code;
+        $this->mReasonPhrase = $phrase;
+        
+        return $pos + 2;
+    }
 
-	public function setReasonPhrase ($reason) {
-		$this->mReasonPhrase = $reason;
-	}
+    protected function parseHeaderMap($str, $pos, $bodyPos)
+    {
+        $strLen = strlen($str);
+        $endPos = 0;
+        do {
+            $endPos = strpos($str, "\r\n", $pos);
+            if (false === $endPos) {
+                $endPos = $strLen;
+            }
+            
+            $line = substr($str, $pos, $endPos - $pos);
+            list ($key, $val) = explode(':', $line);
+            $this->mHeader[$key] = ltrim($val);
+            
+            $pos = $endPos + 2;
+        } while ($endPos < $bodyPos);
+    }
 
-	public function addBody ($str) {
-		$this->mBody .= $str;
-	}
+    public function setStatusCode($code)
+    {
+        $this->mStatusCode = $code;
+    }
+
+    public function setReasonPhrase($reason)
+    {
+        $this->mReasonPhrase = $reason;
+    }
+
+    public function addBody($str)
+    {
+        $this->mBody .= $str;
+    }
+
+    protected function packOneCookie($key, $cookie)
+    {
+        $s = '';
+        
+        if (is_string($cookie)) {
+            $s = "Set-Cookie: $key=" . urlencode($cookie) . "\r\n";
+        } else {
+            $s = "Set-Cookie: $key=" . urlencode($cookie['value']) . "; ";
+            if (0 != $cookie['expire']) {
+                $s .= date('D, d-M-Y H:i:s e', $cookie['expire']);
+            }
+            if ('' !== $cookie['path']) {
+                $s .= $cookie['path'];
+            }
+            if ('' !== $cookie['domain']) {
+                $s .= $cookie['domain'];
+            }
+            if (true === $cookie['secure']) {
+                $s .= 'secure';
+            }
+            if (true === $cookie['httponly']) {
+                $s .= 'httponly';
+            }
+            
+            $s .= "\r\n";
+        }
+    }
 }

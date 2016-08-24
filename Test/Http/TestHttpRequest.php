@@ -102,6 +102,24 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function testGetAllParams()
+    {
+        $req = new HttpRequest();
+        
+        $all = array(
+            'a' => 'b',
+            'ab' => 'cd',
+            '34' => 45
+        );
+        foreach ($all as $key => $one) {
+            $req->set($key, $one);
+        }
+        
+        if ($all !== $req->getAllParams()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
+    }
+
     public function testPack()
     {
         $host = '127.0.0.1';
@@ -117,6 +135,8 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         
         $req = new HttpRequest("http://$host:$port/abc?name=%2f");
         $req->setMethod('POST');
+        $req->setCookie('id', '/', 30, '/a/b', '.che001.com', true, true);
+        $req->setCookie('name', 'n', 30, '/a/b', '.che001.com', true, true);
         $body = '01234';
         $req->addBody($body);
         
@@ -125,6 +145,7 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
         $reqStr .= 'Host: 127.0.0.1:' . "$port\r\n";
         $reqStr .= 'Content-Length: ' . strlen($body) . "\r\n";
+        $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
         $reqStr .= "\r\n";
         $reqStr .= $body;
         if ($packedData !== $reqStr) {

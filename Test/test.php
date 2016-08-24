@@ -1,7 +1,9 @@
 <?php
 use Test\Http\HttpTestSuite;
 
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+if (! class_exists('PHPUnit_Framework_TestSuite')) {
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+}
 
 function autoloadFramework($class)
 {
