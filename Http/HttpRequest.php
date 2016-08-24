@@ -49,6 +49,7 @@ class HttpRequest extends HttpMessage implements IHttpRequest
     public function __construct($url = '')
     {
         $this->mId = uuid_create();
+        $this->setHeader('RequestId', $this->mId);
         
         if (! empty($url)) {
             $this->setURI($url);
@@ -223,7 +224,7 @@ class HttpRequest extends HttpMessage implements IHttpRequest
                 $cookieStr .= urlencode($val['value']);
             }
         }
-        $s .= self::HEADER_COOKIE . $cookieStr . "\r\n";
+        $s .= self::HEADER_COOKIE . ': ' . $cookieStr . "\r\n";
         
         $body = $this->mBody;
         $str = $this->packQueryMap();
@@ -234,9 +235,9 @@ class HttpRequest extends HttpMessage implements IHttpRequest
                 $body = $str;
             }
         }
-        $s .= self::HEADER_CONTENT_LENGTH . ' ' . strlen($body) . "\r\n";
+        $s .= self::HEADER_CONTENT_LENGTH . ': ' . strlen($body) . "\r\n";
         $s .= "\r\n";
-        $s .= $this->mBody;
+        $s .= $body;
         
         return $s;
     }

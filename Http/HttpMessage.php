@@ -67,7 +67,7 @@ abstract class HttpMessage
         if ('Cookie' == $fieldName) {
             return $this->mCookieMap[$fieldName];
         } else {
-            return $this->mHeader[$fieldName];
+            return @$this->mHeader[$fieldName];
         }
     }
 

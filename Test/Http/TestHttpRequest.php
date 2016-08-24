@@ -121,6 +121,20 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    protected function getReqStr($id, $body)
+    {
+        $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
+        $reqStr .= 'RequestId: ' . $id . "\r\n";
+        $reqStr .= 'Host: 127.0.0.1:60000' . "\r\n";
+        $reqStr .= 'Content-Type: ' . HttpMessage::CONTENT_TYPE_URLENCODED . "\r\n";
+        $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
+        $reqStr .= 'Content-Length: ' . strlen($body) . "\r\n";
+        $reqStr .= "\r\n";
+        $reqStr .= $body;
+        
+        return $reqStr;
+    }
+
     public function testPack()
     {
         $host = '127.0.0.1';
@@ -143,29 +157,17 @@ class TestHttpRequest extends \PHPUnit_Framework_TestCase
         $req->set('a', 'b');
         $req->set('c', 'd');
         
-        $packedData = $req->pack();
-        
         $packedBody = '01234&a=b&c=d';
-        $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
-        $reqStr .= 'Host: 127.0.0.1:' . "$port\r\n";
-        $reqStr .= 'Content-Type: ' . HttpMessage::CONTENT_TYPE_URLENCODED . "\r\n";
-        $reqStr .= 'Content-Length: ' . strlen($packedBody) . "\r\n";
-        $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
-        $reqStr .= "\r\n";
-        $reqStr .= $packedBody;
+        $reqStr = $this->getReqStr($req->getId(), $packedBody);
+        $packedData = $req->pack();
         if ($packedData !== $reqStr) {
             throw new \PHPUnit_Framework_AssertionFailedError();
         }
         
         $req->setBody('');
         $packedBody = 'a=b&c=d';
-        $reqStr = 'POST /abc?name=%2f HTTP/1.1' . "\r\n";
-        $reqStr .= 'Host: 127.0.0.1:' . "$port\r\n";
-        $reqStr .= 'Content-Type: ' . HttpMessage::CONTENT_TYPE_URLENCODED . "\r\n";
-        $reqStr .= 'Content-Length: ' . strlen($packedBody) . "\r\n";
-        $reqStr .= 'Cookie: id=%2F; name=n' . "\r\n";
-        $reqStr .= "\r\n";
-        $reqStr .= $packedBody;
+        $reqStr = $this->getReqStr($req->getId(), $packedBody);
+        $packedData = $req->pack();
         if ($packedData !== $reqStr) {
             throw new \PHPUnit_Framework_AssertionFailedError();
         }
