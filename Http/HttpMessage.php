@@ -133,9 +133,4 @@ abstract class HttpMessage
     {
         return $this->mBody;
     }
-
-    public function getContentLength()
-    {
-        return $this->mHeader[self::HEADER_CONTENT_LENGTH];
-    }
 }
