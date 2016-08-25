@@ -33,7 +33,7 @@ class TestHttpMessage extends \PHPUnit_Framework_TestCase
         
         $cookie = array(
             'value' => 'b',
-            'expire' => 30,
+            'expires' => 30,
             'path' => '/a',
             'domain' => '.a.com',
             'secure' => true,
@@ -45,7 +45,7 @@ class TestHttpMessage extends \PHPUnit_Framework_TestCase
         
         $cookie = array(
             'value' => '/',
-            'expire' => 30,
+            'expires' => 30,
             'path' => '/a/b',
             'domain' => '.a.com',
             'secure' => true,
@@ -58,7 +58,7 @@ class TestHttpMessage extends \PHPUnit_Framework_TestCase
         $allCookie = array(
             'a' => array(
                 'value' => 'b',
-                'expire' => 30,
+                'expires' => 30,
                 'path' => '/a',
                 'domain' => '.a.com',
                 'secure' => true,
@@ -66,7 +66,7 @@ class TestHttpMessage extends \PHPUnit_Framework_TestCase
             ),
             'b' => array(
                 'value' => '/',
-                'expire' => 30,
+                'expires' => 30,
                 'path' => '/a/b',
                 'domain' => '.a.com',
                 'secure' => true,

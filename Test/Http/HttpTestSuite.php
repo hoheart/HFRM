@@ -8,6 +8,7 @@ class HttpTestSuite extends \PHPUnit_Framework_TestSuite
     {
         $this->addTestSuite('Test\Http\TestHttpMessage');
         $this->addTestSuite('Test\Http\TestHttpRequest');
+        $this->addTestSuite('Test\Http\TestHttpResponse');
         $this->addTestSuite('Test\Http\TestAsyncHttpClient');
     }
 }

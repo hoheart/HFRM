@@ -71,14 +71,14 @@ abstract class HttpMessage
         }
     }
 
-    public function setCookie($name, $value = "", $expire = 0, $path = "", $domain = "", $secure = false, $httponly = false)
+    public function setCookie($name, $value = "", $expires = 0, $path = "", $domain = "", $secure = false, $httponly = false)
     {
         $map = array(
             'value' => $value
         );
         
-        if (0 != $expire) {
-            $map['expire'] = $expire;
+        if (0 != $expires) {
+            $map['expires'] = $expires;
         }
         if ('' !== $path) {
             $map['path'] = $path;
