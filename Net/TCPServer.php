@@ -7,6 +7,12 @@ use Framework\HFC\Exception\ParameterErrorException;
 class TCPServer
 {
 
+    /**
+     *
+     * @var int
+     */
+    const EVENT_CONNECT = 1;
+
     protected $mHost = '';
 
     protected $mPort = 0;
@@ -26,7 +32,7 @@ class TCPServer
     public function on($event, IConnectionManager $cm)
     {
         switch ($event) {
-            case 'connect':
+            case self::EVENT_CONNECT:
                 $this->mConnectionManager = $cm;
                 
                 break;
@@ -52,6 +58,8 @@ class TCPServer
             $this,
             'onAccept'
         ));
+        
+        \Ev::run();
     }
 
     public function onAccept($watcher = null, $revents = null)

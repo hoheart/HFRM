@@ -137,10 +137,7 @@ class AsyncHttpClient
             fclose($this->mConnection);
             $this->mConnection = false;
             
-            $ret = stream_get_meta_data($this->mConnection);
-            $uri = $ret['uri'];
-            
-            throw new NetworkErrorException('connection closed or error. uri:' . $uri);
+            throw new NetworkErrorException('connection closed or error.');
         }
         
         $this->mWroteLen += $ret;
@@ -191,9 +188,6 @@ class AsyncHttpClient
      */
     public function onRead($ew, $events)
     {
-        $meta = stream_get_meta_data($this->mConnection);
-        $uri = $meta['uri'];
-        
         // 8192一般是一个tcp包的大小
         // false表示网络出错了，空表示连接已经关闭，这个时候都调用close释放资源
         $ret = fread($this->mConnection, 8192);
@@ -201,7 +195,7 @@ class AsyncHttpClient
             fclose($this->mConnection);
             $this->mConnection = false;
             
-            throw new NetworkErrorException('connection closed or error. uri:' . $uri, 'framework');
+            throw new NetworkErrorException('connection closed or error.', 'framework');
         }
         
         $fn = $ew->data;
@@ -347,7 +341,7 @@ class AsyncHttpClient
     }
 
     /**
-     * 根据请求指定的地址，简历与服务器的连接，但并不发起请求。如果连接已经建立，就不在重新建立。
+     * 根据请求指定的地址，建立与服务器的连接，但并不发起请求。如果连接已经建立，就不在重新建立。
      *
      * @param HttpRequest $req
      *            请求对象

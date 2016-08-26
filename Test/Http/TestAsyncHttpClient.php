@@ -18,29 +18,27 @@ class TestAsyncHttpClient extends \PHPUnit_Framework_TestCase
      */
     public function testRequest()
     {
-        // $host = '172.16.20.58';
-        // $port = 50000;
+        $host = '127.0.0.1';
+        $port = 60000;
         
-        // $req = new HttpRequest("http://$host:$port/abc");
-        // $req->setMethod('POST');
-        // $body = '01234';
-        // $req->addBody($body);
+        $req = new HttpRequest("http://$host:$port/abc");
+        $req->setMethod('POST');
+        $body = '01234';
+        $req->addBody($body);
         
-        // // 先测试短点的数据
-        // $client = new AsyncHttpClient();
-        // $resp = null;
-        // $client->request($req, function ($r) use($resp) {
-        // $resp = $r;
-        // }, 1, 1);
+        $packedData = $req->pack();
         
-        // AsyncHttpClient::waitUntilAllResponded();
+        // 先测试短点的数据
+        $client = new AsyncHttpClient();
+        $resp = null;
+        $client->request($req, function ($r) use ($resp) {
+            $resp = $r;
+        }, 1, 1);
         
-        // $reqStr = 'POST /abc HTTP/1.1' . "\r\n";
-        // $reqStr .= 'Host: 127.0.0.1' . "$port\r\n";
-        // $reqStr .= 'Content-Length: ' . strlen($body) . "\r\n";
-        // $reqStr .= "\r\n";
-        // if (null == $resp || $reqStr != $resp->getBody()) {
-        // throw new \PHPUnit_Framework_AssertionFailedError();
-        // }
+        AsyncHttpClient::waitUntilAllResponded();
+        
+        if (null == $resp || $packedData != $resp->getBody()) {
+            throw new \PHPUnit_Framework_AssertionFailedError();
+        }
     }
 }
